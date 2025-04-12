@@ -3,7 +3,10 @@ package repositories;
 import models.entities.User;
 import models.enums.UserRoles;
 import org.junit.Test;
+import repositories.interfaces.UserRepository;
+import utils.mappers.UserMapper;
 
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.UUID;
 
@@ -29,13 +32,16 @@ public class UsersRepositoryTest {
     }
 
     @Test
-    public void findAllAsyncTest() {
-        try {
-            UsersRepository userRepository = new UsersRepository();
+    public void findAllAsyncTest() throws SQLException {
+        UserRepository userRepository = new UsersRepository();
 
-            userRepository.findAllAsync().thenAccept(System.out::println)
-                    .exceptionally(throwable -> null);
-            var result = userRepository.findAllAsync();
+        try {
+            var result = userRepository.findAllAsync()
+                    .thenApply(userList -> userList
+                            .stream()
+                            .map(UserMapper::toDto)
+                            .toList())
+                    .join();
 
             assertNotNull(result);
         } catch (Exception e) {

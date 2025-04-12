@@ -27,14 +27,17 @@ public class UsersRepository implements UserRepository{
     private static final String usersSchema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
     private static final String usersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.users-table");
     private final SqlQueryStrings sqlQueryStrings;
-    private final ExecutorService dbExecutor;
+    private static final ExecutorService dbExecutor;
+
+    static {
+        dbExecutor = Executors.newFixedThreadPool(
+                Runtime.getRuntime().availableProcessors(),
+                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
+                );
+    }
 
     public UsersRepository() throws SQLException {
         sqlQueryStrings = new SqlQueryStrings();
-        this.dbExecutor = Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors(),
-                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
-        );
     }
 
     /**
