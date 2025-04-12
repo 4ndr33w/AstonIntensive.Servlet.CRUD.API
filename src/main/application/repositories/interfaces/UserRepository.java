@@ -2,8 +2,10 @@ package repositories.interfaces;
 
 import models.entities.User;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Интерфецс для поиска пользователя:
@@ -19,4 +21,6 @@ public interface UserRepository extends BaseRepository<User> {
     Optional<User> findByUserName(String userName);
     Optional<User> updateEmail(String oldEmail, String newEmail);
     Optional<User> updatePassword(UUID userId, String newPassword);
+
+    CompletableFuture<List<User>> findAllAsync();
 }

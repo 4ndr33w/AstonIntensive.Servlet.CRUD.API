@@ -1,20 +1,21 @@
 package repositories;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import models.entities.User;
-import repositories.interfaces.BaseRepository;
 import repositories.interfaces.UserRepository;
 import utils.sqls.SqlQueryStrings;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static utils.mappers.UserMapper.mapResultSetToUser;
 
@@ -26,9 +27,14 @@ public class UsersRepository implements UserRepository{
     private static final String usersSchema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
     private static final String usersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.users-table");
     private final SqlQueryStrings sqlQueryStrings;
+    private final ExecutorService dbExecutor;
 
     public UsersRepository() throws SQLException {
         sqlQueryStrings = new SqlQueryStrings();
+        this.dbExecutor = Executors.newFixedThreadPool(
+                Runtime.getRuntime().availableProcessors(),
+                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
+        );
     }
 
     /**
@@ -69,6 +75,23 @@ public class UsersRepository implements UserRepository{
         catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public CompletableFuture<List<User>> findAllAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            try (JdbcConnection conn = new JdbcConnection();
+                 PreparedStatement stmt = conn.prepareStatement(String.format("SELECT * FROM %s.%s", usersSchema, usersTable));
+                 ResultSet rs = stmt.executeQuery()) {
+
+                List<User> users = new ArrayList<>();
+                while (rs.next()) {
+                    users.add(mapResultSetToUser(rs));
+                }
+                return users;
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        }, dbExecutor);
     }
 
     /**

@@ -29,6 +29,21 @@ public class UsersRepositoryTest {
     }
 
     @Test
+    public void findAllAsyncTest() {
+        try {
+            UsersRepository userRepository = new UsersRepository();
+
+            userRepository.findAllAsync().thenAccept(System.out::println)
+                    .exceptionally(throwable -> null);
+            var result = userRepository.findAllAsync();
+
+            assertNotNull(result);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
+    @Test
     public void createTest() {
         try {
             UsersRepository userRepository = new UsersRepository();

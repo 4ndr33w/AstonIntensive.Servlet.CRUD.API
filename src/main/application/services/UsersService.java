@@ -57,6 +57,15 @@ public class UsersService implements BaseService<UserDto>, UserService {
                 .orElseGet(List::of);
     }
 
+    public List<UserDto> getAllAsync() throws SQLException {
+        return userRepository.findAllAsync()
+                .thenApply(userList -> userList
+                        .stream()
+                        .map(UserMapper::toDto)
+                        .toList())
+                .join();
+    }
+
     @Override
     public UserDto createUser(User user) throws Exception {
         return null;

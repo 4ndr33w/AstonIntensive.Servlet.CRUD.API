@@ -17,7 +17,17 @@ public class UsersServiceTest {
 
         UsersService usersService = new UsersService();
 
+
         var users = usersService.getAll();
+
+        assertNotNull(users);
+    }
+
+    @Test
+    public void getAllAsyncTest() throws SQLException {
+        UsersService usersService = new UsersService();
+
+        var users = usersService.getAllAsync();
 
         assertNotNull(users);
     }
