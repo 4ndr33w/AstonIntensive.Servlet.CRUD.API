@@ -3,6 +3,7 @@ package services;
 import org.junit.Test;
 
 import java.sql.SQLException;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -11,7 +12,7 @@ import static org.junit.Assert.assertNotNull;
  * @version 1.0
  */
 public class UsersServiceTest {
-
+/*
     @Test
     public void getAllTest() throws SQLException {
 
@@ -21,13 +22,13 @@ public class UsersServiceTest {
         var users = usersService.getAll();
 
         assertNotNull(users);
-    }
+    }*/
 
     @Test
-    public void getAllAsyncTest() throws SQLException {
+    public void getAllAsyncTest() throws SQLException, ExecutionException, InterruptedException {
         UsersService usersService = new UsersService();
 
-        var users = usersService.getAllAsync();
+        var users = usersService.getAllAsync().get();
 
         assertNotNull(users);
     }

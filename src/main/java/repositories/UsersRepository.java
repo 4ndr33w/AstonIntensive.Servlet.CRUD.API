@@ -23,7 +23,7 @@ import static utils.mappers.UserMapper.mapResultSetToUser;
  * @author 4ndr33w
  * @version 1.0
  */
-public class UsersRepository implements UserRepository{
+public class UsersRepository implements UserRepository, AutoCloseable{
     private static final String usersSchema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
     private static final String usersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.users-table");
     private final SqlQueryStrings sqlQueryStrings;
@@ -61,25 +61,6 @@ public class UsersRepository implements UserRepository{
      *         </ul>
      */
     @Override
-    public Optional<List<User>> findAll() {
-        final String query = sqlQueryStrings.findAllQueryString(String.format("%s.%s", usersSchema, usersTable));
-        List<User> users = new ArrayList<>();
-
-        try (JdbcConnection jdbcConnection = new JdbcConnection();
-             PreparedStatement stmt = jdbcConnection.prepareStatement(query);
-             ResultSet resultSet = stmt.executeQuery()) {
-
-            while (resultSet.next()) {
-                users.add(mapResultSetToUser(resultSet));
-            }
-
-            return Optional.ofNullable(users.isEmpty() ? null : users);
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public CompletableFuture<List<User>> findAllAsync() {
         return CompletableFuture.supplyAsync(() -> {
             try (JdbcConnection conn = new JdbcConnection();
@@ -98,37 +79,43 @@ public class UsersRepository implements UserRepository{
     }
 
     /**
-     * Создание пользователя
-     * @return {@code Optional<User>}
-     * @throws RuntimeException
+     * Асинхронное создание пользователя
+     *
+     * @param item объект пользователя для создания (не null)
+     * @return CompletableFuture с созданным пользователем (с заполненным ID)
+     * @throws RuntimeException если произошла ошибка при выполнении операции
      */
     @Override
-    public Optional<User> create(User item) {
-        if (item == null) {
-            return Optional.empty();
-        }
-
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            String queryString = sqlQueryStrings.createUserString(String.format("%s.%s", usersSchema, usersTable), item);
-
-            Statement statement = jdbcConnection.statement();
-
-            int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
-
-            if (affectedRows == 0) {
-                return Optional.empty();
+    public CompletableFuture<User> createAsync(User item) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (item == null) {
+                throw new IllegalArgumentException("User item cannot be null");
             }
 
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    item.setId((UUID) generatedKeys.getObject(1));
+            String tableName = String.format("%s.%s", usersSchema, usersTable);
+            String queryString = sqlQueryStrings.createUserString(tableName, item);
+
+            try (JdbcConnection jdbcConnection = new JdbcConnection();
+                 Statement statement = jdbcConnection.statement()) {
+
+                int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
+
+                if (affectedRows == 0) {
+                    throw new RuntimeException("Failed to create user, no rows affected");
+                }
+
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        item.setId((UUID) generatedKeys.getObject(1));
+                        return item;
+                    }
+                    throw new RuntimeException("Failed to retrieve generated keys");
                 }
             }
-            return Optional.of(item);
-        } catch (Exception ex) {
-            System.err.println("Failed to create user: " + ex.getMessage());
-            throw new RuntimeException(ex);
-        }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, dbExecutor);
     }
 
     /**
@@ -155,57 +142,62 @@ public class UsersRepository implements UserRepository{
      *         </ul>
      */
     @Override
-    public boolean delete(UUID id) {
-        String tableName = String.format("%s.%s", usersSchema, usersTable);
+    public CompletableFuture<Boolean> deleteAsync(UUID id) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (id == null) {
+                return false;
+            }
 
-        if(id != null) {
+            String tableName = String.format("%s.%s", usersSchema, usersTable);
             String queryString = sqlQueryStrings.deleteById(tableName, id.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-
                 int affectedRows = jdbcConnection.executeUpdate(queryString);
-
                 return affectedRows > 0;
             }
             catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }
-        return false;
+        }, dbExecutor);
     }
 
     @Override
-    public Optional<User> findById(UUID id) {
-        return Optional.empty();
+    public CompletableFuture<User> findByIdAsync(UUID id) {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public Optional<List<User>> findByName(String name) {
-        return Optional.empty();
+    public CompletableFuture<List<User>> findByNameAsync(String name) {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public Optional<User> update(User item) {
-        return Optional.empty();
+    public CompletableFuture<User> updateAsync(User item) {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public Optional<User> findByEmail(String email) {
-        return Optional.empty();
+    public CompletableFuture<User> findByEmailAsync(String email) {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public Optional<User> findByUserName(String userName) {
-        return Optional.empty();
+    public CompletableFuture<User> findByUserNameAsync(String userName) {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public Optional<User> updateEmail(String oldEmail, String newEmail) {
-        return Optional.empty();
+    public CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail) {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public Optional<User> updatePassword(UUID userId, String newPassword) {
-        return Optional.empty();
+    public CompletableFuture<User> updatePasswordAsync(UUID userId, String newPassword) {
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public void close() {
+        dbExecutor.shutdown();
     }
 }
