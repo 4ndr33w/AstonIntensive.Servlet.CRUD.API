@@ -67,15 +67,16 @@ public class ProjectsRepositoryTest {
     @Test
     public void getByIdTest() throws ExecutionException, InterruptedException, SQLException {
         ProjectRepository projectsRepository = new ProjectsRepository();
-        UUID id = UUID.fromString("d2d4b92a-f9db-4001-9c04-26b150c75310");
+        UUID id = UUID.fromString("9658455a-348b-4d4d-ad08-cb562da4f8c4");
         var result = projectsRepository.findByIdAsync(id)
-                .thenApplyAsync(ProjectMapper::toDto)
+                //.thenApplyAsync(ProjectMapper::toDto)
                 .exceptionally(ex -> {
                     //System.err.println("Error fetching users: " + ex.getMessage());
                     return null; // Fallback
                 }).get();
+        var project = result;
 
-        assertEquals("testProject1", result.getName());
+        assertEquals("testProject2", result.getName());
     }
 
     @Test
@@ -100,7 +101,7 @@ public class ProjectsRepositoryTest {
         try {
             ProjectRepository projectsRepository = new ProjectsRepository();
             var project = toDto(Utils.testProject1);
-            UUID userId = UUID.fromString("ce3f5f07-20ee-4976-b17c-4460604b5a1b");
+            UUID userId = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa6");
             UUID projectId = UUID.fromString("9658455a-348b-4d4d-ad08-cb562da4f8c4");
 
 

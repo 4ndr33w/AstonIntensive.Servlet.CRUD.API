@@ -69,7 +69,6 @@ public class JdbcConnection implements AutoCloseable{
         return connection.createStatement();
     }
 
-
     @Override
     public void close() throws Exception {
 

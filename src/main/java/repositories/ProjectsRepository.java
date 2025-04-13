@@ -4,10 +4,12 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import models.dtos.ProjectDto;
+import models.dtos.UserDto;
 import models.entities.Project;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import utils.mappers.ProjectMapper;
+import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.ResultSet;
@@ -21,11 +23,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
-import static utils.mappers.ProjectMapper.toDto;
 import static utils.mappers.ProjectMapper.mapResultSetToProject;
-
-
 
 /**
  * @author 4ndr33w
@@ -59,16 +59,56 @@ public class ProjectsRepository implements ProjectRepository {
             if (id == null) {
                 return null;
             }
+
             String tableName = String.format("%s.%s", schema, projectsTable);
             String queryString = sqlQueryStrings.findByIdString(tableName, id.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-                var resultSet  = jdbcConnection.executeQuery(queryString);
+                var resultSet = jdbcConnection.executeQuery(queryString);
 
-                return resultSet.next() ? mapResultSetToProject(resultSet) : null;
+                if (!resultSet.next()) {
+                    return null;
+                }
+
+                Project project = mapResultSetToProject(resultSet);
+
+                List<UserDto> users = loadProjectUsers(id).join();
+                project.setProjectUsers(users);
+
+                return project;
+            } catch (Exception e) {
+                throw new CompletionException("Failed to find project by id: " + id, e);
             }
-            catch (Exception e) {
-                throw new RuntimeException(e);
+        }, dbExecutor);
+    }
+
+    private CompletableFuture<List<UserDto>> loadProjectUsers(UUID projectId) {
+        return CompletableFuture.supplyAsync(() -> {
+            String queryString = String.format(
+                    "SELECT user_id FROM %s.%s WHERE project_id = '%s'",
+                    schema, projectUsersTable, projectId);
+
+            try (JdbcConnection jdbcConnection = new JdbcConnection();
+                 var resultSet = jdbcConnection.executeQuery(queryString)) {
+
+                List<CompletableFuture<UserDto>> userFutures = new ArrayList<>();
+
+                while (resultSet.next()) {
+                    UUID userId = (UUID) resultSet.getObject("user_id");
+                    userFutures.add(
+                            userRepository.findByIdAsync(userId)
+                                    .thenApply(UserMapper::toDto)
+                    );
+                }
+
+                return CompletableFuture.allOf(userFutures.toArray(new CompletableFuture[0]))
+                        .thenApply(v -> userFutures.stream()
+                                .map(CompletableFuture::join)
+                                .collect(Collectors.toList()))
+                        .join();
+
+            } catch (Exception e) {
+                throw new CompletionException("Failed to load project users", e);
             }
         }, dbExecutor);
     }
@@ -187,7 +227,7 @@ public class ProjectsRepository implements ProjectRepository {
 
 
 
-    
+
 
 
 
