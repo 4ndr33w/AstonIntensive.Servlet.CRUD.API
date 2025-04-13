@@ -1,14 +1,9 @@
 package utils.sqls;
 
-import models.dtos.UserDto;
 import models.entities.Project;
 import models.entities.User;
-import models.enums.ProjectStatus;
 
 import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * @author 4ndr33w
@@ -58,11 +53,27 @@ public class SqlQueryStrings {
         return query.toString();
     }
 
-    public String deleteById(String tableName, String id){
+    public String deleteByIdString(String tableName, String id){
         return String.format("DELETE FROM %s WHERE id = '%s';", tableName, id);
     }
 
-    public String findById(String tableName, String id){
+    public String findByIdString(String tableName, String id){
         return String.format("SELECT * FROM %s WHERE id = '%s';", tableName, id);
+    }
+
+    public String findProjectsByAdminIdString(String tableName, String adminId){
+        if (adminId != null) {
+            return String.format("SELECT * FROM %s WHERE admin_id = '%s';", tableName, adminId);
+        } else {
+            return "";
+        }
+    }
+
+    public String addUserIntoProjectString(String tableName, String projectId, String userId) {
+        if (projectId != null && userId != null) {
+            return String.format("INSERT INTO %s (project_id, user_id) VALUES ('%s', '%s');", tableName, projectId, userId);
+        } else {
+            return "";
+        }
     }
 }

@@ -3,21 +3,29 @@ package repositories;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
+import models.dtos.ProjectDto;
 import models.entities.Project;
-import models.entities.User;
 import repositories.interfaces.ProjectRepository;
+import repositories.interfaces.UserRepository;
+import utils.mappers.ProjectMapper;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.ResultSet;
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static utils.mappers.ProjectMapper.toDto;
 import static utils.mappers.ProjectMapper.mapResultSetToProject;
+
+
 
 /**
  * @author 4ndr33w
@@ -31,6 +39,7 @@ public class ProjectsRepository implements ProjectRepository {
 
     private final SqlQueryStrings sqlQueryStrings;
     private static final ExecutorService dbExecutor;
+    private final UserRepository userRepository;
 
     static {
         dbExecutor = Executors.newFixedThreadPool(
@@ -39,8 +48,9 @@ public class ProjectsRepository implements ProjectRepository {
         );
     }
 
-    public ProjectsRepository() {
+    public ProjectsRepository() throws SQLException {
         sqlQueryStrings = new SqlQueryStrings();
+        userRepository = new UsersRepository();
     }
 
     @Override
@@ -49,17 +59,11 @@ public class ProjectsRepository implements ProjectRepository {
             if (id == null) {
                 return null;
             }
-
             String tableName = String.format("%s.%s", schema, projectsTable);
-            String queryString = sqlQueryStrings.findById(tableName, id.toString());
+            String queryString = sqlQueryStrings.findByIdString(tableName, id.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
                 var resultSet  = jdbcConnection.executeQuery(queryString);
-                /*var next = resultSet.next();
-                Project result = null;
-                if(next) {
-                    result = mapResultSetToProject(resultSet);
-                }*/
 
                 return resultSet.next() ? mapResultSetToProject(resultSet) : null;
             }
@@ -68,14 +72,14 @@ public class ProjectsRepository implements ProjectRepository {
             }
         }, dbExecutor);
     }
+
     @Override
     public CompletableFuture<Project> createAsync(Project item) throws SQLException {
-        //7f1111e0-8020-4de6-b15a-601d6903b9eb
+
         return CompletableFuture.supplyAsync(() -> {
             if (item == null) {
                 throw new IllegalArgumentException("User item cannot be null");
             }
-
             String tableName = String.format("%s.%s", schema, projectsTable);
             String queryString = sqlQueryStrings.createProjectString(tableName, item);
 
@@ -102,34 +106,105 @@ public class ProjectsRepository implements ProjectRepository {
         }, dbExecutor);
     }
 
-
-
-
-
-
-
-
     @Override
     public CompletableFuture<List<Project>> findByAdminIdAsync(UUID adminId) {
-        return null;
+        return CompletableFuture.supplyAsync(() -> {
+            if (adminId == null) {
+                return null;
+            }
+            String tableName = String.format("%s.%s", schema, projectsTable);
+            String queryString = sqlQueryStrings.findProjectsByAdminIdString(tableName, adminId.toString());
+
+            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+                var resultSet  = jdbcConnection.executeQuery(queryString);
+
+                List<Project> projects = new ArrayList<>();
+                while (resultSet.next()) {
+                    projects.add(mapResultSetToProject(resultSet));
+                }
+                return projects;
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, dbExecutor);
     }
+
+    @Override
+    public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) {
+        if (userId == null || projectId == null) {
+            return CompletableFuture.failedFuture(
+                    new IllegalArgumentException("Parameters cannot be null"));
+        }
+
+        return findByIdAsync(projectId)
+                .thenApply(ProjectMapper::toDto)
+                .thenCompose(projectDto -> {
+                    List<UUID> updatedUsers = new ArrayList<>(projectDto.getProjectUsersIds());
+                    updatedUsers.add(userId);
+
+                    return executeUpdate(userId, projectId, updatedUsers)
+                            .thenApply(v -> {
+                                projectDto.setProjectUsersIds(updatedUsers);
+                                return projectDto;
+                            });
+                });
+    }
+
+    private CompletableFuture<Void> executeUpdate(UUID userId, UUID projectId, List<UUID> updatedUsers) {
+        return CompletableFuture.runAsync(() -> {
+            String tableName = String.format("%s.%s", schema, projectUsersTable);
+            String query = sqlQueryStrings.addUserIntoProjectString(
+                    tableName, projectId.toString(), userId.toString());
+
+            try (JdbcConnection conn = new JdbcConnection();
+                 Statement stmt = conn.statement()) {
+
+                conn.setAutoCommit(false);
+                try {
+                    int affected = stmt.executeUpdate(query);
+                    if (affected == 0) {
+                        throw new SQLDataException("No rows affected");
+                    }
+                    conn.commit();
+                } catch (SQLException e) {
+                    conn.rollback();
+                    throw e;
+                }
+            } catch (SQLException e) {
+                throw new CompletionException("Database error", e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, dbExecutor);
+    }
+
+
+
+
+
+
+
+
+
+    
+
+
 
 
 
     @Override
-    public CompletableFuture<List<User>> findByNameAsync(String name) {
+    public CompletableFuture<List<Project>> findAllAsync() throws SQLException {
         return null;
     }
+
+
+
 
     @Override
-    public CompletableFuture<List<User>> findAllAsync() throws SQLException {
+    public CompletableFuture<List<Project>> findByUserIdAsync(UUID adminId) {
         return null;
     }
-
-
-
-
-
     @Override
     public CompletableFuture<Project> updateAsync(Project item) {
         return null;
@@ -140,13 +215,10 @@ public class ProjectsRepository implements ProjectRepository {
         return null;
     }
 
-    @Override
-    public CompletableFuture<Project> AddUserToProjectAsync(UUID userId, UUID projectId) {
-        return null;
-    }
+
 
     @Override
-    public CompletableFuture<Project> RemoveUserFromProjectAsync(UUID userId, UUID projectId) {
+    public CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, ProjectDto projectDto) {
         return null;
     }
 }

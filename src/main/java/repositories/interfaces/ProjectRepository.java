@@ -1,7 +1,7 @@
 package repositories.interfaces;
 
+import models.dtos.ProjectDto;
 import models.entities.Project;
-import services.interfaces.BaseService;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,8 +13,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ProjectRepository extends BaseRepository<Project> {
 
-    CompletableFuture<Project> AddUserToProjectAsync(UUID userId, UUID projectId);
-    CompletableFuture<Project> RemoveUserFromProjectAsync(UUID userId, UUID projectId);
+    CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId);
+    CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, ProjectDto projectDto);
     CompletableFuture<List<Project>> findByAdminIdAsync(UUID adminId);
+    CompletableFuture<List<Project>> findByUserIdAsync(UUID adminId);
 
 }

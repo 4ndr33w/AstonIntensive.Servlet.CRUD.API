@@ -10,7 +10,6 @@ import utils.sqls.SqlQueryStrings;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -171,7 +170,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             }
 
             String tableName = String.format("%s.%s", usersSchema, usersTable);
-            String queryString = sqlQueryStrings.deleteById(tableName, id.toString());
+            String queryString = sqlQueryStrings.deleteByIdString(tableName, id.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
                 int affectedRows = jdbcConnection.executeUpdate(queryString);
@@ -191,7 +190,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             }
 
             String tableName = String.format("%s.%s", usersSchema, usersTable);
-            String queryString = sqlQueryStrings.findById(tableName, id.toString());
+            String queryString = sqlQueryStrings.findByIdString(tableName, id.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
                 var resultSet  = jdbcConnection.executeQuery(queryString);
@@ -205,11 +204,8 @@ public class UsersRepository implements UserRepository, AutoCloseable{
 
 
 
+
     // TODO: реализовать остальные методы интерфейса UserRepository
-    @Override
-    public CompletableFuture<List<User>> findByNameAsync(String name) {
-        return CompletableFuture.completedFuture(null);
-    }
 
     @Override
     public CompletableFuture<User> updateAsync(User item) {

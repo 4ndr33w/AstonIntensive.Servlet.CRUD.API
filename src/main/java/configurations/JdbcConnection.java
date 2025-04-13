@@ -22,6 +22,24 @@ public class JdbcConnection implements AutoCloseable{
         return connection;
     }
 
+    public void setAutoCommit(boolean flag) throws SQLException {
+        if (connection != null) {
+            connection.setAutoCommit(flag);
+        }
+    }
+
+    public void commit() throws SQLException {
+        if (connection != null) {
+            connection.commit();
+        }
+    }
+
+    public void rollback() throws SQLException {
+        if (connection != null) {
+            connection.rollback();
+        }
+    }
+
     public ResultSet executeQuery(String query) throws SQLException {
         closeResultSet();
         this.statement = connection.createStatement();
