@@ -3,6 +3,7 @@ package models.dtos;
 import models.enums.UserRoles;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -20,6 +21,7 @@ public class UserDto {
     private UserRoles userRole;
     private byte[] userImage;
     private Date createdAt;
+    List<UUID> projectIds;
 
     public UserDto() {
     }
@@ -77,5 +79,11 @@ public class UserDto {
     }
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
+    }
+    public List<UUID> getProjectIds() {
+        return projectIds;
+    }
+    public void setProjectIds(List<UUID> projectIds) {
+        this.projectIds = projectIds;
     }
 }

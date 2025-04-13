@@ -6,7 +6,9 @@ import models.enums.UserRoles;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -27,6 +29,11 @@ public class UserMapper {
         userDto.setUserName(user.getUserName());
         userDto.setUserRole(user.getUserRole());
         userDto.setCreatedAt(user.getCreatedAt());
+
+        List<UUID> projectIds = new ArrayList<>();
+        if(user.getProjects() != null) {
+            user.getProjects().forEach(project -> {projectIds.add(project.getId());});
+        }
         return userDto;
 
     }
@@ -42,6 +49,8 @@ public class UserMapper {
         user.setUserName(userDto.getUserName());
         user.setUserRole(userDto.getUserRole());
         user.setCreatedAt(userDto.getCreatedAt());
+
+        user.setProjects(new ArrayList<>());
         return user;
     }
 
@@ -61,6 +70,8 @@ public class UserMapper {
                         new Date(rs.getTimestamp("updated_at").getTime()) : null,
                 rs.getTimestamp("last_login_date") != null ?
                         new Date(rs.getTimestamp("last_login_date").getTime()) : null
+
+
         );
     }
 }

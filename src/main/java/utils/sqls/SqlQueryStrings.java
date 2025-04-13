@@ -88,4 +88,11 @@ public class SqlQueryStrings {
                 projectsTable, projectUsersTable, userId);
         return query;
     }
+    public String removeUserFromProjectString(String tableName, String projectId, String userId) {
+        if (projectId != null && userId != null) {
+            return String.format("DELETE FROM %s WHERE project_id = '%s' AND user_id = '%s';", tableName, projectId, userId);
+        } else {
+            return "";
+        }
+    }
 }

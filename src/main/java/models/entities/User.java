@@ -1,8 +1,10 @@
 package models.entities;
 
+import models.dtos.ProjectDto;
 import models.enums.UserRoles;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -24,6 +26,8 @@ public class User {
     private Date createdAt;
     private Date updatedAt;
     private Date lastLoginDate;
+
+    List<ProjectDto> projects;
 
     public User() {}
 
@@ -52,6 +56,7 @@ public class User {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.lastLoginDate = lastLoginDate;
+        this.projects = new java.util.ArrayList<>();
     }
 
     public User(String userName,
@@ -77,6 +82,7 @@ public class User {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.lastLoginDate = lastLoginDate;
+        this.projects = new java.util.ArrayList<>();
     }
 
     public String getUserName() {
@@ -150,5 +156,11 @@ public class User {
     }
     public void setLastLoginDate(Date lastLoginDate) {
         this.lastLoginDate = lastLoginDate;
+    }
+    public List<ProjectDto> getProjects() {
+        return projects;
+    }
+    public void setProjects(List<ProjectDto> projects) {
+        this.projects = projects;
     }
 }

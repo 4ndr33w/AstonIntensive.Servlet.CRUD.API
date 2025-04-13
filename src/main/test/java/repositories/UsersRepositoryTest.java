@@ -158,6 +158,7 @@ public class UsersRepositoryTest {
                             .toList())
                     .join();
 
+            var test = result;
             assertNotNull(result);
         } catch (Exception e) {
             System.err.println(e.getMessage());
@@ -209,5 +210,6 @@ public class UsersRepositoryTest {
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
-    }*/
+    }
+    */
 }

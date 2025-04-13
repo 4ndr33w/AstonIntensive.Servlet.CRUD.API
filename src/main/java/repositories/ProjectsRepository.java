@@ -293,6 +293,25 @@ public class ProjectsRepository implements ProjectRepository {
         return  memberProjectsFuture;
     }
 
+    @Override
+    public CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException {
+        return CompletableFuture.supplyAsync(() -> {
+            if (id == null) {
+                return false;
+            }
+
+            String tableName = String.format("%s.%s", schema, projectsTable);
+            String queryString = sqlQueryStrings.deleteByIdString(tableName, id.toString());
+
+            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+                int affectedRows = jdbcConnection.executeUpdate(queryString);
+                return affectedRows > 0;
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, dbExecutor);
+    }
 
 
 
@@ -322,15 +341,55 @@ public class ProjectsRepository implements ProjectRepository {
         return null;
     }
 
+
+
+
+
     @Override
-    public CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException {
-        return null;
+    public CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, UUID projectId) {
+        if (userId == null || projectId == null) {
+            return CompletableFuture.failedFuture(
+                    new IllegalArgumentException("Parameters cannot be null"));
+        }
+
+        return findByIdAsync(projectId)
+                .thenApply(ProjectMapper::toDto)
+                .thenCompose(projectDto -> {
+                    List<UUID> updatedUsers = new ArrayList<>(projectDto.getProjectUsersIds());
+                    updatedUsers.remove(userId);
+
+                    return deleteUsersFromProjectUsersTable(userId, projectId)
+                            .thenApply(v -> {
+                                projectDto.setProjectUsersIds(updatedUsers);
+                                return projectDto;
+                            });
+                });
     }
+    private CompletableFuture<Void> deleteUsersFromProjectUsersTable(UUID userId, UUID projectId) {
+        return CompletableFuture.runAsync(() -> {
+            String tableName = String.format("%s.%s", schema, projectUsersTable);
+            String query = sqlQueryStrings.removeUserFromProjectString(
+                    tableName, projectId.toString(), userId.toString());
 
+            try (JdbcConnection connection = new JdbcConnection();
+                 Statement statement = connection.statement()) {
 
-
-    @Override
-    public CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, ProjectDto projectDto) {
-        return null;
+                connection.setAutoCommit(false);
+                try {
+                    int affected = statement.executeUpdate(query);
+                    if (affected == 0) {
+                        throw new SQLDataException("No rows affected");
+                    }
+                    connection.commit();
+                } catch (SQLException e) {
+                    connection.rollback();
+                    throw e;
+                }
+            } catch (SQLException e) {
+                throw new CompletionException("Database error", e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, dbExecutor);
     }
 }

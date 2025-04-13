@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 public interface ProjectRepository extends BaseRepository<Project> {
 
     CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId);
-    CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, ProjectDto projectDto);
+    CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, UUID projectId);
     CompletableFuture<List<Project>> findByAdminIdAsync(UUID adminId);
     CompletableFuture<List<Project>> findByUserIdAsync(UUID adminId);
 

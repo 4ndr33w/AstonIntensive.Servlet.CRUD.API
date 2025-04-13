@@ -11,6 +11,7 @@ import testUtils.Utils;
 import utils.mappers.ProjectMapper;
 import utils.sqls.SqlQueryStrings;
 
+import static org.junit.Assert.*;
 import static utils.mappers.ProjectMapper.toDto;
 
 import java.sql.ResultSet;
@@ -18,9 +19,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * @author 4ndr33w
@@ -100,20 +98,8 @@ public class ProjectsRepositoryTest {
     public void addUserToProjectTest() throws ExecutionException, InterruptedException, SQLException {
         try {
             ProjectRepository projectsRepository = new ProjectsRepository();
-            var project = toDto(Utils.testProject1);
             UUID userId = UUID.fromString("443d26e3-dcbc-4e23-90b0-7b659f486a04");
             UUID projectId = UUID.fromString("9658455a-348b-4d4d-ad08-cb562da4f8c4");
-
-
-            String schema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
-            String projectsTable = PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
-            String projectUsersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
-            sqlQueryStrings = new SqlQueryStrings();
-            String tableName = String.format("%s.%s", schema, projectUsersTable);
-            String queryString = sqlQueryStrings.addUserIntoProjectString(tableName, projectId.toString(), userId.toString());
-            //var sqlString = sqlQueryStrings.addUserIntoProjectString();
-
-            //project.setId(projectId);
 
             var result = projectsRepository.addUserToProjectAsync(userId, projectId);
 
@@ -140,6 +126,39 @@ public class ProjectsRepositoryTest {
             assertNotNull(result);
         }
         catch (ExecutionException | InterruptedException | SQLException e) {
+            if (e.getCause() instanceof SQLException) {
+                System.err.println("Error adding user to project: " + e.getMessage());
+            }
+        }
+    }
+
+    @Test
+    public void deleteCorrectTest() {
+        UUID id = UUID.fromString("cd41280a-6c71-48f1-b824-f4b832bd021d");
+
+        try {
+            ProjectRepository projectRepository = new ProjectsRepository();
+            var result = projectRepository.deleteAsync(id).get();
+
+            assertTrue(result);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
+    @Test
+    public void removeUserFromProjectTest() throws ExecutionException, InterruptedException, SQLException {
+        try {
+            ProjectRepository projectsRepository = new ProjectsRepository();
+            UUID userId = UUID.fromString("443d26e3-dcbc-4e23-90b0-7b659f486a04");
+            UUID projectId = UUID.fromString("9658455a-348b-4d4d-ad08-cb562da4f8c4");
+
+            var result = projectsRepository.RemoveUserFromProjectAsync(userId, projectId);
+
+            var resultProject = result.get();
+
+            assertEquals(0, resultProject.getProjectUsersIds().indexOf(userId));
+        } catch (ExecutionException | InterruptedException | SQLException e) {
             if (e.getCause() instanceof SQLException) {
                 System.err.println("Error adding user to project: " + e.getMessage());
             }
