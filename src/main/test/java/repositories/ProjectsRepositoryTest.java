@@ -126,4 +126,23 @@ public class ProjectsRepositoryTest {
             }
         }
     }
+
+    @Test
+    public void findByUserIdTest() throws ExecutionException, InterruptedException, SQLException {
+        try {
+            ProjectRepository projectsRepository = new ProjectsRepository();
+            UUID userId = UUID.fromString("ce3f5f07-20ee-4976-b17c-4460604b5a1b");
+
+            var result = projectsRepository.findByUserIdAsync(userId);
+
+            var resultProject = result.get();
+
+            assertNotNull(result);
+        }
+        catch (ExecutionException | InterruptedException | SQLException e) {
+            if (e.getCause() instanceof SQLException) {
+                System.err.println("Error adding user to project: " + e.getMessage());
+            }
+        }
+    }
 }

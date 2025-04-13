@@ -16,9 +16,7 @@ import java.sql.ResultSet;
 import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -53,6 +51,43 @@ public class ProjectsRepository implements ProjectRepository {
         userRepository = new UsersRepository();
     }
 
+    @Override
+    public CompletableFuture<List<Project>> findByAdminIdAsync(UUID adminId) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (adminId == null) {
+                return Collections.emptyList();
+            }
+
+            String tableName = String.format("%s.%s", schema, projectsTable);
+            String queryString = sqlQueryStrings.findProjectsByAdminIdString(tableName, adminId.toString());
+
+            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+                var resultSet = jdbcConnection.executeQuery(queryString);
+
+                List<CompletableFuture<Project>> projectFutures = new ArrayList<>();
+
+                while (resultSet.next()) {
+                    Project project = mapResultSetToProject(resultSet);
+                    projectFutures.add(
+                            loadProjectUsers(project.getId())
+                                    .thenApply(users -> {
+                                        project.setProjectUsers(users);
+                                        return project;
+                                    })
+                    );
+                }
+
+                return CompletableFuture.allOf(projectFutures.toArray(new CompletableFuture[0]))
+                        .thenApply(v -> projectFutures.stream()
+                                .map(CompletableFuture::join)
+                                .collect(Collectors.toList()))
+                        .join();
+
+            } catch (Exception e) {
+                throw new CompletionException("Failed to find projects by admin id", e);
+            }
+        }, dbExecutor);
+    }
     @Override
     public CompletableFuture<Project> findByIdAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
@@ -147,30 +182,6 @@ public class ProjectsRepository implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<List<Project>> findByAdminIdAsync(UUID adminId) {
-        return CompletableFuture.supplyAsync(() -> {
-            if (adminId == null) {
-                return null;
-            }
-            String tableName = String.format("%s.%s", schema, projectsTable);
-            String queryString = sqlQueryStrings.findProjectsByAdminIdString(tableName, adminId.toString());
-
-            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-                var resultSet  = jdbcConnection.executeQuery(queryString);
-
-                List<Project> projects = new ArrayList<>();
-                while (resultSet.next()) {
-                    projects.add(mapResultSetToProject(resultSet));
-                }
-                return projects;
-            }
-            catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }, dbExecutor);
-    }
-
-    @Override
     public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) {
         if (userId == null || projectId == null) {
             return CompletableFuture.failedFuture(
@@ -219,6 +230,61 @@ public class ProjectsRepository implements ProjectRepository {
         }, dbExecutor);
     }
 
+    @Override
+    public CompletableFuture<List<Project>> findByUserIdAsync(UUID userId) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (userId == null) {
+                return Collections.emptyList();
+            }
+            CompletableFuture<List<Project>> adminProjectsFuture = findByAdminIdAsync(userId);
+
+            CompletableFuture<List<Project>> memberProjectsFuture = CompletableFuture.supplyAsync(() -> {
+                String query = String.format(
+                        "SELECT p.* FROM %s.%s p JOIN %s.%s pu ON p.id = pu.project_id WHERE pu.user_id = '%s'",
+                        schema, projectsTable, schema, projectUsersTable, userId);
+
+                try (JdbcConnection conn = new JdbcConnection();
+                     ResultSet rs = conn.executeQuery(query)) {
+
+                    List<Project> projects = new ArrayList<>();
+                    while (rs.next()) {
+                        projects.add(mapResultSetToProject(rs));
+                    }
+                    return projects;
+                } catch (SQLException e) {
+                    throw new CompletionException("Failed to find member projects", e);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }, dbExecutor);
+
+            return adminProjectsFuture
+                    .thenCombine(memberProjectsFuture, (adminProjects, memberProjects) -> {
+                        Set<Project> combined = new LinkedHashSet<>();
+                        combined.addAll(adminProjects);
+                        combined.addAll(memberProjects);
+                        return new ArrayList<>(combined);
+                    })
+                    .thenCompose(projects -> {
+                        List<CompletableFuture<Project>> enrichedProjects = projects.stream()
+                                .map(project -> loadProjectUsers(project.getId())
+                                        .thenApply(users -> {
+                                            project.setProjectUsers(users);
+                                            return project;
+                                        }))
+                                .toList();
+
+                        return CompletableFuture.allOf(enrichedProjects.toArray(new CompletableFuture[0]))
+                                .thenApply(v -> enrichedProjects.stream()
+                                        .map(CompletableFuture::join)
+                                        .collect(Collectors.toList()));
+                    })
+                    .join();
+
+        }, dbExecutor);
+    }
+
+
 
 
 
@@ -241,10 +307,7 @@ public class ProjectsRepository implements ProjectRepository {
 
 
 
-    @Override
-    public CompletableFuture<List<Project>> findByUserIdAsync(UUID adminId) {
-        return null;
-    }
+
     @Override
     public CompletableFuture<Project> updateAsync(Project item) {
         return null;
