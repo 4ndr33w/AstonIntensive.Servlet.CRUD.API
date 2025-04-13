@@ -16,6 +16,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static utils.mappers.UserMapper.toDto;
+
 /**
  * @author 4ndr33w
  * @version 1.0
@@ -31,7 +33,12 @@ public class UsersService implements UserService {
 
     @Override
     public CompletableFuture<UserDto> getByIdAsync(UUID id) {
-        return CompletableFuture.completedFuture(null);
+        return userRepository.findByIdAsync(id)
+                .thenApplyAsync(UserMapper::toDto)
+                .exceptionally(ex -> {
+                    //System.err.println("Error fetching users: " + ex.getMessage());
+                    return null; // Fallback
+                });
     }
 
     @Override

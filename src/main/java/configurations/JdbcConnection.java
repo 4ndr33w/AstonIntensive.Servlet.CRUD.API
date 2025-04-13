@@ -17,7 +17,7 @@ public class JdbcConnection implements AutoCloseable{
         DataSource dataSource = DataSourceProvider.getDataSource();
         this.connection = dataSource.getConnection();
     }
-/*
+
     public Connection getConnection() {
         return connection;
     }
@@ -34,7 +34,7 @@ public class JdbcConnection implements AutoCloseable{
         this.statement = connection.createStatement();
         return statement.execute(query);
     }
-*/
+
     public int executeUpdate(String query) throws SQLException {
         closeStatement();
         this.statement = connection.createStatement();

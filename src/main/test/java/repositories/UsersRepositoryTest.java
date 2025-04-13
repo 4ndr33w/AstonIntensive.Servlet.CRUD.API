@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import repositories.interfaces.UserRepository;
 import testUtils.Utils;
+import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
 
@@ -18,6 +19,7 @@ import java.sql.Statement;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.mockito.Mockito.*;
 
@@ -48,6 +50,22 @@ public class UsersRepositoryTest {
     @InjectMocks
     private UsersRepository usersRepository;
 
+
+    @Test
+    public void getByIdTest() throws ExecutionException, InterruptedException, SQLException {
+        usersRepository = new UsersRepository ();
+        UUID id = UUID.fromString("7f1111e0-8020-4de6-b15a-601d6903b9eb");
+        var result =  usersRepository.findByIdAsync(id)
+                .thenApplyAsync(UserMapper::toDto)
+                .exceptionally(ex -> {
+                    //System.err.println("Error fetching users: " + ex.getMessage());
+                    return null; // Fallback
+                }).get();
+
+        var project = result;
+        assertEquals("login", result.getUserName());
+
+    }
 
 /*
     @Test

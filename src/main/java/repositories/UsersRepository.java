@@ -41,7 +41,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     }
 
     /**
-     * Поиск всех пользователей
+     * Асинхронный поиск всех пользователей
      * <p>Возвращает {@code Optional}, содержащий коллекцию пользователей</p>
      *
      * @see User
@@ -119,27 +119,49 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     }
 
     /**
-     * Удаление пользователя по {@code id}
+     * Асинхронное удаление пользователя по идентификатору {@code id}
      *
-     * <p>Удаляет данные из таблицы по {@code id}; в случае успешного удаления возвращает {@code true}</p>
+     * <p>Выполняет удаление данных из таблицы в отдельном потоке. Операция не блокирует вызывающий поток.</p>
      *
-     * <p>Возвращает {@code false} в случаях:
+     * <p>Поведение метода:</p>
      * <ul>
-     *     <li>если {@code id} равен {@code null}</li>
-     *     <li>если из БД не удалось удалить строку</li>
-     * </ul></p>
+     *     <li>Возвращает {@code CompletableFuture} с {@code true}, если:
+     *         <ul>
+     *             <li>Удаление выполнено успешно</li>
+     *             <li>Затронута хотя бы одна строка в таблице</li>
+     *         </ul>
+     *     </li>
+     *     <li>Возвращает {@code CompletableFuture} с {@code false}, если:
+     *         <ul>
+     *             <li>Параметр {@code id} равен {@code null}</li>
+     *             <li>Не найдена строка для удаления (запрос выполнен, но affectedRows = 0)</li>
+     *         </ul>
+     *     </li>
+     * </ul>
      *
-     * @param id {@code UUID} идентификатор пользователя
-     * @return {@code true} если произошло удаление хотя бы одной строки в таблице,
-     *         {@code false} в противном случае
-     * @throws RuntimeException если произошла ошибка при выполнении SQL-запроса.
-     *         Исключение-обертка для оригинального исключения БД, которое можно получить через
-     *         {@link Throwable#getCause()}. Может содержать следующие исходные исключения:
+     * <p>Особенности реализации:</p>
+     * <ul>
+     *     <li>Использует выделенный пул потоков ({@code dbExecutor}) для выполнения операции</li>
+     *     <li>Автоматически управляет ресурсами соединения с БД (try-with-resources)</li>
+     * </ul>
+     *
+     * @param id идентификатор пользователя ({@code UUID}), не null
+     * @return {@code CompletableFuture<Boolean>} результат операции:
+     *         <ul>
+     *             <li>{@code true} - удаление выполнено успешно</li>
+     *             <li>{@code false} - удаление не выполнено (см. условия выше)</li>
+     *         </ul>
+     * @throws RuntimeException если произошла ошибка при выполнении операции. Исключение содержит:
      *         <ul>
      *             <li>{@link java.sql.SQLException} - ошибка SQL-запроса</li>
-     *             <li>{@link java.sql.SQLTimeoutException} - превышено время выполнения запроса</li>
-     *             <li>{@link java.sql.SQLSyntaxErrorException} - синтаксическая ошибка в запросе</li>
+     *             <li>{@link java.sql.SQLTimeoutException} - превышение времени ожидания</li>
+     *             <li>{@link java.sql.SQLSyntaxErrorException} - синтаксическая ошибка запроса</li>
+     *             <li>{@link java.util.concurrent.CompletionException} - ошибка выполнения асинхронной задачи</li>
      *         </ul>
+     * @see #dbExecutor
+     * @see JdbcConnection
+     * @implNote Для обработки результатов используйте методы {@code CompletableFuture}:
+     *           {@code thenApply()}, {@code exceptionally()} и др.
      */
     @Override
     public CompletableFuture<Boolean> deleteAsync(UUID id) {
@@ -163,9 +185,27 @@ public class UsersRepository implements UserRepository, AutoCloseable{
 
     @Override
     public CompletableFuture<User> findByIdAsync(UUID id) {
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.supplyAsync(() -> {
+            if (id == null) {
+                return null;
+            }
+
+            String tableName = String.format("%s.%s", usersSchema, usersTable);
+            String queryString = sqlQueryStrings.findById(tableName, id.toString());
+
+            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+                var resultSet  = jdbcConnection.executeQuery(queryString);
+                return resultSet.next() ? mapResultSetToUser(resultSet) : null;
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, dbExecutor);
     }
 
+
+
+    // TODO: реализовать остальные методы интерфейса UserRepository
     @Override
     public CompletableFuture<List<User>> findByNameAsync(String name) {
         return CompletableFuture.completedFuture(null);

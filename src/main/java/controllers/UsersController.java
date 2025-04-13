@@ -6,6 +6,7 @@ import services.interfaces.UserService;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -22,5 +23,13 @@ public class UsersController {
 
     public List<UserDto> getAll() throws SQLException, ExecutionException, InterruptedException {
         return userService.getAllAsync().get();
+    }
+
+    public UserDto getUser(UUID id) throws SQLException, ExecutionException, InterruptedException {
+        if (id != null) {
+            return userService.getByIdAsync(id).get();
+        } else {
+            return null;
+        }
     }
 }
