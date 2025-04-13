@@ -88,6 +88,7 @@ public class ProjectsRepository implements ProjectRepository {
             }
         }, dbExecutor);
     }
+
     @Override
     public CompletableFuture<Project> findByIdAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
@@ -119,9 +120,11 @@ public class ProjectsRepository implements ProjectRepository {
 
     private CompletableFuture<List<UserDto>> loadProjectUsers(UUID projectId) {
         return CompletableFuture.supplyAsync(() -> {
-            String queryString = String.format(
-                    "SELECT user_id FROM %s.%s WHERE project_id = '%s'",
-                    schema, projectUsersTable, projectId);
+            String tableName = String.format("%s.%s", schema, projectUsersTable);
+            String queryString = sqlQueryStrings
+                    .selectUserIdsFromProjectUsersTableByProjectId(
+                            tableName,
+                            projectId.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection();
                  var resultSet = jdbcConnection.executeQuery(queryString)) {
@@ -149,14 +152,14 @@ public class ProjectsRepository implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project item) throws SQLException {
+    public CompletableFuture<Project> createAsync(Project project) throws SQLException {
 
         return CompletableFuture.supplyAsync(() -> {
-            if (item == null) {
-                throw new IllegalArgumentException("User item cannot be null");
+            if (project == null) {
+                throw new IllegalArgumentException("User project cannot be null");
             }
             String tableName = String.format("%s.%s", schema, projectsTable);
-            String queryString = sqlQueryStrings.createProjectString(tableName, item);
+            String queryString = sqlQueryStrings.createProjectString(tableName, project);
 
             try (JdbcConnection jdbcConnection = new JdbcConnection();
                  Statement statement = jdbcConnection.statement()) {
@@ -169,8 +172,8 @@ public class ProjectsRepository implements ProjectRepository {
 
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        item.setId((UUID) generatedKeys.getObject(1));
-                        return item;
+                        project.setId((UUID) generatedKeys.getObject(1));
+                        return project;
                     }
                     throw new RuntimeException("Failed to retrieve generated keys");
                 }
@@ -194,7 +197,7 @@ public class ProjectsRepository implements ProjectRepository {
                     List<UUID> updatedUsers = new ArrayList<>(projectDto.getProjectUsersIds());
                     updatedUsers.add(userId);
 
-                    return executeUpdate(userId, projectId, updatedUsers)
+                    return insertUsersIntoProjectUsersTable(userId, projectId)
                             .thenApply(v -> {
                                 projectDto.setProjectUsersIds(updatedUsers);
                                 return projectDto;
@@ -202,24 +205,24 @@ public class ProjectsRepository implements ProjectRepository {
                 });
     }
 
-    private CompletableFuture<Void> executeUpdate(UUID userId, UUID projectId, List<UUID> updatedUsers) {
+    private CompletableFuture<Void> insertUsersIntoProjectUsersTable(UUID userId, UUID projectId) {
         return CompletableFuture.runAsync(() -> {
             String tableName = String.format("%s.%s", schema, projectUsersTable);
             String query = sqlQueryStrings.addUserIntoProjectString(
                     tableName, projectId.toString(), userId.toString());
 
-            try (JdbcConnection conn = new JdbcConnection();
-                 Statement stmt = conn.statement()) {
+            try (JdbcConnection connection = new JdbcConnection();
+                 Statement statement = connection.statement()) {
 
-                conn.setAutoCommit(false);
+                connection.setAutoCommit(false);
                 try {
-                    int affected = stmt.executeUpdate(query);
+                    int affected = statement.executeUpdate(query);
                     if (affected == 0) {
                         throw new SQLDataException("No rows affected");
                     }
-                    conn.commit();
+                    connection.commit();
                 } catch (SQLException e) {
-                    conn.rollback();
+                    connection.rollback();
                     throw e;
                 }
             } catch (SQLException e) {
@@ -238,25 +241,7 @@ public class ProjectsRepository implements ProjectRepository {
             }
             CompletableFuture<List<Project>> adminProjectsFuture = findByAdminIdAsync(userId);
 
-            CompletableFuture<List<Project>> memberProjectsFuture = CompletableFuture.supplyAsync(() -> {
-                String query = String.format(
-                        "SELECT p.* FROM %s.%s p JOIN %s.%s pu ON p.id = pu.project_id WHERE pu.user_id = '%s'",
-                        schema, projectsTable, schema, projectUsersTable, userId);
-
-                try (JdbcConnection conn = new JdbcConnection();
-                     ResultSet rs = conn.executeQuery(query)) {
-
-                    List<Project> projects = new ArrayList<>();
-                    while (rs.next()) {
-                        projects.add(mapResultSetToProject(rs));
-                    }
-                    return projects;
-                } catch (SQLException e) {
-                    throw new CompletionException("Failed to find member projects", e);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }, dbExecutor);
+            CompletableFuture<List<Project>> memberProjectsFuture = findProjectsByUserIdIfUserNotProjectAdmin(userId);
 
             return adminProjectsFuture
                     .thenCombine(memberProjectsFuture, (adminProjects, memberProjects) -> {
@@ -282,6 +267,30 @@ public class ProjectsRepository implements ProjectRepository {
                     .join();
 
         }, dbExecutor);
+    }
+
+    private CompletableFuture<List<Project>> findProjectsByUserIdIfUserNotProjectAdmin(UUID userId) {
+        CompletableFuture<List<Project>> memberProjectsFuture = CompletableFuture.supplyAsync(() -> {
+
+            String projectsTableName = String.format("%s.%s", schema, projectsTable);
+            String projectUsersTableName = String.format("%s.%s", schema, projectUsersTable);
+            String query = sqlQueryStrings.findAllProjectsByUserId(projectsTableName, projectUsersTableName, userId.toString());
+
+            try (JdbcConnection conn = new JdbcConnection();
+                 ResultSet rs = conn.executeQuery(query)) {
+
+                List<Project> projects = new ArrayList<>();
+                while (rs.next()) {
+                    projects.add(mapResultSetToProject(rs));
+                }
+                return projects;
+            } catch (SQLException e) {
+                throw new CompletionException("Failed to find member projects", e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, dbExecutor);
+        return  memberProjectsFuture;
     }
 
 

@@ -20,9 +20,9 @@ public class Utils {
     public static final String usersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.users-table");
 
     public static User testUser1 = new User(UUID.randomUUID(),
-            "testUser1",
+            "testUser4",
             "password",
-            "testUser1@gmail.com",
+            "testUser4@gmail.com",
             "firstName",
             "lastName",
             "phoneNumber",

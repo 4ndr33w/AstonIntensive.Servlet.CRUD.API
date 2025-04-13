@@ -163,7 +163,7 @@ public class UsersRepositoryTest {
             System.err.println(e.getMessage());
         }
     }
-/*
+
     @Test
     public void createTest() {
         try {
@@ -172,17 +172,17 @@ public class UsersRepositoryTest {
             User user = new User("login", "pass", "email@email.com", "Andr33w", "McFly", "0721000000", UserRoles.USER, null, new Date(), new Date(), new Date());
 
 
-            var result = userRepository.create(user);
+            var result = userRepository.createAsync(Utils.testUser1);
 
-            var resultUser = result;//.get();
+            var resultUser = result.get();//.get();
             assertNotNull(result);
-            var id = resultUser.get().getId();
+            var id = resultUser.getId();
 
-            assertEquals("login", resultUser.get().getUserName());
+            assertEquals("login", resultUser.getUserName());
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }
-    }*/
+    }
 /*
     @Test
     public void deleteByInvalidIdTest() {

@@ -101,7 +101,7 @@ public class ProjectsRepositoryTest {
         try {
             ProjectRepository projectsRepository = new ProjectsRepository();
             var project = toDto(Utils.testProject1);
-            UUID userId = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa6");
+            UUID userId = UUID.fromString("443d26e3-dcbc-4e23-90b0-7b659f486a04");
             UUID projectId = UUID.fromString("9658455a-348b-4d4d-ad08-cb562da4f8c4");
 
 
@@ -131,7 +131,7 @@ public class ProjectsRepositoryTest {
     public void findByUserIdTest() throws ExecutionException, InterruptedException, SQLException {
         try {
             ProjectRepository projectsRepository = new ProjectsRepository();
-            UUID userId = UUID.fromString("ce3f5f07-20ee-4976-b17c-4460604b5a1b");
+            UUID userId = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa6");
 
             var result = projectsRepository.findByUserIdAsync(userId);
 

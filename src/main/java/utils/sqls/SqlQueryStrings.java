@@ -76,4 +76,16 @@ public class SqlQueryStrings {
             return "";
         }
     }
+
+    public String selectUserIdsFromProjectUsersTableByProjectId(String tableName, String projectId) {
+        return String.format(
+                "SELECT user_id FROM %s WHERE project_id = '%s'",  tableName, projectId);
+    }
+
+    public String findAllProjectsByUserId(String projectsTable, String projectUsersTable, String userId) {
+        String query = String.format(
+                "SELECT proj.* FROM %s proj JOIN %s proj_users ON proj.id = proj_users.project_id WHERE proj_users.user_id = '%s'",
+                projectsTable, projectUsersTable, userId);
+        return query;
+    }
 }
