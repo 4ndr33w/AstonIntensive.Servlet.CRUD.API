@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutionException;
  * @author 4ndr33w
  * @version 1.0
  */
-@WebServlet("/users")
+@WebServlet("/api/v1/users")
 public class UsersServlet extends HttpServlet {
 
     private final UsersController controller;
@@ -40,6 +40,11 @@ public class UsersServlet extends HttpServlet {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
+        var path = req.getPathInfo();
+
+        // Не получилось вычленить Id из req.getPathInfo(), разделяя строку на массив
+        // если быть точнее, то /{id} воспринимался как несуществующий endpoint
+        // поэтому пришлось использовать параметр запроса
         String id = req.getParameter("id");
         if (id == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);

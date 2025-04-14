@@ -18,9 +18,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface BaseRepository<T> {
 
-    CompletableFuture<T> findByIdAsync(UUID id);
+    CompletableFuture<T> findByIdAsync(UUID id)  throws SQLException;
     CompletableFuture<List<T>> findAllAsync()  throws SQLException;
     CompletableFuture<T> createAsync(T item) throws SQLException;
-    CompletableFuture<T> updateAsync(T item);
+    CompletableFuture<T> updateAsync(T item)  throws SQLException;
     CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException;
 }

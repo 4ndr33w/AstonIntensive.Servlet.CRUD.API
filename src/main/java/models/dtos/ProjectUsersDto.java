@@ -11,15 +11,21 @@ public class ProjectUsersDto {
 
     private UUID userId;
     private UUID projectId;
-    private Date createdAt;
-    private Date updatedAt;
+    private Date createdAt = new Date();
+    private Date updatedAt = new Date();
 
     public ProjectUsersDto() {}
+
         public ProjectUsersDto(UUID userId, UUID projectId, Date createdAt, Date updatedAt) {
         this.userId = userId;
         this.projectId = projectId;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+    }
+
+    public ProjectUsersDto(UUID userId, UUID projectId) {
+        this.userId = userId;
+        this.projectId = projectId;
     }
 
     public UUID getUserId() {

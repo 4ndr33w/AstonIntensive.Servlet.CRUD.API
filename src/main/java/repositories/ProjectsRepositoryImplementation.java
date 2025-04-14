@@ -1,6 +1,5 @@
 package repositories;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import configurations.ThreadPoolConfiguration;
@@ -9,6 +8,7 @@ import models.dtos.UserDto;
 import models.entities.Project;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
+import utils.StaticConstants;
 import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
@@ -21,7 +21,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static utils.mappers.ProjectMapper.mapResultSetToProject;
@@ -30,39 +29,33 @@ import static utils.mappers.ProjectMapper.mapResultSetToProject;
  * @author 4ndr33w
  * @version 1.0
  */
-public class ProjectsRepository implements ProjectRepository {
+public class ProjectsRepositoryImplementation implements ProjectRepository {
 
     private static final String schema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
     private static final String projectsTable = PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
     private static final String projectUsersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
+    String tableName = String.format("%s.%s", schema, projectsTable);
 
     private final SqlQueryStrings sqlQueryStrings;
-    private static final ExecutorService dbExecutor;// = ThreadPoolConfiguration.getDbExecutor();
+    private static final ExecutorService dbExecutor;
     private final UserRepository userRepository;
 
-    //private static final ThreadPoolConfiguration threadPoolConfiguration;
-
     static {
-        /*dbExecutor = Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors(),
-                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
-        );*/
         dbExecutor = ThreadPoolConfiguration.getDbExecutor();
     }
 
-    public ProjectsRepository() throws SQLException {
+    public ProjectsRepositoryImplementation() {
         sqlQueryStrings = new SqlQueryStrings();
-        userRepository = new UsersRepository();
+        userRepository = new UsersRepositoryImplementation();
     }
 
     @Override
     public CompletableFuture<List<Project>> findByAdminIdAsync(UUID adminId) {
         return CompletableFuture.supplyAsync(() -> {
             if (adminId == null) {
-                return Collections.emptyList();
+                throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
             }
 
-            String tableName = String.format("%s.%s", schema, projectsTable);
             String queryString = sqlQueryStrings.findProjectsByAdminIdString(tableName, adminId.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
@@ -88,13 +81,13 @@ public class ProjectsRepository implements ProjectRepository {
                         .join();
 
             } catch (Exception e) {
-                throw new CompletionException("Failed to find projects by admin id", e);
+                throw new CompletionException(StaticConstants.NO_PROJECTS_FOUND_BY_ADMIN_ID_EXCEPTION_MESSAGE, e);
             }
         }, dbExecutor);
     }
 
     @Override
-    public CompletableFuture<Project> findByIdAsync(UUID id) {
+    public CompletableFuture<Project> findByIdAsync(UUID id)  throws SQLException {
         return CompletableFuture.supplyAsync(() -> {
             if (id == null) {
                 return null;
@@ -124,10 +117,10 @@ public class ProjectsRepository implements ProjectRepository {
 
     private CompletableFuture<List<UserDto>> loadProjectUsers(UUID projectId) {
         return CompletableFuture.supplyAsync(() -> {
-            String tableName = String.format("%s.%s", schema, projectUsersTable);
+            String projectUsersTableName = String.format("%s.%s", schema, projectUsersTable);
             String queryString = sqlQueryStrings
                     .selectUserIdsFromProjectUsersTableByProjectId(
-                            tableName,
+                            projectUsersTableName,
                             projectId.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection();

@@ -1,11 +1,11 @@
 package repositories;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import configurations.ThreadPoolConfiguration;
 import models.entities.User;
 import repositories.interfaces.UserRepository;
+import utils.StaticConstants;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.*;
@@ -15,7 +15,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static utils.mappers.UserMapper.mapResultSetToUser;
 
@@ -23,21 +22,19 @@ import static utils.mappers.UserMapper.mapResultSetToUser;
  * @author 4ndr33w
  * @version 1.0
  */
-public class UsersRepository implements UserRepository, AutoCloseable{
+public class UsersRepositoryImplementation implements UserRepository, AutoCloseable{
+
     private static final String usersSchema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
     private static final String usersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.users-table");
+    private final String usersTableName = String.format("%s.%s", usersSchema, usersTable);
     private final SqlQueryStrings sqlQueryStrings;
     private static final ExecutorService dbExecutor;
 
     static {
-        /*dbExecutor = Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors(),
-                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
-                );*/
         dbExecutor = ThreadPoolConfiguration.getDbExecutor();
     }
 
-    public UsersRepository() throws SQLException {
+    public UsersRepositoryImplementation() {
         sqlQueryStrings = new SqlQueryStrings();
     }
 
@@ -65,7 +62,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     public CompletableFuture<List<User>> findAllAsync() {
         return CompletableFuture.supplyAsync(() -> {
             try (JdbcConnection conn = new JdbcConnection();
-                 PreparedStatement stmt = conn.prepareStatement(String.format("SELECT * FROM %s.%s", usersSchema, usersTable));
+                 PreparedStatement stmt = conn.prepareStatement(usersTableName);
                  ResultSet rs = stmt.executeQuery()) {
 
                 List<User> users = new ArrayList<>();
@@ -73,8 +70,9 @@ public class UsersRepository implements UserRepository, AutoCloseable{
                     users.add(mapResultSetToUser(rs));
                 }
                 return users;
-            } catch (Exception e) {
-                throw new CompletionException(e);
+            }
+            catch (Exception e) {
+                throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
             }
         }, dbExecutor);
     }
@@ -90,11 +88,9 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     public CompletableFuture<User> createAsync(User item) {
         return CompletableFuture.supplyAsync(() -> {
             if (item == null) {
-                throw new IllegalArgumentException("User item cannot be null");
+                throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
             }
-
-            String tableName = String.format("%s.%s", usersSchema, usersTable);
-            String queryString = sqlQueryStrings.createUserString(tableName, item);
+            String queryString = sqlQueryStrings.createUserString(usersTableName, item);
 
             try (JdbcConnection jdbcConnection = new JdbcConnection();
                  Statement statement = jdbcConnection.statement()) {
@@ -102,7 +98,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
                 int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
 
                 if (affectedRows == 0) {
-                    throw new RuntimeException("Failed to create user, no rows affected");
+                    throw new SQLException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
                 }
 
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
@@ -110,11 +106,11 @@ public class UsersRepository implements UserRepository, AutoCloseable{
                         item.setId((UUID) generatedKeys.getObject(1));
                         return item;
                     }
-                    throw new RuntimeException("Failed to retrieve generated keys");
+                    throw new SQLException(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
                 }
             }
             catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
             }
         }, dbExecutor);
     }
@@ -168,18 +164,17 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     public CompletableFuture<Boolean> deleteAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
             if (id == null) {
-                return false;
+                throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
             }
 
-            String tableName = String.format("%s.%s", usersSchema, usersTable);
-            String queryString = sqlQueryStrings.deleteByIdString(tableName, id.toString());
+            String queryString = sqlQueryStrings.deleteByIdString(usersTableName, id.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
                 int affectedRows = jdbcConnection.executeUpdate(queryString);
                 return affectedRows > 0;
             }
             catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
             }
         }, dbExecutor);
     }
@@ -188,18 +183,17 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     public CompletableFuture<User> findByIdAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
             if (id == null) {
-                return null;
+                throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
             }
 
-            String tableName = String.format("%s.%s", usersSchema, usersTable);
-            String queryString = sqlQueryStrings.findByIdString(tableName, id.toString());
+            String queryString = sqlQueryStrings.findByIdString(usersTableName, id.toString());
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
                 var resultSet  = jdbcConnection.executeQuery(queryString);
                 return resultSet.next() ? mapResultSetToUser(resultSet) : null;
             }
             catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
             }
         }, dbExecutor);
     }

@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutionException;
  * @author 4ndr33w
  * @version 1.0
  */
-@WebServlet("/users/all")
+@WebServlet("/api/v1/users/all")
 public class GetAllUsersServlet extends HttpServlet {
 
     private final UsersController controller;

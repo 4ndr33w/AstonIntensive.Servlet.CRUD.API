@@ -4,6 +4,7 @@ import models.dtos.ProjectDto;
 import models.dtos.UserDto;
 import models.entities.Project;
 import models.enums.ProjectStatus;
+import utils.StaticConstants;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -62,16 +63,34 @@ public class ProjectMapper {
     }
 
     public static Project mapResultSetToProject(ResultSet rs) throws SQLException {
-        return new Project(
-                UUID.fromString(rs.getString("id")),
-                rs.getString("name"),
-                rs.getString("description"),
-                new Date(rs.getTimestamp("created_at").getTime()),
-                rs.getTimestamp("updated_at") != null ?
-                        new Date(rs.getTimestamp("updated_at").getTime()) : null,
-                rs.getBytes("image"),
-                UUID.fromString(rs.getString("admin_id")),
-                ProjectStatus.values()[Integer.parseInt(rs.getString("project_status"))]
-        );
+        if (rs == null) {
+            throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        }
+
+        try {
+            Project project = new Project(
+                    UUID.fromString(rs.getString("id")),
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getTimestamp("created_at") != null ?
+                            new Date(rs
+                                    .getTimestamp("updated_at")
+                                    .getTime()) : new Date(),
+
+                    rs.getTimestamp("updated_at") != null ?
+                            new Date(rs
+                                    .getTimestamp("updated_at")
+                                    .getTime()) : new Date(),
+
+                    rs.getBytes("image"),
+                    UUID.fromString(rs.getString("admin_id")),
+                    ProjectStatus.values()[Integer.parseInt(rs.getString("project_status"))]
+            );
+
+            return project;
+        }
+        catch (SQLException ex){
+            throw new SQLException(StaticConstants.ERROR_FETCHING_RESULT_SET_METADATA_EXCEPTION_MESSAGE, ex.getMessage());
+        }
     }
 }

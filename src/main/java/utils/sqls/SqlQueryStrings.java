@@ -61,6 +61,13 @@ public class SqlQueryStrings {
         return String.format("SELECT * FROM %s WHERE id = '%s';", tableName, id);
     }
 
+    public String findProjectUserByUserIdString(String tableName, String id){
+        return String.format("SELECT * FROM %s WHERE user_id = '%s';", tableName, id);
+    }
+    public String findProjectUserByProjectIdString(String tableName, String id){
+        return String.format("SELECT * FROM %s WHERE project_id = '%s';", tableName, id);
+    }
+
     public String findProjectsByAdminIdString(String tableName, String adminId){
         if (adminId != null) {
             return String.format("SELECT * FROM %s WHERE admin_id = '%s';", tableName, adminId);

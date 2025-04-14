@@ -24,12 +24,12 @@ public class UsersController {
     }
 
     public List<UserDto> getAll() throws SQLException, ExecutionException, InterruptedException {
-        return userService.getAllAsync().get();
+        return userService.getAllAsync().get().stream().map(UserMapper::toDto).toList();
     }
 
     public UserDto getUser(UUID id) throws SQLException, ExecutionException, InterruptedException {
         if (id != null) {
-            return userService.getByIdAsync(id).get();
+            return UserMapper.toDto(userService.getByIdAsync(id).get());
         } else {
             throw new IllegalArgumentException("Id is null");
         }
@@ -37,7 +37,7 @@ public class UsersController {
 
     public UserDto addUser(User user) throws Exception {
         if (user != null) {
-            return userService.createUserAsync(user).get();
+            return UserMapper.toDto(userService.createAsync(user).get());
         }
         else {
             throw new Exception("User is null");

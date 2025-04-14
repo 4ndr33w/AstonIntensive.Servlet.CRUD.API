@@ -1,7 +1,6 @@
 package repositories;
 
 import configurations.JdbcConnection;
-import jdk.jshell.execution.Util;
 import models.entities.User;
 import models.enums.UserRoles;
 import org.junit.Test;
@@ -9,7 +8,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import repositories.interfaces.UserRepository;
 import testUtils.Utils;
-import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
 
@@ -18,22 +16,17 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import org.mockito.Mockito.*;
-
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * @author 4ndr33w
  * @version 1.0
  */
 //@ExtendWith(MockitoExtension.class)
-public class UsersRepositoryTest {
+public class UsersRepositoryImplementationTest {
 
     @Mock
     private JdbcConnection jdbcConnection;
@@ -48,14 +41,14 @@ public class UsersRepositoryTest {
     private SqlQueryStrings sqlQueryStrings = new SqlQueryStrings();
 
     @InjectMocks
-    private UsersRepository usersRepository;
+    private UsersRepositoryImplementation usersRepositoryImplementation;
 
 
     @Test
     public void getByIdTest() throws ExecutionException, InterruptedException, SQLException {
-        usersRepository = new UsersRepository ();
+        usersRepositoryImplementation = new UsersRepositoryImplementation();
         UUID id = UUID.fromString("7f1111e0-8020-4de6-b15a-601d6903b9eb");
-        var result =  usersRepository.findByIdAsync(id)
+        var result =  usersRepositoryImplementation.findByIdAsync(id)
                 .thenApplyAsync(UserMapper::toDto)
                 .exceptionally(ex -> {
                     //System.err.println("Error fetching users: " + ex.getMessage());
@@ -148,7 +141,7 @@ public class UsersRepositoryTest {
 
     @Test
     public void findAllAsyncTest() throws SQLException {
-        UserRepository userRepository = new UsersRepository();
+        UserRepository userRepository = new UsersRepositoryImplementation();
 
         try {
             var result = userRepository.findAllAsync()
@@ -168,7 +161,7 @@ public class UsersRepositoryTest {
     @Test
     public void createTest() {
         try {
-            UsersRepository userRepository = new UsersRepository();
+            UsersRepositoryImplementation userRepository = new UsersRepositoryImplementation();
 
             User user = new User("login", "pass", "email@email.com", "Andr33w", "McFly", "0721000000", UserRoles.USER, null, new Date(), new Date(), new Date());
 
