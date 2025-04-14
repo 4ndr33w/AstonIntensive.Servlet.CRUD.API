@@ -1,8 +1,10 @@
 package controllers;
 
 import models.dtos.UserDto;
+import models.entities.User;
 import services.UsersService;
 import services.interfaces.UserService;
+import utils.mappers.UserMapper;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -29,7 +31,24 @@ public class UsersController {
         if (id != null) {
             return userService.getByIdAsync(id).get();
         } else {
-            return null;
+            throw new IllegalArgumentException("Id is null");
+        }
+    }
+
+    public UserDto addUser(User user) throws Exception {
+        if (user != null) {
+            return userService.createUserAsync(user).get();
+        }
+        else {
+            throw new Exception("User is null");
+        }
+    }
+
+    public boolean deleteUser(UUID id) throws SQLException, ExecutionException, InterruptedException {
+        if (id != null) {
+            return userService.deleteByIdAsync(id).get();
+        } else {
+            throw new IllegalArgumentException("Id is null");
         }
     }
 }

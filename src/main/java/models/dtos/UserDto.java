@@ -21,7 +21,7 @@ public class UserDto {
     private UserRoles userRole;
     private byte[] userImage;
     private Date createdAt;
-    List<UUID> projectIds;
+    List<ProjectDto> projects;
 
     public UserDto() {
     }
@@ -80,10 +80,10 @@ public class UserDto {
     public void setCreatedAt(Date createdAt) {
         this.createdAt = createdAt;
     }
-    public List<UUID> getProjectIds() {
-        return projectIds;
+    public List<ProjectDto> getProjects() {
+        return projects;
     }
-    public void setProjectIds(List<UUID> projectIds) {
-        this.projectIds = projectIds;
+    public void setProjects(List<ProjectDto> projects) {
+        this.projects = projects;
     }
 }

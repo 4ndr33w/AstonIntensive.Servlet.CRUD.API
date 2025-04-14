@@ -3,6 +3,7 @@ package repositories;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
+import configurations.ThreadPoolConfiguration;
 import models.entities.User;
 import repositories.interfaces.UserRepository;
 import utils.sqls.SqlQueryStrings;
@@ -29,10 +30,11 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     private static final ExecutorService dbExecutor;
 
     static {
-        dbExecutor = Executors.newFixedThreadPool(
+        /*dbExecutor = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors(),
                 new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
-                );
+                );*/
+        dbExecutor = ThreadPoolConfiguration.getDbExecutor();
     }
 
     public UsersRepository() throws SQLException {

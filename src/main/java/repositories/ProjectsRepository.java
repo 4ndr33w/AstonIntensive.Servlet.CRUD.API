@@ -3,6 +3,7 @@ package repositories;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
+import configurations.ThreadPoolConfiguration;
 import models.dtos.ProjectDto;
 import models.dtos.UserDto;
 import models.entities.Project;
@@ -36,14 +37,17 @@ public class ProjectsRepository implements ProjectRepository {
     private static final String projectUsersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
 
     private final SqlQueryStrings sqlQueryStrings;
-    private static final ExecutorService dbExecutor;
+    private static final ExecutorService dbExecutor;// = ThreadPoolConfiguration.getDbExecutor();
     private final UserRepository userRepository;
 
+    //private static final ThreadPoolConfiguration threadPoolConfiguration;
+
     static {
-        dbExecutor = Executors.newFixedThreadPool(
+        /*dbExecutor = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors(),
                 new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
-        );
+        );*/
+        dbExecutor = ThreadPoolConfiguration.getDbExecutor();
     }
 
     public ProjectsRepository() throws SQLException {
@@ -313,38 +317,6 @@ public class ProjectsRepository implements ProjectRepository {
         }, dbExecutor);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @Override
-    public CompletableFuture<List<Project>> findAllAsync() throws SQLException {
-        return null;
-    }
-
-
-
-
-
-    @Override
-    public CompletableFuture<Project> updateAsync(Project item) {
-        return null;
-    }
-
-
-
-
-
     @Override
     public CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, UUID projectId) {
         if (userId == null || projectId == null) {
@@ -365,6 +337,7 @@ public class ProjectsRepository implements ProjectRepository {
                             });
                 });
     }
+
     private CompletableFuture<Void> deleteUsersFromProjectUsersTable(UUID userId, UUID projectId) {
         return CompletableFuture.runAsync(() -> {
             String tableName = String.format("%s.%s", schema, projectUsersTable);
@@ -391,5 +364,25 @@ public class ProjectsRepository implements ProjectRepository {
                 throw new RuntimeException(e);
             }
         }, dbExecutor);
+    }
+
+
+
+
+
+
+
+
+
+
+    // ToDo: реализовать методы
+    @Override
+    public CompletableFuture<List<Project>> findAllAsync() throws SQLException {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Project> updateAsync(Project item) {
+        return null;
     }
 }

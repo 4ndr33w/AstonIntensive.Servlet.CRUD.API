@@ -4,12 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.UsersController;
 import models.dtos.UserDto;
+import models.entities.User;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -25,140 +27,150 @@ import java.util.concurrent.ExecutionException;
 public class UsersServlet extends HttpServlet {
 
     private final UsersController controller;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     public UsersServlet() throws SQLException {
         super();
         controller = new UsersController();
     }
 
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        /*try {
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
 
-            String path = req.getPathInfo();
-            UUID id = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa6");
-            UserDto user = controller.getUser(id);
+        String id = req.getParameter("id");
+        if (id == null) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\":\"Требуется указать Id\"}");
+            return;
+        }
 
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonResponse = mapper.writeValueAsString(user);
+        boolean idValidation = validateId(id);
+        if(!idValidation) {
 
-            PrintWriter out = resp.getWriter();
-            out.print(jsonResponse);
-            out.flush();
-        } catch (ExecutionException | SQLException | InterruptedException | IOException e) {
-            throw new RuntimeException(e);
-        }*/
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\":\"Неверный формат Id\"}");
+            return;
 
-        String action = req.getServletPath();
+        }
+        try {
+            UUID userId = UUID.fromString(id);
 
-        switch (action) {
-            case "/users/all":
-                try {
-                    resp.setContentType("application/json");
-                    resp.setCharacterEncoding("UTF-8");
+            UserDto userDto = controller.getUser(userId);
 
-                    List<UserDto> users = controller.getAll();
+            if (userDto != null) {
 
-                    ObjectMapper mapper = new ObjectMapper();
-                    String jsonResponse = mapper.writeValueAsString(users);
+                ObjectMapper mapper = new ObjectMapper();
+                String jsonResponse = mapper.writeValueAsString(userDto);
 
-
-                    PrintWriter out = resp.getWriter();
-                    out.print(jsonResponse);
-                    out.flush();
-                }
-                catch (SQLException | ExecutionException | InterruptedException e) {
-                    if(e instanceof SQLException) {
-                        resp.sendError(500);
-                    }
-                    if(e instanceof InterruptedException) {
-                        resp.sendError(400);
-                    }
-                    if(e instanceof ExecutionException) {
-                        resp.sendError(404);
-                    }
-                    else {
-                        resp.sendError(400);
-                    }
-                }
-                /*
-                var jsonResponse = getAllUsers(resp);
+                resp.setStatus(HttpServletResponse.SC_OK);
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
                 out.flush();
-                //getUser(UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa6"), resp, req.getPathInfo());*/
-                break;
-            default:
-                String pathInfo = req.getPathInfo();
-                if (pathInfo != null) {
-                    String stringId = pathInfo.substring(7);
-                    String[] parts = pathInfo.split("/");
-                    if (parts.length > 1) {
-                        try {
-                            UUID id = UUID.fromString(stringId);
-                            getUser(id, resp, stringId);
-                        } catch (IllegalArgumentException e) {
-                            // Обработка ошибки, если id не является корректным UUID
-                        }
-                    }
-                }
-                break;
-        }
 
-
-    }
-
-    private String getAllUsers(HttpServletResponse resp) throws ServletException, IOException {
-        try {
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
-
-            List<UserDto> users = controller.getAll();
-
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonResponse = mapper.writeValueAsString(users);
-
-            return jsonResponse;
-
-            /*PrintWriter out = resp.getWriter();
-            out.print(jsonResponse);
-            out.flush();*/
-        } catch (SQLException | ExecutionException | InterruptedException e) {
-            if (e instanceof SQLException) {
-                resp.sendError(500);
-                return "500 Error: SQL Error";
-            }
-            if (e instanceof InterruptedException) {
-                resp.sendError(400);
-                return "400 Error: Bad Request";
-            }
-            if (e instanceof ExecutionException) {
-                resp.sendError(404);
-                return "404 Error: Not Found";
             } else {
-                resp.sendError(400);
-                return "400 Error: Bad Request";
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                resp.getWriter().write("{\"error\":\"Пользователь не найден\"}");
             }
+        } catch (SQLException | InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void getUser(UUID id, HttpServletResponse resp, String pathInfo) {
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+
         try {
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
+            User user = parseUserFromRequest(req);
 
-            UserDto user = controller.getUser(id);
+            validateUser(user);
 
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonResponse = mapper.writeValueAsString(user);
+            UserDto createdUser = controller.addUser(user);
 
-            PrintWriter out = resp.getWriter();
-            out.print(jsonResponse);
-            out.flush();
-        } catch (ExecutionException | SQLException | InterruptedException | IOException e) {
-            throw new RuntimeException(e);
+            resp.setStatus(HttpServletResponse.SC_CREATED);
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.writeValue(resp.getWriter(), createdUser);
+
+        } catch (IllegalArgumentException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
+        } catch (Exception e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("{\"error\":\"Internal server error\"}");
+            e.printStackTrace();
+        }
+    }
+
+    private User parseUserFromRequest(HttpServletRequest req) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.readValue(req.getInputStream(), User.class);
+    }
+
+    private void validateUser(User user) throws IllegalArgumentException {
+        if (user.getUserName() == null || user.getUserName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+    }
+
+    private boolean validateId(String id) throws IllegalArgumentException {
+        if (id == null || id.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            UUID.fromString(id);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+
+        String id = req.getParameter("id");
+        if (id == null) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\":\"User ID must be provided in URL\"}");
+            return;
+        }
+        try {
+            UUID userId = UUID.fromString(id);
+
+            boolean isDeleted = controller.deleteUser(userId);
+
+            // 4. Формируем ответ
+            if (isDeleted) {
+                resp.setStatus(HttpServletResponse.SC_OK);
+                resp.getWriter().write("{\"message\":\"User deleted successfully\"}");
+            } else {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                resp.getWriter().write("{\"error\":\"User not found\"}");
+            }
+
+        } catch (IllegalArgumentException e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write("{\"error\":\"Invalid user ID format\"}");
+        } catch (SQLException e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("{\"error\":\"Database error: " + e.getMessage() + "\"}");
+        } catch (ExecutionException | InterruptedException e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write("{\"error\":\"Operation failed\"}");
+            Thread.currentThread().interrupt(); // Восстанавливаем флаг прерывания
         }
     }
 }

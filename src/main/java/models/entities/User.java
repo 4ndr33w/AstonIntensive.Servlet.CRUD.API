@@ -23,9 +23,9 @@ public class User {
     private UserRoles userRole;
     private byte[] userImage;
 
-    private Date createdAt;
-    private Date updatedAt;
-    private Date lastLoginDate;
+    private Date createdAt = new Date();
+    private Date updatedAt = new Date();
+    private Date lastLoginDate = new Date();
 
     List<ProjectDto> projects;
 
@@ -53,9 +53,9 @@ public class User {
         this.phoneNumber = phoneNumber;
         this.userRole = userRole;
         this.userImage = userImage;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.lastLoginDate = lastLoginDate;
+        this.createdAt = createdAt == null ? new Date() : createdAt;
+        this.updatedAt = updatedAt == null ? new Date() : createdAt;
+        this.lastLoginDate = lastLoginDate == null ? new Date() : createdAt;
         this.projects = new java.util.ArrayList<>();
     }
 
@@ -79,9 +79,9 @@ public class User {
         this.phoneNumber = phoneNumber;
         this.userRole = userRole;
         this.userImage = userImage;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.lastLoginDate = lastLoginDate;
+        this.createdAt = createdAt == null ? new Date() : createdAt;
+        this.updatedAt = updatedAt == null ? new Date() : createdAt;
+        this.lastLoginDate = lastLoginDate == null ? new Date() : createdAt;
         this.projects = new java.util.ArrayList<>();
     }
 

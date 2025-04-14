@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 public interface BaseService<T> {
 
     CompletableFuture<T> getByIdAsync(UUID id);
-    CompletableFuture<Boolean> deleteByIdAsync(UUID id);
+    CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException;
     CompletableFuture<T> updateByIdAsync(UUID id, T entity);
     CompletableFuture<List<T>> getAllAsync() throws SQLException;
 }

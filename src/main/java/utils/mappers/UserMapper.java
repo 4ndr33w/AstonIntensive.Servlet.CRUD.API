@@ -30,9 +30,15 @@ public class UserMapper {
         userDto.setUserRole(user.getUserRole());
         userDto.setCreatedAt(user.getCreatedAt());
 
-        List<UUID> projectIds = new ArrayList<>();
+        /*List<UUID> projectIds = new ArrayList<>();
         if(user.getProjects() != null) {
             user.getProjects().forEach(project -> {projectIds.add(project.getId());});
+        }*/
+        if(user.getProjects() != null) {
+            userDto.setProjects(user.getProjects());
+        }
+        else {
+            userDto.setProjects(new ArrayList<>());
         }
         return userDto;
 
@@ -50,7 +56,12 @@ public class UserMapper {
         user.setUserRole(userDto.getUserRole());
         user.setCreatedAt(userDto.getCreatedAt());
 
-        user.setProjects(new ArrayList<>());
+        if(userDto.getProjects() != null) {
+            user.setProjects(userDto.getProjects());
+        }
+        else {
+            user.setProjects(new ArrayList<>());
+        }
         return user;
     }
 
