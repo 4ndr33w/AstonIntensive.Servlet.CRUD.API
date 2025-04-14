@@ -14,7 +14,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 import static utils.mappers.UserMapper.mapResultSetToUser;
 
@@ -60,10 +62,11 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
      */
     @Override
     public CompletableFuture<List<User>> findAllAsync() {
+        String queryString = sqlQueryStrings.findAllQueryString(usersTableName);
         return CompletableFuture.supplyAsync(() -> {
             try (JdbcConnection conn = new JdbcConnection();
-                 PreparedStatement stmt = conn.prepareStatement(usersTableName);
-                 ResultSet rs = stmt.executeQuery()) {
+
+                 ResultSet rs = conn.executeQuery(queryString)) {
 
                 List<User> users = new ArrayList<>();
                 while (rs.next()) {
@@ -194,6 +197,26 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
             }
             catch (Exception e) {
                 throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+            }
+        }, dbExecutor);
+    }
+
+    public CompletableFuture<List<User>> findAllByIdsAsync(List<UUID> ids) {
+        return CompletableFuture.supplyAsync(() -> {
+            String query = String.format("SELECT * FROM %s WHERE id IN (%s)", usersTableName, ids.stream().map(id -> "'" + id + "'").collect(Collectors.joining(",")));
+
+            try (JdbcConnection conn = new JdbcConnection();
+                 ResultSet rs = conn.executeQuery(query)) {
+
+                List<User> users = new ArrayList<>();
+                while (rs.next()) {
+                    users.add(mapResultSetToUser(rs));
+                }
+                return users;
+            } catch (SQLException e) {
+                throw new CompletionException("Failed to load users", e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }, dbExecutor);
     }

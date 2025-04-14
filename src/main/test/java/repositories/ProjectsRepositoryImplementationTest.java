@@ -86,7 +86,7 @@ public class ProjectsRepositoryImplementationTest {
             var resultProject = result.get();
             assertNotNull(result);
 
-        } catch (ExecutionException | InterruptedException | SQLException e) {
+        } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -95,9 +95,9 @@ public class ProjectsRepositoryImplementationTest {
     public void addUserToProjectTest() throws ExecutionException, InterruptedException, SQLException {
         try {
             ProjectRepository projectsRepository = new ProjectsRepositoryImplementation();
-            UUID userId = UUID.fromString("443d26e3-dcbc-4e23-90b0-7b659f486a04");
+            UUID userId = UUID.fromString("cd0a9cda-6e6d-4f89-b1d2-b0bb22b92c8b");
             UUID projectId = UUID.fromString("9658455a-348b-4d4d-ad08-cb562da4f8c4");
-
+//cd0a9cda-6e6d-4f89-b1d2-b0bb22b92c8b
             var result = projectsRepository.addUserToProjectAsync(userId, projectId);
 
             var resultProject = result.get();
@@ -122,7 +122,7 @@ public class ProjectsRepositoryImplementationTest {
 
             assertNotNull(result);
         }
-        catch (ExecutionException | InterruptedException | SQLException e) {
+        catch (ExecutionException | InterruptedException e) {
             if (e.getCause() instanceof SQLException) {
                 System.err.println("Error adding user to project: " + e.getMessage());
             }

@@ -4,6 +4,10 @@ import models.entities.Project;
 import models.entities.User;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author 4ndr33w
@@ -12,6 +16,10 @@ import java.util.Arrays;
 public class SqlQueryStrings {
 
     public String findAllQueryString(String tableName){
+        return String.format("SELECT * FROM %s", tableName);
+    }
+
+    public String findAllByIdQueryString(String tableName, String id){
         return String.format("SELECT * FROM %s", tableName);
     }
 
@@ -101,5 +109,29 @@ public class SqlQueryStrings {
         } else {
             return "";
         }
+    }
+
+    public String findByProjectIdsString(String tableName, List<UUID> projectIds) {
+        String placeholders = projectIds.stream()
+                .map(id -> "?")
+                .collect(Collectors.joining(","));
+
+        return String.format(
+                "SELECT project_id, user_id FROM %s WHERE project_id IN (%s)",
+                tableName,
+                placeholders
+        );
+    }
+
+    public String findAllByIdsString(String tableName, int paramsCount) {
+        String placeholders = IntStream.range(0, paramsCount)
+                .mapToObj(i -> "?")
+                .collect(Collectors.joining(","));
+
+        return String.format(
+                "SELECT * FROM %s WHERE id IN (%s)",
+                tableName,
+                placeholders
+        );
     }
 }

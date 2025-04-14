@@ -152,7 +152,7 @@ public class UsersRepositoryImplementationTest {
                     .join();
 
             var test = result;
-            assertNotNull(result);
+            assertNotNull(test);
         } catch (Exception e) {
             System.err.println(e.getMessage());
         }

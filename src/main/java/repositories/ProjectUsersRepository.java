@@ -8,15 +8,15 @@ import models.entities.User;
 import utils.StaticConstants;
 import utils.sqls.SqlQueryStrings;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 import static utils.mappers.ProjectUserMapper.mapResultSetToProjectUser;
 import static utils.mappers.UserMapper.mapResultSetToUser;
@@ -94,5 +94,70 @@ public class ProjectUsersRepository {
             }
         }, dbExecutor);
     }
+
+    public CompletableFuture<ProjectUsersDto> addUserToProject(UUID userId, UUID projectId) {
+        return CompletableFuture.supplyAsync(() -> {
+            String tableName = String.format("%s.%s", schema, projectUsersTable);
+            String query = sqlQueryStrings.addUserIntoProjectString(
+                    tableName, projectId.toString(), userId.toString());
+
+            try (JdbcConnection connection = new JdbcConnection();
+                 Statement statement = connection.statement()) {
+
+                connection.setAutoCommit(false);
+                try {
+                    int affected = statement.executeUpdate(query);
+                    if (affected == 0) {
+                        throw new SQLDataException("No rows affected");
+                    }
+                    connection.commit();
+
+                    // Возвращаем DTO с информацией о добавленной связи
+                    return new ProjectUsersDto(projectId, userId);
+
+                } catch (SQLException e) {
+                    connection.rollback();
+                    throw new CompletionException("Failed to add user to project", e);
+                }
+            } catch (Exception e) {
+                throw new CompletionException("Database connection error", e);
+            }
+        }, dbExecutor);
+
+    }
+
+    public CompletableFuture<List<ProjectUsersDto>> findByProjectIds(List<UUID> projectIds) {
+        if (projectIds == null || projectIds.isEmpty()) {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+
+        return CompletableFuture.supplyAsync(() -> {
+            String tableName = String.format("%s.%s", schema, projectUsersTable);
+            String query = sqlQueryStrings.findByProjectIdsString(tableName, projectIds);
+
+            try (JdbcConnection connection = new JdbcConnection();
+                 PreparedStatement statement = connection.prepareStatement(query)) {
+
+                // Устанавливаем параметры для IN-условия
+                for (int i = 0; i < projectIds.size(); i++) {
+                    statement.setObject(i + 1, projectIds.get(i));
+                }
+
+                try (ResultSet rs = statement.executeQuery()) {
+                    List<ProjectUsersDto> results = new ArrayList<>();
+
+                    while (rs.next()) {
+                        results.add(mapResultSetToProjectUser(rs));
+                    }
+
+                    return results;
+                }
+            } catch (Exception e) {
+                throw new CompletionException("Failed to load project-user relations", e);
+            }
+        }, dbExecutor);
+    }
+
+
 }
 

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Интерфецс для поиска пользователя:
@@ -21,5 +22,5 @@ public interface UserRepository extends BaseRepository<User> {
     CompletableFuture<User> findByUserNameAsync(String userName);
     CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail);
     CompletableFuture<User> updatePasswordAsync(UUID userId, String newPassword);
-
+    CompletableFuture<List<User>> findAllByIdsAsync(List<UUID> ids);
 }
