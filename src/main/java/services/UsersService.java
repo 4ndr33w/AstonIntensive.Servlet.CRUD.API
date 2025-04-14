@@ -87,6 +87,8 @@ public class UsersService implements UserService {
 
     @Override
     public CompletableFuture<List<User>> getAllAsync() throws SQLException {
+
+
         return userRepository.findAllAsync()
                 .thenCompose(users -> {
 

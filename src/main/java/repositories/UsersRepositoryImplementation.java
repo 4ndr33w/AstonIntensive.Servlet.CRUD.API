@@ -61,9 +61,9 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
     @Override
     public CompletableFuture<List<User>> findAllAsync() {
         return CompletableFuture.supplyAsync(() -> {
+            String queryString = sqlQueryStrings.findAllQueryString(usersTableName);
             try (JdbcConnection conn = new JdbcConnection();
-                 PreparedStatement stmt = conn.prepareStatement(usersTableName);
-                 ResultSet rs = stmt.executeQuery()) {
+                 ResultSet rs = conn.executeQuery(queryString )) {
 
                 List<User> users = new ArrayList<>();
                 while (rs.next()) {

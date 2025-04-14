@@ -86,7 +86,7 @@ public class ProjectsRepositoryImplementationTest {
             var resultProject = result.get();
             assertNotNull(result);
 
-        } catch (ExecutionException | InterruptedException | SQLException e) {
+        } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -103,7 +103,7 @@ public class ProjectsRepositoryImplementationTest {
             var resultProject = result.get();
 
             assertEquals(0, resultProject.getProjectUsersIds().indexOf(userId));
-        } catch (ExecutionException | InterruptedException | SQLException e) {
+        } catch (ExecutionException | InterruptedException e) {
             if (e.getCause() instanceof SQLException) {
                 System.err.println("Error adding user to project: " + e.getMessage());
             }
@@ -122,7 +122,7 @@ public class ProjectsRepositoryImplementationTest {
 
             assertNotNull(result);
         }
-        catch (ExecutionException | InterruptedException | SQLException e) {
+        catch (ExecutionException | InterruptedException e) {
             if (e.getCause() instanceof SQLException) {
                 System.err.println("Error adding user to project: " + e.getMessage());
             }
@@ -155,7 +155,7 @@ public class ProjectsRepositoryImplementationTest {
             var resultProject = result.get();
 
             assertEquals(0, resultProject.getProjectUsersIds().indexOf(userId));
-        } catch (ExecutionException | InterruptedException | SQLException e) {
+        } catch (ExecutionException | InterruptedException e) {
             if (e.getCause() instanceof SQLException) {
                 System.err.println("Error adding user to project: " + e.getMessage());
             }

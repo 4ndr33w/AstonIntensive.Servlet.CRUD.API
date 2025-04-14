@@ -34,7 +34,6 @@ public class GetAllUsersServlet extends HttpServlet {
         try {
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
-            var test = controller;
 
             List<UserDto> users = controller.getAll();
 
