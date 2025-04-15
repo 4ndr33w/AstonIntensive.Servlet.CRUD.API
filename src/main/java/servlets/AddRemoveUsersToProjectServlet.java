@@ -1,34 +1,51 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import controllers.ProjectsController;
+import controllers.ProjectControllerSynchronous;
+import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.sql.SQLException;
 import java.util.UUID;
 
 /**
+ * Сервлет с эндпойнтами для добавления / удаления
+ * пользователей в / из проекта
+ *
  * @author 4ndr33w
  * @version 1.0
  */
 @WebServlet("/api/v1/projects/users")
-public class AddRemoveIsersToProjectServlet extends HttpServlet {
+public class AddRemoveUsersToProjectServlet extends HttpServlet {
 
-    private final ProjectsController projectController;
+    private final ProjectControllerInterface projectController;
+    //private final ProjectsController projectController;
 
-    public AddRemoveIsersToProjectServlet() throws SQLException {
-        this.projectController = new ProjectsController();
+    public AddRemoveUsersToProjectServlet() {
+        this.projectController = new ProjectControllerSynchronous();
     }
 
-    /*@Override
-    public void init() {
-        this.projectController = new ProjectsController();
-    }*/
-
+    /**
+     * HTTP POST запрос
+     * метод добавляет пользователя в проект
+     * <p>
+     *     метод принимает два параметра в адресной строке:
+     *     <ul>
+     *         <li>{@code projectId}</li>
+     *         <li>{@code userId}</li>
+     *     </ul>
+     * </p>
+     * @param req
+     * @param resp
+     *
+     * @return 200 OK
+     * @return 400 Bad Request
+     *
+     * @throws Exception
+     */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         try {
@@ -41,10 +58,27 @@ public class AddRemoveIsersToProjectServlet extends HttpServlet {
             new ObjectMapper().writeValue(resp.getWriter(), result);
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            // Обработка ошибки
         }
     }
 
+    /**
+     * HTTP DELETE запрос
+     * метод удаляет пользователя в проект
+     * <p>
+     *     метод принимает два параметра:
+     *     <ul>
+     *         <li>{@code projectId}</li>
+     *         <li>{@code userId}</li>
+     *     </ul>
+     * </p>
+     * @param req
+     * @param resp
+     *
+     * @return 200 OK
+     * @return 400 Bad Request
+     *
+     * @throws Exception
+     */
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
         try {
@@ -57,7 +91,6 @@ public class AddRemoveIsersToProjectServlet extends HttpServlet {
             new ObjectMapper().writeValue(resp.getWriter(), result);
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            // Обработка ошибки
         }
     }
 }

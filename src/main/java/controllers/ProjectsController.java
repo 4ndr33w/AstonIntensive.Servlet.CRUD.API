@@ -1,5 +1,6 @@
 package controllers;
 
+import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import models.entities.Project;
 import services.ProjectServiceImplNew;
@@ -16,16 +17,23 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Класс контроллера, предоставляющего методы для работы с проектами
+ * Класс для работы с проектами
+ * в многопоточном режиме
+ * Предоставляет методы для{@code CRUD}-операций с проектами
+ *
+ * @see ProjectControllerInterface
+ * @see services.interfaces.ProjectService
  * @author 4ndr33w
  * @version 1.0
  */
-public class ProjectsController {
+public class ProjectsController implements ProjectControllerInterface {
 
     private final ProjectService projectService;
+    //private final services.interfaces.synchronous.ProjectServiceSynchro projectService;
 
     public ProjectsController() {
 
+        //this.projectService = new services.synchronous.ProjectsService();
         this.projectService = new ProjectServiceImplNew();
         //this.projectService = new ProjectsService();
     }
@@ -43,7 +51,6 @@ public class ProjectsController {
      * @throws ExecutionException
      * @throws InterruptedException
      * @throws NoSuchElementException
-     * @throws RuntimeException
      */
     public List<ProjectDto> getByUserId(UUID userId) {
         Objects.requireNonNull(userId);
@@ -74,7 +81,7 @@ public class ProjectsController {
      * @throws NoSuchElementException
      * @throws RuntimeException
      */
-    public List<ProjectDto> getByAdminId(UUID adminId){
+    public List<ProjectDto> getByAdminId(UUID adminId) {
         Objects.requireNonNull(adminId);
 
         try {
@@ -171,6 +178,19 @@ public class ProjectsController {
         }
     }
 
+    /**
+     * Добавить пользователя в проект по
+     * {@code userId} и {@code projectId}
+     * @param projectId
+     * @param userId
+     * @return {@code ProjectDto}
+     * @throws SQLException
+     * @throws ExecutionException
+     * @throws InterruptedException
+     * @throws NoSuchElementException
+     * @throws RuntimeException
+     * @throws IllegalArgumentException
+     */
     public ProjectDto addUserToProject(UUID userId, UUID projectId) {
         try {
             CompletableFuture<Project> future = projectService.addUserToProjectAsync(userId, projectId);
@@ -181,11 +201,25 @@ public class ProjectsController {
             throw new RuntimeException("Operation was interrupted", e);
         } catch (ExecutionException e) {
             throw convertExecutionException(e.getCause());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Удалить пользователя из проекта по
+     * {@code userId} и {@code projectId}
+     * @param projectId
+     * @param userId
+     * @return {@code ProjectDto}
+     * @throws SQLException
+     * @throws ExecutionException
+     * @throws InterruptedException
+     * @throws NoSuchElementException
+     * @throws RuntimeException
+     * @throws IllegalArgumentException
+     */
     public ProjectDto removeUserFromProject(UUID userId, UUID projectId) {
         try {
             CompletableFuture<Project> future = projectService.removeUserFromProjectAsync(userId, projectId);

@@ -189,8 +189,8 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
 
                 while (resultSet.next()) {
                     result.add(new ProjectUsersDto(
-                            (UUID) resultSet.getObject("project_id"),
-                            (UUID) resultSet.getObject("user_id")
+                            (UUID) resultSet.getObject("user_id"),
+                            (UUID) resultSet.getObject("project_id")
                     ));
                 }
 

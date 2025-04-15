@@ -1,24 +1,24 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import controllers.ProjectsController;
+import controllers.ProjectControllerSynchronous;
+import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import utils.StaticConstants;
 import utils.Utils;
 
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 /**
+ * Сервлет обработки GET-запроса
+ * для получения всех проектов пользователя
+ *
  * @author 4ndr33w
  * @version 1.0
  */
@@ -26,16 +26,38 @@ import java.util.concurrent.ExecutionException;
 public class GetProjectByUserIdServlet extends HttpServlet {
 
     //private final Project
-    private final ProjectsController controller;// = new ProjectsController();
+
+    private final ProjectControllerInterface controller;
+
+    //private final ProjectsController controller;// = new ProjectsController();
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Utils utils;
 
-    public GetProjectByUserIdServlet() throws SQLException {
+    public GetProjectByUserIdServlet() {
         super();
-        this.controller = new ProjectsController();
+        //this.controller = new ProjectsController();
         this.utils = new Utils();
+        this.controller = new ProjectControllerSynchronous();
     }
 
+    /**
+     * HTTP GET запрос
+     * метод возвращает список всех проектов,
+     * в которых участвует пользователь с указанным {@code userId}
+     *
+     * <p>
+     *     метод принимает параметр в адресной строке:
+     *     <ul>
+     *         <li>{@code Id}</li>
+     *     </ul>
+     * </p>
+     *
+     * @param req
+     * @param resp
+     * @return 200 OK
+     * @return 400 Bad Request
+     * @throws RuntimeException
+     */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 

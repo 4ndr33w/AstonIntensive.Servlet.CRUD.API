@@ -14,7 +14,9 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Класс контроллера, предоставляющего методы для работы с пользователями
+ * Класс контроллера,
+ * Предоставляет методы для{@code CRUD}-операций с данными пользователей
+ *
  * @author 4ndr33w
  * @version 1.0
  */

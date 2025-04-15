@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -93,6 +94,33 @@ public class ProjectMapper {
         }
         catch (SQLException ex){
             throw new SQLException(StaticConstants.ERROR_FETCHING_RESULT_SET_METADATA_EXCEPTION_MESSAGE, ex.getMessage());
+        }
+    }
+
+    public static Optional<Project> mapResultSetToProjectOptional(ResultSet rs) {
+        if (rs == null) {
+            throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        }
+        try {
+            Project project = new Project(
+                    UUID.fromString(rs.getString("id")),
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getTimestamp("created_at") != null ?
+                            new Date(rs.getTimestamp("created_at").getTime()) : new Date(),
+                    rs.getTimestamp("updated_at") != null ?
+                            new Date(rs.getTimestamp("updated_at").getTime()) : new Date(),
+                    rs.getBytes("image"),
+                    UUID.fromString(rs.getString("admin_id")),
+                    ProjectStatus.values()[Integer.parseInt(rs.getString("project_status"))]
+            );
+            return Optional.of(project);
+        }
+        catch (SQLException ex) {
+            throw new RuntimeException(
+                    StaticConstants.ERROR_FETCHING_RESULT_SET_METADATA_EXCEPTION_MESSAGE,
+                    ex
+            );
         }
     }
 }

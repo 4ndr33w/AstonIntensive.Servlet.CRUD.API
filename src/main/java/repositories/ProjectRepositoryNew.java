@@ -10,6 +10,7 @@ import models.entities.User;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
+import utils.StaticConstants;
 import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
@@ -67,7 +68,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
                 int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
 
                 if (affectedRows == 0) {
-                    throw new RuntimeException("Failed to create user, no rows affected");
+                    throw new RuntimeException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
                 }
 
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
@@ -75,7 +76,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
                         project.setId((UUID) generatedKeys.getObject(1));
                         return project;
                     }
-                    throw new RuntimeException("Failed to retrieve generated keys");
+                    throw new RuntimeException(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
                 }
             }
             catch (Exception e) {
@@ -123,7 +124,8 @@ public class ProjectRepositoryNew implements ProjectRepository {
                 }
 
             } catch (Exception e) {
-                throw new RuntimeException("Error finding projects by adminId: " + userId, e);
+                String message = String.format("%s; userId: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, userId);
+                throw new RuntimeException(message , e);
             }
 
             return projects;
@@ -145,7 +147,8 @@ public class ProjectRepositoryNew implements ProjectRepository {
                 return mapResultSetToProject(resultSet);
 
             } catch (SQLException e) {
-                throw new RuntimeException("Error finding project by id: " + id, e);
+                String message = String.format("%s; id: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, id);
+                throw new RuntimeException(message, e);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -155,9 +158,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     @Override
     public CompletableFuture<Boolean> deleteAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
-            if (id == null) {
-                return false;
-            }
+            Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
             String tableName = String.format("%s.%s", schema, projectsTable);
             String queryString = sqlQueryStrings.deleteByIdString(tableName, id.toString());
@@ -174,10 +175,9 @@ public class ProjectRepositoryNew implements ProjectRepository {
 
     @Override
     public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) {
-        if (userId == null || projectId == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("Parameters cannot be null"));
-        }
+
+        Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return findByIdAsync(projectId)
                 .thenApply(ProjectMapper::toDto)

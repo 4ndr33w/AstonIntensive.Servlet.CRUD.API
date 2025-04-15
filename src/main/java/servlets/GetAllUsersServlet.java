@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * Servlet для получения списка всех пользователей
+ *
  * @author 4ndr33w
  * @version 1.0
  */
@@ -24,11 +26,21 @@ public class GetAllUsersServlet extends HttpServlet {
 
     private final UsersController controller;
 
-    public GetAllUsersServlet() throws SQLException {
+    public GetAllUsersServlet() {
         super();
         controller = new UsersController();
     }
 
+    /**
+     * HTTP GET запрос
+     * метод возвращает список всех пользователей
+     *
+     * @param req
+     * @param resp
+     *     * @return 200 OK
+     * @return 400 Bad Request
+     *     * @throws RuntimeException
+     */
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
         try {

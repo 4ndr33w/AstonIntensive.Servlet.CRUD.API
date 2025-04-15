@@ -1,7 +1,9 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import controllers.ProjectControllerSynchronous;
 import controllers.ProjectsController;
+import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import utils.StaticConstants;
 import utils.Utils;
@@ -19,23 +21,46 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * Сервлет обработки GET-запроса
+ * для получения всех проектов, в которых
+ * пользователь с идентификатором {@code Id}
+ * является администратором
+ *
  * @author 4ndr33w
  * @version 1.0
  */
 @WebServlet("/api/v1/projects/admin")
 public class GetProjectsByAdminIdServlet extends HttpServlet {
 
-    //private final Project
-    private final ProjectsController projectController;// = new ProjectsController();
+    private final ProjectControllerInterface projectController;
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Utils utils;
 
-    public GetProjectsByAdminIdServlet (){
+    public GetProjectsByAdminIdServlet () {
         super();
-        this.projectController = new ProjectsController();
         this.utils = new Utils();
+        this.projectController = new ProjectControllerSynchronous();
+        //this.projectController = new ProjectsController();
     }
 
+    /**
+     * HTTP GET запрос
+     * метод возвращает список всех проектов,
+     * в которых пользователь с идентификатором {@code Id} является администратором,
+     *
+     * <p>
+     *     метод принимает параметр в адресной строке:
+     *     <ul>
+     *         <li>{@code Id}</li>
+     *     </ul>
+     * </p>
+     *
+     * @param req
+     * @param resp
+     * @return 200 OK
+     * @return 400 Bad Request
+     * @throws RuntimeException
+     */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 

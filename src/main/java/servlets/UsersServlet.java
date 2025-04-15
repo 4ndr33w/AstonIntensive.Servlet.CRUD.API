@@ -7,7 +7,6 @@ import models.entities.User;
 import utils.StaticConstants;
 import utils.Utils;
 
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 /**
  * @author 4ndr33w
@@ -29,14 +27,14 @@ public class UsersServlet extends HttpServlet {
     private ObjectMapper objectMapper = new ObjectMapper();
     private Utils utils;
 
-    public UsersServlet() throws SQLException {
+    public UsersServlet() {
         super();
         controller = new UsersController();
         utils = new Utils();
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -82,8 +80,34 @@ public class UsersServlet extends HttpServlet {
         }
     }
 
+    /**
+     * HTTP POST запрос
+     * Создание нового пользователя
+     * метод возвращает DTO-объект пользователя {@code UserDto}
+     *
+     * <pre>{@code
+     * {
+     *  "userName": "Andr33w"
+     *  "password": "McFly"
+     *  "email": "McFly@123.ru"
+     *  "firstName": "Andrew"
+     *  "lastName": "McFly"
+     *  "phoneNumber": "+79211234567"
+     *  "userRole": 0
+     *  "userImage": null
+     * }
+     * }</pre>
+     *
+     * @param req
+     * @param resp
+     * @return 201 Created
+     * @return 400 Bad Request
+     * @return 500 Internal Server Error
+     * @throws RuntimeException
+     * @throws IllegalArgumentException
+     */
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -125,8 +149,28 @@ public class UsersServlet extends HttpServlet {
         }
     }
 
+    /**
+     * HTTP DELETE запрос
+     * метод удаляет пользователя по {@code id}.
+     * Возвращает сообщение о успешном удалении
+     *
+     * <p>
+     *     метод принимает параметр в адресной строке:
+     *     <ul>
+     *         <li>{@code Id}</li>
+     *     </ul>
+     * </p>
+     *
+     * @param req
+     * @param resp
+     * @return 200 OK
+     * @return 400 Bad Request
+     * @return 404 Not Found
+     * @throws RuntimeException
+     * @throws IOException
+     */
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -154,7 +198,7 @@ public class UsersServlet extends HttpServlet {
 
         } catch (IllegalArgumentException | IOException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            //resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
         }
     }
 }

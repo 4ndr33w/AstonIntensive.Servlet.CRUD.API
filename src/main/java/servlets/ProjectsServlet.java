@@ -1,7 +1,9 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import controllers.ProjectControllerSynchronous;
 import controllers.ProjectsController;
+import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import models.entities.Project;
 import utils.StaticConstants;
@@ -20,23 +22,46 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * Сервлет представляет эндпойнт
+ * для обработки запросов по {@code CRUD} операциям
+ * с проектами {@code Project}
+ *
  * @author 4ndr33w
  * @version 1.0
  */
 @WebServlet("/api/v1/projects")
 public class ProjectsServlet extends HttpServlet {
 
-    //private final Project
-    private final ProjectsController controller;// = new ProjectsController();
+    private final ProjectControllerInterface controller;
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Utils utils;
 
-    public ProjectsServlet() throws SQLException {
+    public ProjectsServlet() {
         super();
-        this.controller = new ProjectsController();
+        this.controller = new ProjectControllerSynchronous();
+        //this.controller = new ProjectsController();
         utils = new Utils();
     }
 
+    /**
+     * HTTP GET запрос
+     * метод возвращает DTO-объект проекта {@code ProjectDto},
+     * включая {@code id} пользователей, участвующих в проекте,
+     *
+     * <p>
+     *     метод принимает параметр в адресной строке:
+     *     <ul>
+     *         <li>{@code Id}</li>
+     *     </ul>
+     * </p>
+     *
+     * @param req
+     * @param resp
+     * @return 200 OK
+     * @return 400 Bad Request
+     * @return 404 Not Found
+     * @throws RuntimeException
+     */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
@@ -87,6 +112,29 @@ public class ProjectsServlet extends HttpServlet {
         }
     }
 
+    /**
+     * HTTP POST запрос
+     * Создание нового проекта
+     * метод возвращает DTO-объект проекта {@code ProjectDto}
+     *
+     * <pre>{@code
+     * {
+     *  "name": "Default Project"
+     *  "description": "Default Project Description"
+     *  "adminId": "41096054-cbd7-4308-8411-905ae6f03aa6"
+     *  "projectStatus": 0
+     *  "image": null
+     * }
+     * }</pre>
+     *
+     * @param req
+     * @param resp
+     * @return 201 Created
+     * @return 400 Bad Request
+     * @return 500 Internal Server Error
+     * @throws RuntimeException
+     * @throws IllegalArgumentException
+     */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         resp.setContentType("application/json");
@@ -120,8 +168,28 @@ public class ProjectsServlet extends HttpServlet {
         }
     }
 
+    /**
+     * HTTP DELETE запрос
+     * метод удаляет проект по {@code id}.
+     * Возвращает сообщение о успешном удалении
+     *
+     * <p>
+     *     метод принимает параметр в адресной строке:
+     *     <ul>
+     *         <li>{@code Id}</li>
+     *     </ul>
+     * </p>
+     *
+     * @param req
+     * @param resp
+     * @return 200 OK
+     * @return 400 Bad Request
+     * @return 404 Not Found
+     * @throws RuntimeException
+     * @throws IOException
+     */
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -150,7 +218,7 @@ public class ProjectsServlet extends HttpServlet {
         } catch (java.io.IOException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             //throw new IllegalArgumentException(e);
-            //resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
         }
     }
 }
