@@ -18,5 +18,4 @@ public interface ProjectRepository extends BaseRepository<Project> {
     CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException;
     CompletableFuture<List<Project>> findByAdminIdAsync(UUID adminId);
     CompletableFuture<List<Project>> findByUserIdAsync(UUID adminId);
-
 }

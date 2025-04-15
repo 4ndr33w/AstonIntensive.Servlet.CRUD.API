@@ -6,15 +6,18 @@ import configurations.ThreadPoolConfiguration;
 import models.entities.User;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
+import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 import static utils.mappers.UserMapper.mapResultSetToUser;
 
@@ -194,6 +197,42 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
             }
             catch (Exception e) {
                 throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+            }
+        }, dbExecutor);
+    }
+
+    @Override
+    public CompletableFuture<List<User>> findAllByIdsAsync(List<UUID> userIds) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (userIds == null || userIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<String> ids = userIds.stream().map(UUID::toString).toList();
+            String sql = sqlQueryStrings.findAllByIdsString(usersTableName, ids);
+
+            /*String sql = String.format("SELECT * FROM %s WHERE id IN (", usersTableName) +
+                    userIds.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";*/
+
+            try (JdbcConnection connection = new JdbcConnection();
+                 PreparedStatement statement = connection.getConnection().prepareStatement(sql)) {
+
+                // Устанавливаем параметры для IN-условия
+                for (int i = 0; i < userIds.size(); i++) {
+                    statement.setObject(i + 1, userIds.get(i));
+                }
+
+                ResultSet resultSet = statement.executeQuery();
+                List<User> result = new ArrayList<>();
+
+                while (resultSet.next()) {
+                    result.add(UserMapper.mapResultSetToUser(resultSet));
+                }
+
+                return result;
+            } catch (SQLException e) {
+                throw new CompletionException("Failed to find users by ids", e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }, dbExecutor);
     }

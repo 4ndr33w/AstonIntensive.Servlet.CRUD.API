@@ -3,6 +3,7 @@ package controllers;
 import models.dtos.ProjectDto;
 import models.dtos.UserDto;
 import models.entities.Project;
+import services.ProjectServiceImplNew;
 import services.ProjectsService;
 import services.interfaces.ProjectService;
 import utils.mappers.ProjectMapper;
@@ -24,7 +25,8 @@ public class ProjectsController {
 
     public ProjectsController() throws SQLException {
 
-        this.projectService = new ProjectsService();
+        this.projectService = new ProjectServiceImplNew();
+        //this.projectService = new ProjectsService();
     }
 
     public List<ProjectDto> getByUserId(UUID id) throws SQLException, ExecutionException, InterruptedException {
@@ -44,9 +46,26 @@ public class ProjectsController {
     }
 
     public ProjectDto getByProjectId(UUID id) throws SQLException, ExecutionException, InterruptedException {
+        projectService = new ProjectServiceImplNew();
         if (id != null) {
             var project = projectService.getByIdAsync(id).get();
             return ProjectMapper.toDto(project);
+        } else {
+            throw new IllegalArgumentException("Id is null");
+        }
+    }
+
+    public ProjectDto create(Project project) throws Exception {
+        if (project != null) {
+            return ProjectMapper.toDto(projectService.createAsync(project).get());
+        } else {
+            throw new IllegalArgumentException("Project is null");
+        }
+    }
+
+    public boolean delete(UUID id) throws SQLException, ExecutionException, InterruptedException {
+        if (id != null) {
+            return projectService.deleteByIdAsync(id).get();
         } else {
             throw new IllegalArgumentException("Id is null");
         }

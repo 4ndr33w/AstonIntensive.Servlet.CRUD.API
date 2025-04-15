@@ -1,0 +1,228 @@
+package services;
+
+import models.dtos.ProjectUsersDto;
+import models.dtos.UserDto;
+import models.entities.Project;
+import models.entities.User;
+import repositories.ProjectUsersRepositoryImpl;
+import repositories.ProjectsRepositoryImplementation;
+import repositories.UsersRepositoryImplementation;
+import repositories.interfaces.ProjectRepository;
+import repositories.interfaces.ProjectUserRepository;
+import repositories.interfaces.UserRepository;
+import services.interfaces.ProjectService;
+import utils.mappers.UserMapper;
+
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
+
+/**
+ * @author 4ndr33w
+ * @version 1.0
+ */
+public class ProjectServiceImplNew implements ProjectService {
+
+    private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
+    private final ProjectUserRepository projectUserRepository;
+
+    public ProjectServiceImplNew() throws SQLException {
+        this.projectRepository = new ProjectsRepositoryImplementation();
+        this.userRepository = new UsersRepositoryImplementation();
+        this.projectUserRepository = new ProjectUsersRepositoryImpl();
+    }
+
+    @Override
+    public CompletableFuture<Project> createAsync(Project project) throws Exception {
+        if (project == null) {
+            return CompletableFuture.failedFuture(
+                    new IllegalArgumentException("User cannot be null"));
+        }
+
+        CompletableFuture<Project> projectFuture = projectRepository.createAsync(project);
+
+        return projectFuture
+                .exceptionally(ex -> {
+                    throw new CompletionException(ex.getCause() != null ? ex.getCause() : ex);
+                });
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException {
+        if (id == null) {
+            return CompletableFuture.failedFuture(
+                    new IllegalArgumentException("User ID cannot be null"));
+        }
+
+        return projectRepository.deleteAsync(id)
+                .thenApply(deleted -> {
+                    if (!deleted) {
+                        throw new NoSuchElementException("User with id " + id + " not found");
+                    }
+                    return true;
+                })
+                .exceptionally(ex -> {
+                    if (ex.getCause() instanceof SQLException) {
+                        throw new CompletionException("Database error while deleting user", ex.getCause());
+                    } else {
+                        throw new CompletionException(ex);
+                    }});
+    }
+
+    @Override
+    public CompletableFuture<Project> getByIdAsync(UUID id) throws SQLException {
+        return projectRepository.findByIdAsync(id)
+                .thenCompose(project -> {
+                    if (project == null) {
+                        return CompletableFuture.completedFuture(null);
+                    }
+                    return fillProjectUsers(project);
+                })
+                .exceptionally(ex -> {
+                    throw new CompletionException("Failed to get project by id: " + id, ex);
+                });
+    }
+
+    public CompletableFuture<Project> fillProjectUsers(Project project) {
+        return projectUserRepository.findByProjectId(project.getId())
+                .thenCompose(projectUsersDtos -> {
+                    if (projectUsersDtos.isEmpty()) {
+                        project.setProjectUsers(Collections.emptyList());
+                        return CompletableFuture.completedFuture(project);
+                    }
+
+                    List<CompletableFuture<User>> userFutures = projectUsersDtos.stream()
+                            .map(dto -> {
+                                try {
+                                    return userRepository.findByIdAsync(dto.getUserId());
+                                } catch (SQLException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            })
+                            .toList();
+
+                    return CompletableFuture.allOf(userFutures.toArray(new CompletableFuture[0]))
+                            .thenApply(v -> {
+                                List<UserDto> users = userFutures.stream()
+                                        .map(CompletableFuture::join)
+                                        .filter(Objects::nonNull)
+                                        .map(UserMapper::toDto)
+                                        .collect(Collectors.toList());
+
+                                project.setProjectUsers(users);
+                                return project;
+                            });
+                });
+    }
+
+
+
+
+
+
+
+    @Override
+    public CompletableFuture<List<Project>> getByUserIdAsync(UUID userId) {
+        return projectRepository.findByUserIdAsync(userId)
+                .thenCompose(projects -> {
+                    if (projects == null || projects.isEmpty()) {
+                        return CompletableFuture.completedFuture(Collections.emptyList());
+                    }
+                    return fillProjectsWithUsers(projects);
+                })
+                .exceptionally(ex -> {
+                    throw new CompletionException("Failed to get projects by user id: " + userId, ex);
+                });
+    }
+
+    @Override
+    public CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) {
+        if (adminId == null) {
+            return CompletableFuture.failedFuture(
+                    new IllegalArgumentException("User ID cannot be null"));
+        }
+        return projectRepository.findByAdminIdAsync(adminId)
+                .thenCompose(projects -> {
+                    if (projects == null || projects.isEmpty()) {
+                        return CompletableFuture.completedFuture(Collections.emptyList());
+                    }
+                    return fillProjectsWithUsers(projects);
+                })
+                .exceptionally(ex -> {
+                    throw new CompletionException("Failed to get projects by admin id: " + adminId, ex);
+                });
+    }
+
+    public CompletableFuture<List<Project>> fillProjectsWithUsers(List<Project> projects) {
+        // Собираем все ID проектов для batch-запроса
+        List<UUID> projectIds = projects.stream()
+                .map(Project::getId)
+                .collect(Collectors.toList());
+
+        // Получаем всех пользователей для всех проектов одним запросом
+        return projectUserRepository.findByProjectIds(projectIds)
+                .thenCompose(projectUsersMap -> {
+                    // Группируем пользователей по projectId
+                    Map<UUID, List<UUID>> usersByProjectId = projectUsersMap.stream()
+                            .collect(Collectors.groupingBy(
+                                    ProjectUsersDto::getProjectId,
+                                    Collectors.mapping(ProjectUsersDto::getUserId, Collectors.toList())
+                            ));
+
+                    // Для каждого проекта получаем данные пользователей
+                    List<CompletableFuture<Project>> projectFutures = projects.stream()
+                            .map(project -> {
+                                List<UUID> userIds = usersByProjectId.getOrDefault(project.getId(), Collections.emptyList());
+                                return fillUsersForProject(project, userIds);
+                            })
+                            .collect(Collectors.toList());
+
+                    return CompletableFuture.allOf(projectFutures.toArray(new CompletableFuture[0]))
+                            .thenApply(v -> projectFutures.stream()
+                                    .map(CompletableFuture::join)
+                                    .collect(Collectors.toList()));
+                });
+    }
+
+    // Протестировано, работает.
+    public CompletableFuture<Project> fillUsersForProject(Project project, List<UUID> userIds) {
+        if (userIds.isEmpty()) {
+            project.setProjectUsers(Collections.emptyList());
+            return CompletableFuture.completedFuture(project);
+        }
+
+        // Получаем данные всех пользователей одним batch-запросом
+        return userRepository.findAllByIdsAsync(userIds)
+                .thenApply(users -> {
+                    List<UserDto> userDtos = users.stream()
+                            .map(UserMapper::toDto)
+                            .collect(Collectors.toList());
+                    project.setProjectUsers(userDtos);
+                    return project;
+                });
+    }
+
+
+    @Override
+    public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException {
+        return null;
+    }
+
+    @Override
+    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) {
+        return null;
+    }
+
+
+
+
+
+
+    @Override
+    public CompletableFuture<Project> updateByIdAsync(UUID id, Project entity) {
+        return null;
+    }
+}

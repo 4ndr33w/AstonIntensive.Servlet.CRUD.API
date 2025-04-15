@@ -42,7 +42,7 @@ public class ProjectsRepositoryImplementationTest {
     @Test
     public void createTest() {
         try {
-            ProjectRepository projectsRepository = new ProjectsRepositoryImplementation();
+            ProjectRepository projectsRepository = new ProjectRepositoryNew();
 
             Project project = Utils.testProject1;
 
@@ -61,7 +61,7 @@ public class ProjectsRepositoryImplementationTest {
 
     @Test
     public void getByIdTest() throws ExecutionException, InterruptedException, SQLException {
-        ProjectRepository projectsRepository = new ProjectsRepositoryImplementation();
+        ProjectRepository projectsRepository = new ProjectRepositoryNew();
         UUID id = UUID.fromString("9658455a-348b-4d4d-ad08-cb562da4f8c4");
         var result = projectsRepository.findByIdAsync(id)
                 //.thenApplyAsync(ProjectMapper::toDto)
@@ -77,7 +77,7 @@ public class ProjectsRepositoryImplementationTest {
     @Test
     public void getProjectsByAdminId() {
         try {
-            ProjectRepository projectsRepository = new ProjectsRepositoryImplementation();
+            ProjectRepository projectsRepository = new ProjectRepositoryNew();
 
             UUID adminId = UUID.fromString("7f1111e0-8020-4de6-b15a-601d6903b9eb");
 
@@ -94,8 +94,8 @@ public class ProjectsRepositoryImplementationTest {
     @Test
     public void addUserToProjectTest() throws ExecutionException, InterruptedException, SQLException {
         try {
-            ProjectRepository projectsRepository = new ProjectsRepositoryImplementation();
-            UUID userId = UUID.fromString("443d26e3-dcbc-4e23-90b0-7b659f486a04");
+            ProjectRepository projectsRepository = new ProjectRepositoryNew();
+            UUID userId = UUID.fromString("5b99127d-27bd-44a4-8dfd-ffba74aecacb");
             UUID projectId = UUID.fromString("9658455a-348b-4d4d-ad08-cb562da4f8c4");
 
             var result = projectsRepository.addUserToProjectAsync(userId, projectId);
@@ -113,8 +113,8 @@ public class ProjectsRepositoryImplementationTest {
     @Test
     public void findByUserIdTest() throws ExecutionException, InterruptedException, SQLException {
         try {
-            ProjectRepository projectsRepository = new ProjectsRepositoryImplementation();
-            UUID userId = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa6");
+            ProjectRepository projectsRepository = new ProjectRepositoryNew();
+            UUID userId = UUID.fromString("d6df284c-b302-48c2-84d0-fd6d61c75f38");
 
             var result = projectsRepository.findByUserIdAsync(userId);
 
@@ -131,7 +131,7 @@ public class ProjectsRepositoryImplementationTest {
 
     @Test
     public void deleteCorrectTest() {
-        UUID id = UUID.fromString("cd41280a-6c71-48f1-b824-f4b832bd021d");
+        UUID id = UUID.fromString("9036beb3-9b8f-4dc8-b748-25b3ccdb71e9");
 
         try {
             ProjectRepository projectRepository = new ProjectsRepositoryImplementation();
@@ -147,7 +147,7 @@ public class ProjectsRepositoryImplementationTest {
     public void removeUserFromProjectTest() throws ExecutionException, InterruptedException, SQLException {
         try {
             ProjectRepository projectsRepository = new ProjectsRepositoryImplementation();
-            UUID userId = UUID.fromString("443d26e3-dcbc-4e23-90b0-7b659f486a04");
+            UUID userId = UUID.fromString("5b99127d-27bd-44a4-8dfd-ffba74aecacb");
             UUID projectId = UUID.fromString("9658455a-348b-4d4d-ad08-cb562da4f8c4");
 
             var result = projectsRepository.RemoveUserFromProjectAsync(userId, projectId);

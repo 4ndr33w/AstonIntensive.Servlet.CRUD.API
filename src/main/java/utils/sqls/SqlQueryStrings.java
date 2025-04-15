@@ -4,6 +4,8 @@ import models.entities.Project;
 import models.entities.User;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author 4ndr33w
@@ -101,5 +103,17 @@ public class SqlQueryStrings {
         } else {
             return "";
         }
+    }
+
+    public String findAllByIdsString(String tableName, List<String> ids) {
+
+        String sql = String.format("SELECT * FROM %s WHERE id IN (", tableName) +
+                ids.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
+
+        /*String sql = String.format("SELECT * FROM users WHERE id IN (", tableName) +
+                ids.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";*/
+
+        return sql;
+
     }
 }

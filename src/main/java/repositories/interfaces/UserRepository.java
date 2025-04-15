@@ -22,4 +22,6 @@ public interface UserRepository extends BaseRepository<User> {
     CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail);
     CompletableFuture<User> updatePasswordAsync(UUID userId, String newPassword);
 
+    CompletableFuture<List<User>> findAllByIdsAsync(List<UUID> userIds);
+
 }

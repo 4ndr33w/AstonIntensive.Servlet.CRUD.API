@@ -35,7 +35,7 @@ public class UsersController {
         }
     }
 
-    public UserDto addUser(User user) throws Exception {
+    public UserDto create(User user) throws Exception {
         if (user != null) {
             return UserMapper.toDto(userService.createAsync(user).get());
         }
@@ -44,7 +44,7 @@ public class UsersController {
         }
     }
 
-    public boolean deleteUser(UUID id) throws SQLException, ExecutionException, InterruptedException {
+    public boolean delete(UUID id) throws SQLException, ExecutionException, InterruptedException {
         if (id != null) {
             return userService.deleteByIdAsync(id).get();
         } else {

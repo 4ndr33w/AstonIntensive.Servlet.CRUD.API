@@ -3,12 +3,11 @@ package servlets;
 //import org.junit.jupiter.api.Test;
 import controllers.UsersController;
 import org.junit.Test;
-import org.mockito.Mockito;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.sql.SQLException;
 import java.util.UUID;
 //import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.Assert.assertTrue;
@@ -33,7 +32,7 @@ public class UsersServletTest {
         // Mock UsersController
         UsersController controller = new UsersController();// = mock(UsersController.class);
         controller = mock(UsersController.class);
-        when(controller.deleteUser(testUserId)).thenReturn(true);
+        when(controller.delete(testUserId)).thenReturn(true);
 
         // Создаем экземпляр сервлета с mock контроллером
         UsersServlet servlet = new UsersServlet() {
@@ -60,7 +59,7 @@ public class UsersServletTest {
         servlet.doDelete(request, response);
 
         // Assert
-        verify(controller).deleteUser(testUserId);
+        verify(controller).delete(testUserId);
         verify(response).setContentType("application/json");
         verify(response).setStatus(HttpServletResponse.SC_OK);
 

@@ -1,6 +1,5 @@
 package servlets;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.UsersController;
 import models.dtos.UserDto;
@@ -12,11 +11,9 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -97,7 +94,7 @@ public class UsersServlet extends HttpServlet {
 
             validateUser(user);
 
-            UserDto createdUser = controller.addUser(user);
+            UserDto createdUser = controller.create(user);
 
             resp.setStatus(HttpServletResponse.SC_CREATED);
             ObjectMapper objectMapper = new ObjectMapper();
@@ -146,7 +143,7 @@ public class UsersServlet extends HttpServlet {
         try {
             UUID userId = UUID.fromString(id);
 
-            boolean isDeleted = controller.deleteUser(userId);
+            boolean isDeleted = controller.delete(userId);
 
             // 4. Формируем ответ
             if (isDeleted) {
