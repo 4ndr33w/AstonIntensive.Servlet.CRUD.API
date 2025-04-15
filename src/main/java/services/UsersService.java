@@ -1,6 +1,7 @@
 package services;
 
 import models.dtos.ProjectDto;
+import models.entities.Project;
 import models.entities.User;
 import repositories.ProjectsRepositoryImplementation;
 import repositories.UsersRepositoryImplementation;
@@ -8,6 +9,7 @@ import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.UserService;
 import utils.StaticConstants;
+import utils.exceptions.UserNotFoundException;
 import utils.mappers.ProjectMapper;
 
 import java.sql.SQLException;
@@ -40,8 +42,8 @@ public class UsersService implements UserService {
                     return enrichUserWithProjects(user);
                 })
                 .exceptionally(ex -> {
-                    System.err.println("Error fetching user by id: " + ex.getMessage());
-                    return null;
+                    String message = String.format("$s,  id: %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, id);
+                    throw new UserNotFoundException(message, ex);
                 });
     }
 
@@ -49,13 +51,13 @@ public class UsersService implements UserService {
     public CompletableFuture<User> createAsync(User user) throws Exception {
         if (user == null) {
             return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("User cannot be null"));
+                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE));
         }
         CompletableFuture<User> userFuture = userRepository.createAsync(user);
 
         return userFuture
-                //.thenApplyAsync(UserMapper::toDto)
                 .exceptionally(ex -> {
+                    //String message = String.format("$s, %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, user.getEmail());
                     System.err.println("Error creating user: " + ex.getMessage());
 
                     throw new CompletionException(ex.getCause() != null ? ex.getCause() : ex);
@@ -82,26 +84,6 @@ public class UsersService implements UserService {
                     throw new CompletionException(ex);
                 });
     }
-
-    /*
-        public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException {
-        if (id == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE));
-        }
-
-        return projectRepository.deleteAsync(id)
-                .thenApply(deleted -> {
-                    return deleted;
-                })
-                .exceptionally(ex -> {
-                    if (ex.getCause() instanceof SQLException) {
-                        throw new CompletionException("Database error while deleting user", ex.getCause());
-                    } else {
-                        throw new CompletionException(ex);
-                    }});
-    }
-     */
 
     @Override
     public CompletableFuture<List<User>> getAllAsync() throws SQLException {
@@ -131,44 +113,68 @@ public class UsersService implements UserService {
                     List<CompletableFuture<ProjectDto>> projectFutures = projects.stream()
                             .map(project -> {
                                         try {
-                                            return projectsRepository.findByIdAsync(project.getId())
-                                                    .thenApply(fullProject -> {
-                                                        ProjectDto projectDto = ProjectMapper.toDto(fullProject);
+                                            /*ProjectDto projectDto = ProjectMapper.toDto(fullProject);
 
                                                         List<User> users = fullProject.getProjectUsers().stream()
                                                                 .map(u -> {
                                                                     try {
                                                                         return userRepository.findByIdAsync(u.getId())
-                                                                                //.thenApply(UserMapper::toDto)
                                                                                 .join();
                                                                     } catch (Exception e) {
                                                                         throw new CompletionException(e);
                                                                     }
                                                                 })
-                                                                .collect(Collectors.toList());
+                                                                .toList();
 
                                                         projectDto.setProjectUsersIds(users.stream().map(User::getId).collect(Collectors.toList()));
-                                                        return projectDto;
-                                                    });
+                                                        return projectDto;*/
+                                            return projectsRepository.findByIdAsync(project.getId())
+                                                    .thenApply(this::findProjects);
                                         } catch (SQLException e) {
                                             throw new RuntimeException(e);
                                         }
                                     }
                             )
-                            .collect(Collectors.toList());
+                            .toList();
 
-                    // Комбинируем все асинхронные операции с проектами
                     return CompletableFuture.allOf(projectFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(v -> {
-                                //User _user = user;
+                            .thenApply(v -> {/*
                                 user.setProjects(
                                         projectFutures.stream()
                                                 .map(CompletableFuture::join)
                                                 .collect(Collectors.toList())
                                 );
-                                return user;
+                                return user;*/
+                                return collectProjectsFromFutures(user, projectFutures);
                             });
                 });
+    }
+
+    private ProjectDto findProjects(Project fullProject) {
+        ProjectDto projectDto = ProjectMapper.toDto(fullProject);
+
+        List<User> users = fullProject.getProjectUsers().stream()
+                .map(u -> {
+                    try {
+                        return userRepository.findByIdAsync(u.getId())
+                                .join();
+                    } catch (Exception e) {
+                        throw new CompletionException(e);
+                    }
+                })
+                .toList();
+
+        projectDto.setProjectUsersIds(users.stream().map(User::getId).collect(Collectors.toList()));
+        return projectDto;
+    }
+
+    private User collectProjectsFromFutures(User user, List<CompletableFuture<ProjectDto>> projectFutures) {
+        user.setProjects(
+                projectFutures.stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toList())
+        );
+        return user;
     }
 
 
