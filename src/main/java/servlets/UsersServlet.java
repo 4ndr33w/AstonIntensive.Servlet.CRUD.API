@@ -61,28 +61,24 @@ public class UsersServlet extends HttpServlet {
             return;
 
         }
-        try {
-            UUID userId = UUID.fromString(id);
+        UUID userId = UUID.fromString(id);
 
-            UserDto userDto = controller.getUser(userId);
+        UserDto userDto = controller.getUser(userId);
 
-            if (userDto != null) {
+        if (userDto != null) {
 
-                ObjectMapper mapper = new ObjectMapper();
-                String jsonResponse = mapper.writeValueAsString(userDto);
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonResponse = mapper.writeValueAsString(userDto);
 
-                resp.setStatus(HttpServletResponse.SC_OK);
-                PrintWriter out = resp.getWriter();
-                out.print(jsonResponse);
-                out.flush();
+            resp.setStatus(HttpServletResponse.SC_OK);
+            PrintWriter out = resp.getWriter();
+            out.print(jsonResponse);
+            out.flush();
 
-            }
-            else {
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
-            }
-        } catch (SQLException | InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
+        }
+        else {
+            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
         }
     }
 
@@ -130,19 +126,20 @@ public class UsersServlet extends HttpServlet {
     }
 
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         String id = req.getParameter("id");
-        if (id == null) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
-            return;
-        }
+
         try {
+
+            if (id == null) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+                return;
+            }
             UUID userId = UUID.fromString(id);
 
             boolean isDeleted = controller.delete(userId);
@@ -155,16 +152,9 @@ public class UsersServlet extends HttpServlet {
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
             }
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IOException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
-        } catch (SQLException e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE));
-        } catch (ExecutionException | InterruptedException e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
-            Thread.currentThread().interrupt();
+            //resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
         }
     }
 }

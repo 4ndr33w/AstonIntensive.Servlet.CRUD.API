@@ -1,19 +1,17 @@
 package controllers;
 
-import models.dtos.ProjectDto;
 import models.dtos.UserDto;
 import models.entities.User;
 import services.UsersService;
 import services.interfaces.UserService;
 import utils.StaticConstants;
-import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Класс контроллера, предоставляющего методы для работы с пользователями
@@ -24,7 +22,7 @@ public class UsersController {
 
     public UserService userService;
 
-    public UsersController() throws SQLException {
+    public UsersController() {
         this.userService = new UsersService();
     }
 
@@ -36,13 +34,15 @@ public class UsersController {
      * или возвращает {@code List<UserDto>} из 0 элементов.
      * </p>
      * @return {@code List<ProjectDto>} или пустой список
-     * @throws SQLException
-     * @throws ExecutionException
-     * @throws InterruptedException
-     * @throws IllegalArgumentException
+     * @throws RuntimeException
      */
-    public List<UserDto> getAll() throws SQLException, ExecutionException, InterruptedException {
-        return userService.getAllAsync().get().stream().map(UserMapper::toDto).toList();
+    public List<UserDto> getAll() {
+        try {
+            return userService.getAllAsync().get().stream().map(UserMapper::toDto).toList();
+        }
+        catch (Exception ex) {
+            throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
+        }
     }
 
     /**
@@ -54,20 +54,18 @@ public class UsersController {
      * </p>
      * @param userId
      * @return {@code UserDto} или {@code null}
-     * @throws SQLException
-     * @throws ExecutionException
-     * @throws InterruptedException
+     * @throws NullPointerException
+     * @throws RuntimeException
      */
-    public UserDto getUser(UUID userId) throws SQLException, ExecutionException, InterruptedException {
-        if (userId != null) {
+    public UserDto getUser(UUID userId) {
+        Objects.requireNonNull(userId);
+
+        try {
             var result = userService.getByIdAsync(userId).get();
-            if (result!= null) {
-                return UserMapper.toDto(result);
-            }
-            return null;
+            return UserMapper.toDto(result);
         }
-        else {
-            throw new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        catch (Exception ex) {
+            throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
         }
     }
 
@@ -79,15 +77,17 @@ public class UsersController {
      * </p>
      * @param user
      * @return {@code UserDto}
-     * @throws Exception
-     * @throws IllegalArgumentException
+     * @throws NullPointerException
+     * @throws RuntimeException
      */
-    public UserDto create(User user) throws Exception {
-        if (user != null) {
+    public UserDto create(User user) {
+        Objects.requireNonNull(user);
+
+        try {
             return UserMapper.toDto(userService.createAsync(user).get());
         }
-        else {
-            throw new Exception(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        catch (Exception ex) {
+            throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
         }
     }
 
@@ -100,25 +100,16 @@ public class UsersController {
      * </p>
      * @param userId
      * @return {@code boolean}
-     * @throws SQLException
-     * @throws ExecutionException
-     * @throws InterruptedException
-     * @throws IllegalArgumentException
+     * @throws NullPointerException
+     * @throws RuntimeException
      */
-    public boolean delete(UUID userId) throws SQLException, ExecutionException, InterruptedException {
-        if (userId != null) {
+    public boolean delete(UUID userId) {
+        Objects.requireNonNull(userId);
+        try {
             return userService.deleteByIdAsync(userId).get();
-        } else {
-            throw new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        }
+        catch (Exception ex) {
+            throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
         }
     }
-    /*
-        public boolean delete(UUID id) throws SQLException, ExecutionException, InterruptedException {
-        if (id != null) {
-            return projectService.deleteByIdAsync(id).get();
-        } else {
-            throw new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-        }
-    }
-     */
 }

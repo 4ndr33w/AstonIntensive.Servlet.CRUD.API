@@ -16,8 +16,8 @@ public interface UserService extends BaseService<User> {
 
     //CompletableFuture<UserDto> createUserAsync(User user) throws Exception;
     CompletableFuture<User> getUserByEmailAsync(String email);
-    CompletableFuture<User> getUserByUserNameAsync(String username) throws Exception;
-    CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail) throws Exception;
-    CompletableFuture<User> updatePasswordAsync(UUID userId, String password) throws Exception;
-    CompletableFuture<List<User>> getAllAsync() throws SQLException;
+    CompletableFuture<User> getUserByUserNameAsync(String username);
+    CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail);
+    CompletableFuture<User> updatePasswordAsync(UUID userId, String password);
+    CompletableFuture<List<User>> getAllAsync();
 }

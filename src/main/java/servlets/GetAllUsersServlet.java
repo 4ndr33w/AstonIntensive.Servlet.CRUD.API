@@ -29,7 +29,7 @@ public class GetAllUsersServlet extends HttpServlet {
         controller = new UsersController();
     }
 
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)  throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
         try {
             resp.setContentType("application/json");
@@ -44,19 +44,8 @@ public class GetAllUsersServlet extends HttpServlet {
             out.print(jsonResponse);
             out.flush();
         }
-        catch (SQLException | ExecutionException | InterruptedException e) {
-            if(e instanceof SQLException) {
-                resp.sendError(500);
-            }
-            if(e instanceof InterruptedException) {
-                resp.sendError(400);
-            }
-            if(e instanceof ExecutionException) {
-                resp.sendError(404);
-            }
-            else {
-                resp.sendError(400);
-            }
+        catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

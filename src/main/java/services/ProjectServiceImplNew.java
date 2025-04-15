@@ -30,14 +30,14 @@ public class ProjectServiceImplNew implements ProjectService {
     private final UserRepository userRepository;
     private final ProjectUserRepository projectUserRepository;
 
-    public ProjectServiceImplNew() throws SQLException {
+    public ProjectServiceImplNew() {
         this.projectRepository = new ProjectsRepositoryImplementation();
         this.userRepository = new UsersRepositoryImplementation();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project project) throws Exception {
+    public CompletableFuture<Project> createAsync(Project project) {
         if (project == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("User cannot be null"));
@@ -52,7 +52,7 @@ public class ProjectServiceImplNew implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException {
+    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) {
         if (id == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE));
@@ -71,7 +71,7 @@ public class ProjectServiceImplNew implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> getByIdAsync(UUID id) throws SQLException {
+    public CompletableFuture<Project> getByIdAsync(UUID id) {
         return projectRepository.findByIdAsync(id)
                 .thenCompose(project -> {
                     if (project == null) {
@@ -96,7 +96,8 @@ public class ProjectServiceImplNew implements ProjectService {
                             .map(dto -> {
                                 try {
                                     return userRepository.findByIdAsync(dto.getUserId());
-                                } catch (SQLException e) {
+                                }
+                                catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
                             })
@@ -205,7 +206,7 @@ public class ProjectServiceImplNew implements ProjectService {
 
 
     @Override
-    public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException {
+    public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) {
         if (userId == null || projectId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE)
@@ -252,7 +253,7 @@ public class ProjectServiceImplNew implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException {
+    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) {
         if (userId == null || projectId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE)

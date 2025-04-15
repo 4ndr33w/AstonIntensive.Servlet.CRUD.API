@@ -10,6 +10,7 @@ import utils.mappers.ProjectMapper;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +24,7 @@ public class ProjectsController {
 
     private final ProjectService projectService;
 
-    public ProjectsController() throws SQLException {
+    public ProjectsController() {
 
         this.projectService = new ProjectServiceImplNew();
         //this.projectService = new ProjectsService();
@@ -38,17 +39,23 @@ public class ProjectsController {
      * </p>
      * @param userId
      * @return {@code List<ProjectDto>}
-     * @throws SQLException
+     * @throws NullPointerException
      * @throws ExecutionException
      * @throws InterruptedException
-     * @throws IllegalArgumentException
+     * @throws NoSuchElementException
+     * @throws RuntimeException
      */
-    public List<ProjectDto> getByUserId(UUID userId) throws SQLException, ExecutionException, InterruptedException {
-        if (userId != null) {
-            return projectService.getByUserIdAsync(userId).get().stream().map(ProjectMapper::toDto).toList();
+    public List<ProjectDto> getByUserId(UUID userId) {
+        Objects.requireNonNull(userId);
+
+        try {
+            var result = projectService.getByUserIdAsync(userId).get();
+            return result.stream().map(ProjectMapper::toDto).toList();
         }
-        else {
-            throw new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        catch (NoSuchElementException e) {
+            throw new NoSuchElementException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -61,18 +68,24 @@ public class ProjectsController {
      * </p>
      * @param adminId
      * @return {@code List<ProjectDto>} или пустой список
-     * @throws SQLException
+     * @throws NullPointerException
      * @throws ExecutionException
      * @throws InterruptedException
-     * @throws IllegalArgumentException
+     * @throws NoSuchElementException
+     * @throws RuntimeException
      */
-    public List<ProjectDto> getByAdminId(UUID adminId) throws SQLException, ExecutionException, InterruptedException {
-        if (adminId != null) {
+    public List<ProjectDto> getByAdminId(UUID adminId){
+        Objects.requireNonNull(adminId);
+
+        try {
             return projectService.getByAdminIdAsync(adminId).get().stream().map(ProjectMapper::toDto).toList();
         }
-        else {
-            throw new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        catch (NoSuchElementException e) {
+            throw new NoSuchElementException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
+
     }
 
     /**
@@ -84,21 +97,23 @@ public class ProjectsController {
      * </p>
      * @param projectId
      * @return {@code ProjectDto} или {@code null}
-     * @throws SQLException
+     * @throws NullPointerException
      * @throws ExecutionException
      * @throws InterruptedException
-     * @throws IllegalArgumentException
+     * @throws NoSuchElementException
+     * @throws RuntimeException
      */
-    public ProjectDto getProject(UUID projectId) throws SQLException, ExecutionException, InterruptedException {
-        if (projectId != null) {
+    public ProjectDto getProject(UUID projectId) {
+        Objects.requireNonNull(projectId);
+
+        try {
             var result = projectService.getByIdAsync(projectId).get();
-            if (result!= null) {
-                return ProjectMapper.toDto(result);
-            }
-            return null;
+            return ProjectMapper.toDto(result);
         }
-        else {
-            throw new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        catch (NoSuchElementException e) {
+            throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -110,14 +125,21 @@ public class ProjectsController {
      * </p>
      * @param project
      * @return {@code ProjectDto}
-     * @throws Exception
-     * @throws IllegalArgumentException
+     * @throws NullPointerException
+     * @throws NoSuchElementException
+     * @throws InterruptedException
+     * @throws RuntimeException
      */
-    public ProjectDto create(Project project) throws Exception {
-        if (project != null) {
+    public ProjectDto create(Project project) {
+        Objects.requireNonNull(project);
+
+        try {
             return ProjectMapper.toDto(projectService.createAsync(project).get());
-        } else {
-            throw new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        }
+        catch (NoSuchElementException e) {
+            throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -133,23 +155,22 @@ public class ProjectsController {
      * @throws SQLException
      * @throws ExecutionException
      * @throws InterruptedException
-     * @throws IllegalArgumentException
+     * @throws NoSuchElementException
+     * @throws RuntimeException
      */
-    public boolean delete(UUID projectId) throws SQLException, ExecutionException, InterruptedException {
-        if (projectId != null) {
+    public boolean delete(UUID projectId) {
+        Objects.requireNonNull(projectId);
+
+        try {
             return projectService.deleteByIdAsync(projectId).get();
-        } else {
-            throw new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        }
+        catch (NoSuchElementException e) {
+            throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    /*public ProjectDto addUserToProject(UUID userId, UUID projectId) throws SQLException, ExecutionException, InterruptedException {
-        if (userId != null && projectId != null) {
-            return ProjectMapper.toDto(projectService.addUserToProjectAsync(userId, projectId).get());
-        } else {
-            throw new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-        }
-    }*/
     public ProjectDto addUserToProject(UUID userId, UUID projectId) {
         try {
             CompletableFuture<Project> future = projectService.addUserToProjectAsync(userId, projectId);
@@ -160,7 +181,7 @@ public class ProjectsController {
             throw new RuntimeException("Operation was interrupted", e);
         } catch (ExecutionException e) {
             throw convertExecutionException(e.getCause());
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -175,7 +196,7 @@ public class ProjectsController {
             throw new RuntimeException("Operation was interrupted", e);
         } catch (ExecutionException e) {
             throw convertExecutionException(e.getCause());
-        } catch (SQLException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -195,10 +216,4 @@ public class ProjectsController {
             return new RuntimeException(message);
         }
     }
-
-    /*
-     public List<UserDto> getAll() throws SQLException, ExecutionException, InterruptedException {
-        return userService.getAllAsync().get().stream().map(UserMapper::toDto).toList();
-    }
-     */
 }

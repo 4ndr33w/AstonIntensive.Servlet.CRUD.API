@@ -37,7 +37,7 @@ public class GetProjectByUserIdServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)  throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
         try {
             resp.setContentType("application/json");
@@ -78,19 +78,8 @@ public class GetProjectByUserIdServlet extends HttpServlet {
                 out.flush();
             }
         }
-        catch (SQLException | ExecutionException | InterruptedException e) {
-            if(e instanceof SQLException) {
-                resp.sendError(500);
-            }
-            if(e instanceof InterruptedException) {
-                resp.sendError(400);
-            }
-            if(e instanceof ExecutionException) {
-                resp.sendError(404);
-            }
-            else {
-                resp.sendError(400);
-            }
+        catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

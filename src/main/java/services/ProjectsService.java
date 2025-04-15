@@ -22,7 +22,7 @@ public class ProjectsService implements ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
 
-    public ProjectsService() throws SQLException {
+    public ProjectsService() {
         this.projectRepository = new ProjectsRepositoryImplementation();
         this.userRepository = new UsersRepositoryImplementation();
     }
@@ -105,7 +105,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) throws SQLException {
+    public CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) {
         // 1. Валидация входного параметра
         if (adminId == null) {
             return CompletableFuture.failedFuture(
@@ -140,7 +140,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project project) throws Exception {
+    public CompletableFuture<Project> createAsync(Project project) {
         if (project == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("User cannot be null"));
@@ -156,7 +156,7 @@ public class ProjectsService implements ProjectService {
 
 
     @Override
-    public CompletableFuture<Project> getByIdAsync(UUID id) throws SQLException {
+    public CompletableFuture<Project> getByIdAsync(UUID id) {
         return projectRepository.findByIdAsync(id)
                 .thenCompose(project -> {
                     if (project == null) {
@@ -170,7 +170,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException {
+    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) {
         if (id == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("User ID cannot be null"));

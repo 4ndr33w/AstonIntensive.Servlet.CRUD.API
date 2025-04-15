@@ -52,7 +52,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project project) throws SQLException {
+    public CompletableFuture<Project> createAsync(Project project) {
 
         return CompletableFuture.supplyAsync(() -> {
             if (project == null) {
@@ -153,7 +153,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException {
+    public CompletableFuture<Boolean> deleteAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
             if (id == null) {
                 return false;
@@ -235,12 +235,12 @@ public class ProjectRepositoryNew implements ProjectRepository {
 
 
     @Override
-    public CompletableFuture<List<Project>> findAllAsync() throws SQLException {
+    public CompletableFuture<List<Project>> findAllAsync() {
         return null;
     }
 
     @Override
-    public CompletableFuture<Project> updateAsync(Project item) throws SQLException {
+    public CompletableFuture<Project> updateAsync(Project item) {
         return null;
     }
 }

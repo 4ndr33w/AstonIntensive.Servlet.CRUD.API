@@ -3,6 +3,7 @@ package services;
 import models.dtos.ProjectDto;
 import models.entities.Project;
 import models.entities.User;
+import org.slf4j.Logger;
 import repositories.ProjectsRepositoryImplementation;
 import repositories.UsersRepositoryImplementation;
 import repositories.interfaces.ProjectRepository;
@@ -26,14 +27,16 @@ public class UsersService implements UserService {
 
     private final UserRepository userRepository;
     private final ProjectRepository projectsRepository;
+    private final Logger logger;
 
-    public UsersService() throws SQLException {
+    public UsersService() {
         this.userRepository = new UsersRepositoryImplementation();
         this.projectsRepository = new ProjectsRepositoryImplementation();
+        logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
     }
 
     @Override
-    public CompletableFuture<User> getByIdAsync(UUID id) throws SQLException {
+    public CompletableFuture<User> getByIdAsync(UUID id) {
         return userRepository.findByIdAsync(id)
                 .thenCompose(user -> {
                     if (user == null) {
@@ -42,37 +45,30 @@ public class UsersService implements UserService {
                     return enrichUserWithProjects(user);
                 })
                 .exceptionally(ex -> {
-                    String message = String.format("$s,  id: %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, id);
+                    String message = String.format("$s,  id: %s\ncause: %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, id, ex.getCause().getMessage());
+                    logger.error(message);
                     throw new UserNotFoundException(message, ex);
                 });
     }
 
     @Override
-    public CompletableFuture<User> createAsync(User user) throws Exception {
-        if (user == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE));
-        }
-        CompletableFuture<User> userFuture = userRepository.createAsync(user);
+    public CompletableFuture<User> createAsync(User user) {
+        Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        return userFuture
+        return userRepository.createAsync(user)
                 .exceptionally(ex -> {
-                    //String message = String.format("$s, %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, user.getEmail());
-                    System.err.println("Error creating user: " + ex.getMessage());
-
-                    throw new CompletionException(ex.getCause() != null ? ex.getCause() : ex);
+                    String message = String.format("%s, userId: %s",
+                            StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE,
+                            user.getId());
+                    logger.error(message, ex);
+                    throw new CompletionException(message, ex);
                 });
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException {
-        // Проверка входного параметра
-        if (id == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE));
-        }
+    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) {
+        Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        // Вызов метода репозитория для удаления
         return userRepository.deleteAsync(id)
                 .thenApply(deleted -> {
                     return deleted;
@@ -86,7 +82,7 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<List<User>> getAllAsync() throws SQLException {
+    public CompletableFuture<List<User>> getAllAsync() {
 
 
         return userRepository.findAllAsync()
@@ -94,7 +90,7 @@ public class UsersService implements UserService {
 
                     List<CompletableFuture<User>> userFutures = users.stream()
                             .map(this::enrichUserWithProjects)
-                            .collect(Collectors.toList());
+                            .toList();
 
                     return CompletableFuture.allOf(userFutures.toArray(new CompletableFuture[0]))
                             .thenApply(v -> userFutures.stream()
@@ -113,24 +109,10 @@ public class UsersService implements UserService {
                     List<CompletableFuture<ProjectDto>> projectFutures = projects.stream()
                             .map(project -> {
                                         try {
-                                            /*ProjectDto projectDto = ProjectMapper.toDto(fullProject);
-
-                                                        List<User> users = fullProject.getProjectUsers().stream()
-                                                                .map(u -> {
-                                                                    try {
-                                                                        return userRepository.findByIdAsync(u.getId())
-                                                                                .join();
-                                                                    } catch (Exception e) {
-                                                                        throw new CompletionException(e);
-                                                                    }
-                                                                })
-                                                                .toList();
-
-                                                        projectDto.setProjectUsersIds(users.stream().map(User::getId).collect(Collectors.toList()));
-                                                        return projectDto;*/
                                             return projectsRepository.findByIdAsync(project.getId())
                                                     .thenApply(this::findProjects);
-                                        } catch (SQLException e) {
+                                        }
+                                        catch (Exception e) {
                                             throw new RuntimeException(e);
                                         }
                                     }
@@ -138,15 +120,7 @@ public class UsersService implements UserService {
                             .toList();
 
                     return CompletableFuture.allOf(projectFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(v -> {/*
-                                user.setProjects(
-                                        projectFutures.stream()
-                                                .map(CompletableFuture::join)
-                                                .collect(Collectors.toList())
-                                );
-                                return user;*/
-                                return collectProjectsFromFutures(user, projectFutures);
-                            });
+                            .thenApply(v -> collectProjectsFromFutures(user, projectFutures));
                 });
     }
 
@@ -191,17 +165,17 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<User> getUserByUserNameAsync(String username) throws Exception {
+    public CompletableFuture<User> getUserByUserNameAsync(String username){
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail) throws Exception {
+    public CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail) {
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<User> updatePasswordAsync(UUID userId, String password) throws Exception {
+    public CompletableFuture<User> updatePasswordAsync(UUID userId, String password) {
         return CompletableFuture.completedFuture(null);
     }
 }

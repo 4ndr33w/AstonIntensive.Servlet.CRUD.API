@@ -87,7 +87,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Project> findByIdAsync(UUID id)  throws SQLException {
+    public CompletableFuture<Project> findByIdAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
             if (id == null) {
                 return null;
@@ -149,7 +149,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project project) throws SQLException {
+    public CompletableFuture<Project> createAsync(Project project) {
 
         return CompletableFuture.supplyAsync(() -> {
             if (project == null) {
@@ -182,7 +182,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException {
+    public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) {
         if (userId == null || projectId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Parameters cannot be null"));
@@ -291,7 +291,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException {
+    public CompletableFuture<Boolean> deleteAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
             if (id == null) {
                 return false;
@@ -311,7 +311,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException {
+    public CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, UUID projectId) {
         if (userId == null || projectId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Parameters cannot be null"));
@@ -370,7 +370,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
 
     // ToDo: реализовать методы
     @Override
-    public CompletableFuture<List<Project>> findAllAsync() throws SQLException {
+    public CompletableFuture<List<Project>> findAllAsync() {
         return null;
     }
 

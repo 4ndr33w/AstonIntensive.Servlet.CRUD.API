@@ -13,9 +13,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ProjectService extends BaseService<Project>{
 
-    CompletableFuture<List<Project>> getByUserIdAsync(UUID userId) throws SQLException;
-    CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) throws SQLException;
+    CompletableFuture<List<Project>> getByUserIdAsync(UUID userId);
+    CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId);
 
-    CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException;
-    CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException;
+    CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId);
+    CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId);
 }

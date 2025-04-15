@@ -38,7 +38,7 @@ public class ProjectsServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -49,20 +49,21 @@ public class ProjectsServlet extends HttpServlet {
         // если быть точнее, то /{id} воспринимался как несуществующий endpoint
         // поэтому пришлось использовать параметр запроса
         String id = req.getParameter("id");
-        if (id == null) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
-            return;
-        }
 
-        boolean idValidation = utils.validateId(id);
-        if (!idValidation) {
-
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
-            return;
-        }
         try {
+            if (id == null) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+                return;
+            }
+
+            boolean idValidation = utils.validateId(id);
+            if (!idValidation) {
+
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+                return;
+            }
             UUID projectId = UUID.fromString(id);
 
             ProjectDto project = controller.getProject(projectId);
@@ -81,13 +82,13 @@ public class ProjectsServlet extends HttpServlet {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE));
             }
-        } catch (SQLException | InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -102,37 +103,38 @@ public class ProjectsServlet extends HttpServlet {
 
         } catch (IllegalArgumentException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
+            //resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
+            //resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
             e.printStackTrace();
         }
     }
 
-    private Project parseProjectFromRequest(HttpServletRequest req) throws IOException {
+    private Project parseProjectFromRequest(HttpServletRequest req) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.readValue(req.getInputStream(), Project.class);
         } catch (IOException e) {
-            throw new InvalidPropertiesFormatException(e);
+            throw new RuntimeException(e);
         }
     }
 
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         String id = req.getParameter("id");
-        if (id == null) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
-            return;
-        }
+
         try {
+
+            if (id == null) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+                return;
+            }
             UUID projectId = UUID.fromString(id);
 
             boolean isDeleted = controller.delete(projectId);
@@ -145,16 +147,10 @@ public class ProjectsServlet extends HttpServlet {
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE));
             }
 
-        } catch (IllegalArgumentException e) {
+        } catch (java.io.IOException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
-        } catch (SQLException e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE));
-        } catch (ExecutionException | InterruptedException e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
-            Thread.currentThread().interrupt();
+            //throw new IllegalArgumentException(e);
+            //resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
         }
     }
 }
