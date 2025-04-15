@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.UsersController;
 import models.dtos.UserDto;
 import models.entities.User;
+import utils.Utils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -28,10 +29,12 @@ public class UsersServlet extends HttpServlet {
 
     private final UsersController controller;
     private ObjectMapper objectMapper = new ObjectMapper();
+    private Utils utils;
 
     public UsersServlet() throws SQLException {
         super();
         controller = new UsersController();
+        utils = new Utils();
     }
 
     @Override
@@ -52,7 +55,7 @@ public class UsersServlet extends HttpServlet {
             return;
         }
 
-        boolean idValidation = validateId(id);
+        boolean idValidation = utils.validateId(id);
         if(!idValidation) {
 
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -124,18 +127,6 @@ public class UsersServlet extends HttpServlet {
         }
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
             throw new IllegalArgumentException("Password is required");
-        }
-    }
-
-    private boolean validateId(String id) throws IllegalArgumentException {
-        if (id == null || id.trim().isEmpty()) {
-            return false;
-        }
-        try {
-            UUID.fromString(id);
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
         }
     }
 

@@ -4,6 +4,7 @@ import models.entities.Project;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -12,9 +13,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ProjectService extends BaseService<Project>{
 
-    CompletableFuture<List<Project>> getByUserIdAsync() throws SQLException;
-    CompletableFuture<List<Project>> getByAdminIdAsync() throws SQLException;
+    CompletableFuture<List<Project>> getByUserIdAsync(UUID userId) throws SQLException;
+    CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) throws SQLException;
 
-    CompletableFuture<Project> addUserToProjectAsync();
-    CompletableFuture<Project> removeUserFromProjectAsync();
+    CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException;
+    CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId);
 }
