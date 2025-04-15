@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * Утильный класс для возврата SQL-запросов при указанных параметрах.
+ *
  * @author 4ndr33w
  * @version 1.0
  */
@@ -97,6 +99,19 @@ public class SqlQueryStrings {
                 projectsTable, projectUsersTable, userId);
         return query;
     }
+
+    /**
+     * SQL-запрос на удаление из таблицы {@code tableName}
+     * с заданными идентификаторами {@code projectId} и {@code userId}.
+     * <p>
+     *     Для операции удаления пользователя из участников проекта
+     * </p>
+     *
+     * @param tableName
+     * @param projectId
+     * @param userId
+     * @return {@code String}
+     */
     public String removeUserFromProjectString(String tableName, String projectId, String userId) {
         if (projectId != null && userId != null) {
             return String.format("DELETE FROM %s WHERE project_id = '%s' AND user_id = '%s';", tableName, projectId, userId);
@@ -105,14 +120,18 @@ public class SqlQueryStrings {
         }
     }
 
+    /**
+     * SQL-запрос на поиск в таблице {@code tableName} всех записей
+     * с заданными идентификаторами {@code List<String> ids}.
+     *
+     * @param tableName
+     * @param ids
+     * @return {@code String}
+     */
     public String findAllByIdsString(String tableName, List<String> ids) {
 
         String sql = String.format("SELECT * FROM %s WHERE id IN (", tableName) +
                 ids.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
-
-        /*String sql = String.format("SELECT * FROM users WHERE id IN (", tableName) +
-                ids.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";*/
-
         return sql;
 
     }

@@ -11,6 +11,7 @@ import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.ProjectService;
+import utils.StaticConstants;
 import utils.mappers.UserMapper;
 
 import java.sql.SQLException;
@@ -54,15 +55,12 @@ public class ProjectServiceImplNew implements ProjectService {
     public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException {
         if (id == null) {
             return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("User ID cannot be null"));
+                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE));
         }
 
         return projectRepository.deleteAsync(id)
                 .thenApply(deleted -> {
-                    if (!deleted) {
-                        throw new NoSuchElementException("User with id " + id + " not found");
-                    }
-                    return true;
+                    return deleted;
                 })
                 .exceptionally(ex -> {
                     if (ex.getCause() instanceof SQLException) {
@@ -208,12 +206,89 @@ public class ProjectServiceImplNew implements ProjectService {
 
     @Override
     public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException {
-        return null;
+        if (userId == null || projectId == null) {
+            return CompletableFuture.failedFuture(
+                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE)
+            );
+        }
+        return projectRepository.findByIdAsync(projectId)
+                .thenCompose(project -> {
+                    if (project == null) {
+                        return CompletableFuture.failedFuture(
+
+                                new NoSuchElementException(String.format("$s: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, projectId))
+                        );
+                    }
+
+                    if (userId.equals(project.getAdminId())) {
+                        return CompletableFuture.failedFuture(
+                                new IllegalArgumentException(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE)
+                        );
+                    }
+
+                    // Добавляем пользователя в проект через репозиторий
+                    return projectUserRepository.addUserToProject(userId, projectId)
+                            .thenApply(success -> {
+                                if (!success) {
+                                    throw new CompletionException(
+                                            new SQLException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE)
+                                    );
+                                }
+                                Set<UserDto> updatedUsers = new HashSet<>(project.getProjectUsers());
+                                //-----------------------------------------
+                                // Так как в данном случае позже в ProjectDto
+                                // у нас List<UserDto> будет урезан до
+                                // List<UUID> userIds, то в данной ситуации
+                                // считаю это допустимым решением
+                                UserDto newUserDto = new UserDto();
+                                newUserDto.setId(userId);
+                                //-----------------------------------------
+                                updatedUsers.add(newUserDto);
+                                project.setProjectUsers(updatedUsers.stream().toList());
+
+                                return project;
+                            });
+                });
     }
 
     @Override
-    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) {
-        return null;
+    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException {
+        if (userId == null || projectId == null) {
+            return CompletableFuture.failedFuture(
+                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE)
+            );
+        }
+
+        return projectRepository.findByIdAsync(projectId)
+                .thenCompose(project -> {
+                    if (project == null) {
+                        return CompletableFuture.failedFuture(
+                                new NoSuchElementException("Project not found with ID: " + projectId)
+                        );
+                    }
+
+                    if (userId.equals(project.getAdminId())) {
+                        return CompletableFuture.failedFuture(
+                                new IllegalArgumentException(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE)
+                        );
+                    }
+
+                    return projectUserRepository.deleteUserFromProject(userId, projectId)
+                            .thenApply(success -> {
+                                if (!success) {
+                                    throw new CompletionException(
+                                            new SQLException("Failed to remove user from project in database")
+                                    );
+                                }
+
+                                List<UserDto> updatedUsers = new ArrayList<>(project.getProjectUsers());
+                                var user = updatedUsers.stream().filter(userDto -> userDto.getId().equals(userId)).findFirst();
+                                updatedUsers.remove(user);
+                                project.setProjectUsers(updatedUsers);
+
+                                return project;
+                            });
+                });
     }
 
 

@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 /**
+ * Утильный класс для маппинга {@code ResultSet} в {@code ProjectUsersDto}.
+ *
  * @author 4ndr33w
  * @version 1.0
  */

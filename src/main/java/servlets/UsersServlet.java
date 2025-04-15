@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.UsersController;
 import models.dtos.UserDto;
 import models.entities.User;
+import utils.StaticConstants;
 import utils.Utils;
 
 import javax.servlet.ServletException;
@@ -48,7 +49,7 @@ public class UsersServlet extends HttpServlet {
         String id = req.getParameter("id");
         if (id == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"Требуется указать Id\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
             return;
         }
 
@@ -56,7 +57,7 @@ public class UsersServlet extends HttpServlet {
         if(!idValidation) {
 
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"Неверный формат Id\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
             return;
 
         }
@@ -75,9 +76,10 @@ public class UsersServlet extends HttpServlet {
                 out.print(jsonResponse);
                 out.flush();
 
-            } else {
+            }
+            else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write("{\"error\":\"Пользователь не найден\"}");
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
             }
         } catch (SQLException | InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
@@ -105,7 +107,7 @@ public class UsersServlet extends HttpServlet {
             resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write("{\"error\":\"Internal server error\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
             e.printStackTrace();
         }
     }
@@ -137,7 +139,7 @@ public class UsersServlet extends HttpServlet {
         String id = req.getParameter("id");
         if (id == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"User ID must be provided in URL\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
             return;
         }
         try {
@@ -145,25 +147,24 @@ public class UsersServlet extends HttpServlet {
 
             boolean isDeleted = controller.delete(userId);
 
-            // 4. Формируем ответ
             if (isDeleted) {
                 resp.setStatus(HttpServletResponse.SC_OK);
-                resp.getWriter().write("{\"message\":\"User deleted successfully\"}");
+                resp.getWriter().write(String.format("{\"message\":\"%s\"}", StaticConstants.REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE));
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write("{\"error\":\"User not found\"}");
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
             }
 
         } catch (IllegalArgumentException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"Invalid user ID format\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
         } catch (SQLException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write("{\"error\":\"Database error: " + e.getMessage() + "\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE));
         } catch (ExecutionException | InterruptedException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write("{\"error\":\"Operation failed\"}");
-            Thread.currentThread().interrupt(); // Восстанавливаем флаг прерывания
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
+            Thread.currentThread().interrupt();
         }
     }
 }

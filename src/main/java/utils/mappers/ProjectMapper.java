@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * Утильный класс для маппинга проектов
+ *
  * @author 4ndr33w
  * @version 1.0
  */

@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * Утильный класс для маппинга пользователей
+ *
  * @author 4ndr33w
  * @version 1.0
  */
@@ -31,10 +33,6 @@ public class UserMapper {
         userDto.setUserRole(user.getUserRole());
         userDto.setCreatedAt(user.getCreatedAt());
 
-        /*List<UUID> projectIds = new ArrayList<>();
-        if(user.getProjects() != null) {
-            user.getProjects().forEach(project -> {projectIds.add(project.getId());});
-        }*/
         if(user.getProjects() != null) {
             userDto.setProjects(user.getProjects());
         }

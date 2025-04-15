@@ -19,18 +19,30 @@ import static org.junit.Assert.assertNotNull;
 public class ProjectsControllerTest {
 
     ProjectsController controller;
-/*
+
+    /*
+        @Test
+        public void testProjectsController() throws SQLException, ExecutionException, InterruptedException {
+            Project testProject = Utils.testProject1;
+
+            var id = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa6");
+            controller = new ProjectsController();
+
+            var result = controller.getByUserId(id);
+            var result2 =new ArrayList<>(result);
+            var test = (ProjectDto)result2.toArray()[0];
+
+            assertNotNull(test );
+        }*/
     @Test
-    public void testProjectsController() throws SQLException, ExecutionException, InterruptedException {
-        Project testProject = Utils.testProject1;
+    public void getByAdminIdTest() throws SQLException, ExecutionException, InterruptedException {
+        ProjectsController projectController = new ProjectsController();
+        UUID userId = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa0");
+        var result = projectController.getByAdminId(userId);
 
-        var id = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa6");
-        controller = new ProjectsController();
+        var reslt = result;
 
-        var result = controller.getByUserId(id);
-        var result2 =new ArrayList<>(result);
-        var test = (ProjectDto)result2.toArray()[0];
+        assertNotNull(reslt);
+    }
 
-        assertNotNull(test );
-    }*/
 }

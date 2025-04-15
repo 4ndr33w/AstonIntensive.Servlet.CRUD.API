@@ -3,10 +3,8 @@ package servlets;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.ProjectsController;
 import models.dtos.ProjectDto;
-import models.dtos.UserDto;
 import models.entities.Project;
-import models.entities.User;
-import models.enums.ProjectStatus;
+import utils.StaticConstants;
 import utils.Utils;
 
 import javax.servlet.ServletException;
@@ -18,7 +16,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.InvalidPropertiesFormatException;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
@@ -54,7 +51,7 @@ public class ProjectsServlet extends HttpServlet {
         String id = req.getParameter("id");
         if (id == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"Требуется указать Id\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
             return;
         }
 
@@ -62,18 +59,18 @@ public class ProjectsServlet extends HttpServlet {
         if (!idValidation) {
 
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"Неверный формат Id\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
             return;
         }
         try {
-            UUID userId = UUID.fromString(id);
+            UUID projectId = UUID.fromString(id);
 
-            ProjectDto projects = controller.getByProjectId(userId);
+            ProjectDto project = controller.getProject(projectId);
 
-            if (projects != null) {
+            if (project != null) {
 
                 ObjectMapper mapper = new ObjectMapper();
-                String jsonResponse = mapper.writeValueAsString(projects);
+                String jsonResponse = mapper.writeValueAsString(project);
 
                 resp.setStatus(HttpServletResponse.SC_OK);
                 PrintWriter out = resp.getWriter();
@@ -82,7 +79,7 @@ public class ProjectsServlet extends HttpServlet {
 
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write("{\"error\":\"Пользователь не найден\"}");
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE));
             }
         } catch (SQLException | InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
@@ -108,7 +105,7 @@ public class ProjectsServlet extends HttpServlet {
             resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write("{\"error\":\"Internal server error\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
             e.printStackTrace();
         }
     }
@@ -132,7 +129,7 @@ public class ProjectsServlet extends HttpServlet {
         String id = req.getParameter("id");
         if (id == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"User ID must be provided in URL\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
             return;
         }
         try {
@@ -140,26 +137,24 @@ public class ProjectsServlet extends HttpServlet {
 
             boolean isDeleted = controller.delete(projectId);
 
-            // 4. Формируем ответ
             if (isDeleted) {
                 resp.setStatus(HttpServletResponse.SC_OK);
-                resp.getWriter().write("{\"message\":\"project deleted successfully\"}");
+                resp.getWriter().write(String.format("{\"message\":\"%s\"}", StaticConstants.REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE));
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write("{\"error\":\"project not found\"}");
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE));
             }
 
         } catch (IllegalArgumentException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"Invalid user ID format\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
         } catch (SQLException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write("{\"error\":\"Database error: " + e.getMessage() + "\"}");
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE));
         } catch (ExecutionException | InterruptedException e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().write("{\"error\":\"Operation failed\"}");
-            Thread.currentThread().interrupt(); // Восстанавливаем флаг прерывания
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
+            Thread.currentThread().interrupt();
         }
     }
-
 }

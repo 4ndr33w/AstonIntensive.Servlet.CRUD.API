@@ -3,6 +3,7 @@ package servlets;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.ProjectsController;
 import models.dtos.ProjectDto;
+import utils.StaticConstants;
 import utils.Utils;
 
 import javax.servlet.ServletException;
@@ -25,13 +26,13 @@ import java.util.concurrent.ExecutionException;
 public class GetProjectsByAdminIdServlet extends HttpServlet {
 
     //private final Project
-    private final ProjectsController controller;// = new ProjectsController();
+    private final ProjectsController projectController;// = new ProjectsController();
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Utils utils;
 
     public GetProjectsByAdminIdServlet () throws SQLException {
         super();
-        this.controller = new ProjectsController();
+        this.projectController = new ProjectsController();
         this.utils = new Utils();
     }
 
@@ -50,27 +51,33 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
             String id = req.getParameter("id");
             if (id == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write("{\"error\":\"Требуется указать Id\"}");
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
                 return;
             }
             boolean idValidation = utils.validateId(id);
             if(!idValidation) {
 
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write("{\"error\":\"Неверный формат Id\"}");
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
                 return;
 
             }
 
-            List<ProjectDto> projects = controller.getByAdminId(UUID.fromString(id));
+            List<ProjectDto> projects = projectController.getByAdminId(UUID.fromString(id));
 
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonResponse = mapper.writeValueAsString(projects);
+            if(projects == null || projects.size() == 0) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
+            }
+            else {
+                ObjectMapper mapper = new ObjectMapper();
+                String jsonResponse = mapper.writeValueAsString(projects);
 
 
-            PrintWriter out = resp.getWriter();
-            out.print(jsonResponse);
-            out.flush();
+                PrintWriter out = resp.getWriter();
+                out.print(jsonResponse);
+                out.flush();
+            }
         }
         catch (SQLException | ExecutionException | InterruptedException e) {
             if(e instanceof SQLException) {

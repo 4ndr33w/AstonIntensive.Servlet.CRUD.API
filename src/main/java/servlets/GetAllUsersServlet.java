@@ -40,7 +40,6 @@ public class GetAllUsersServlet extends HttpServlet {
             ObjectMapper mapper = new ObjectMapper();
             String jsonResponse = mapper.writeValueAsString(users);
 
-
             PrintWriter out = resp.getWriter();
             out.print(jsonResponse);
             out.flush();

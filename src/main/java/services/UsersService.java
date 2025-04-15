@@ -7,6 +7,7 @@ import repositories.UsersRepositoryImplementation;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.UserService;
+import utils.StaticConstants;
 import utils.mappers.ProjectMapper;
 
 import java.sql.SQLException;
@@ -66,24 +67,41 @@ public class UsersService implements UserService {
         // Проверка входного параметра
         if (id == null) {
             return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("User ID cannot be null"));
+                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE));
         }
 
         // Вызов метода репозитория для удаления
         return userRepository.deleteAsync(id)
                 .thenApply(deleted -> {
-                    if (!deleted) {
-                        throw new NoSuchElementException("User with id " + id + " not found");
-                    }
-                    return true;
+                    return deleted;
                 })
                 .exceptionally(ex -> {
                     if (ex.getCause() instanceof SQLException) {
-                        throw new CompletionException("Database error while deleting user", ex.getCause());
+                        throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, ex.getCause());
                     }
                     throw new CompletionException(ex);
                 });
     }
+
+    /*
+        public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException {
+        if (id == null) {
+            return CompletableFuture.failedFuture(
+                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE));
+        }
+
+        return projectRepository.deleteAsync(id)
+                .thenApply(deleted -> {
+                    return deleted;
+                })
+                .exceptionally(ex -> {
+                    if (ex.getCause() instanceof SQLException) {
+                        throw new CompletionException("Database error while deleting user", ex.getCause());
+                    } else {
+                        throw new CompletionException(ex);
+                    }});
+    }
+     */
 
     @Override
     public CompletableFuture<List<User>> getAllAsync() throws SQLException {
