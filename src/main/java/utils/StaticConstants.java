@@ -36,4 +36,5 @@ public class StaticConstants {
     public static final String STATIC_TEST_STRING = PropertiesConfiguration.getConstants().getProperty("STATIC_TEST_STRING");
     public static final String REQUEST_VALIDATION_ERROR_MESSAGE = PropertiesConfiguration.getConstants().getProperty("REQUEST_VALIDATION_ERROR_MESSAGE");
     public static final String ILLEGAL_ARGUMENT_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("ILLEGAL_ARGUMENT_EXCEPTION_MESSAGE");
+    public static final String FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE");
 }

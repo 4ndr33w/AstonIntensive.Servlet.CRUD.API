@@ -54,7 +54,6 @@ public class ProjectsService implements ProjectService {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("User ID cannot be null"));
         }
-
         return projectRepository.findByUserIdAsync(userId)
                 .thenApply(projects -> {
                     if (projects == null) {
@@ -70,13 +69,8 @@ public class ProjectsService implements ProjectService {
 
     @Override
     public CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) {
-        // 1. Валидация входного параметра
-        if (adminId == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("User ID cannot be null"));
-        }
+        Objects.requireNonNull(adminId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        // 2. Асинхронный запрос к репозиторию
         return projectRepository.findByAdminIdAsync(adminId)
                 .thenApply(projects -> {
                     if (projects == null) {
@@ -86,7 +80,7 @@ public class ProjectsService implements ProjectService {
                 })
                 .exceptionally(ex -> {
                     System.out.println(String.format("Failed to load user projects for user ID: %s", adminId));
-                    return Collections.emptyList(); // Или можно пробросить исключение дальше
+                    return Collections.emptyList();
                 });
     }
 
@@ -140,11 +134,8 @@ public class ProjectsService implements ProjectService {
 
     @Override
     public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) {
-        if (userId == null || projectId == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE)
-            );
-        }
+        Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.findByIdAsync(projectId)
                 .thenCompose(project -> {
@@ -153,13 +144,11 @@ public class ProjectsService implements ProjectService {
                                 new NoSuchElementException("Project not found with ID: " + projectId)
                         );
                     }
-
                     if (userId.equals(project.getAdminId())) {
                         return CompletableFuture.failedFuture(
                                 new IllegalArgumentException(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE)
                         );
                     }
-
                     return projectUserRepository.deleteUserFromProject(userId, projectId)
                             .thenApply(success -> {
                                 if (!success) {
@@ -167,13 +156,10 @@ public class ProjectsService implements ProjectService {
                                             new SQLException("Failed to remove user from project in database")
                                     );
                                 }
-
                                 List<UserDto> updatedUsers = new ArrayList<>();
 
                                 if (project.getProjectUsers() == null) {
-
                                     project.setProjectUsers(new ArrayList<>());
-
                                     return project;
                                 }
                                 else {

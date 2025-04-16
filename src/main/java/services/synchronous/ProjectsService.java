@@ -51,31 +51,10 @@ public class ProjectsService implements ProjectServiceSynchro {
         List<Project> projects = projectsOpt.get();
         return enrichProjectsWithUsers(projects);
     }
-    /*public List<Project> getByUserId(UUID userId) {
-        Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-
-
-        List<Project> projects = new ArrayList<>();
-        try {
-            var projectUsers = projectUsersRepository.findByUserId(userId).get();
-            for (var projectUser : projectUsers) {
-                var result = projectRepository.findById(projectUser.getProjectId()).get();
-                projects.add(result);
-            }
-
-        }
-        catch (CompletionException | InterruptedException | ExecutionException e) {
-            if (e.getCause() instanceof NullPointerException) {
-                return result.get();
-            }
-        }
-
-        return  null;
-    }*/
 
     @Override
     public List<Project> getByAdminId(UUID adminId) {
-        // Получаем проекты, где пользователь является админом
+
         Optional<List<Project>> projectsOpt = projectRepository.findByAdminId(adminId);
         if (projectsOpt.isEmpty() || projectsOpt.get().isEmpty()) {
             logger.error("ProjectService: Projects not found for admin with id: {}", adminId);
@@ -103,13 +82,11 @@ public class ProjectsService implements ProjectServiceSynchro {
     public Project create(Project entity) {
         Objects.requireNonNull(entity, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        //var result = projectRepository.create(entity);
         return projectRepository.create(entity);
     }
 
     @Override
     public Project getById(UUID id) {
-        // Получаем проект по ID
         Optional<Project> projectOpt = projectRepository.findById(id);
         if (projectOpt.isEmpty()) {
             throw new RuntimeException("Project not found with id: " + id);
@@ -130,51 +107,62 @@ public class ProjectsService implements ProjectServiceSynchro {
     }
 
     private List<Project> enrichProjectsWithUsers(List<Project> projects) {
-        // Собираем ID всех проектов
-        List<UUID> projectIds = projects.stream()
+         List<UUID> projectIds = projects.stream()
                 .map(Project::getId)
                 .collect(Collectors.toList());
 
         try {
             List<ProjectUsersDto> projectUsers = projectUsersRepository.findByProjectIds(projectIds).get();
-            logger.info("ProjectService: enrichProjectsWithUsers: Project users: {}", projectUsers);
-
             Map<UUID, List<ProjectUsersDto>> usersByProjectId = projectUsers.stream()
                     .collect(Collectors.groupingBy(ProjectUsersDto::getProjectId));
-
-            logger.info("ProjectService: enrichProjectsWithUsers: Users by project ID: {}", usersByProjectId.size());
 
             Set<UUID> userIds = projectUsers.stream()
                     .map(ProjectUsersDto::getUserId)
                     .collect(Collectors.toSet());
 
-            logger.info("ProjectService: enrichProjectsWithUsers: User IDs: {}", userIds.size());
-            Map<UUID, User> usersMap = userRepository.findAllByIdsAsync(new ArrayList<>(userIds))
-                    .get()
-                    .stream()
-                    .collect(Collectors.toMap(User::getId, user -> user));
-            logger.info("ProjectService: enrichProjectsWithUsers: Users map: {}", usersMap.size());
+            Map<UUID, User> usersMap = handleUserIdAndUsersMap(projectUsers);
 
-            return projects.stream()
-                    .map(project -> {
-                        List<ProjectUsersDto> projectUserDtos = usersByProjectId.getOrDefault(project.getId(), Collections.emptyList());
-                        List<UserDto> userDtos = projectUserDtos.stream()
-                                .map(dto -> {
-                                    User user = usersMap.get(dto.getUserId());
-                                    return user != null ? UserMapper.toDto(user) : null;
-                                })
-                                .filter(Objects::nonNull)
-                                .collect(Collectors.toList());
-                        project.setProjectUsers(userDtos);
-                        logger.info("ProjectService: enrichProjectsWithUsers: Project users: {}", project.getProjectUsers().size());
-                        return project;
-                    })
-                    .collect(Collectors.toList());
+            return handleProjectsWithUserMap(projects, usersByProjectId, usersMap);
         }
         catch (CompletionException | InterruptedException | ExecutionException e) {
             logger.error("ProjectService: enrichProjectsWithUsers: Error enriching projects with users", e);
             throw new RuntimeException(e);
         }
+    }
+    private Map<UUID, User> handleUserIdAndUsersMap(List<ProjectUsersDto> projectUsers) throws ExecutionException, InterruptedException {
+        Set<UUID> userIds = projectUsers.stream()
+                .map(ProjectUsersDto::getUserId)
+                .collect(Collectors.toSet());
+
+        logger.info("ProjectService: enrichProjectsWithUsers: User IDs: {}", userIds.size());
+
+        return userRepository.findAllByIdsAsync(new ArrayList<>(userIds))
+                .get()
+                .stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+    }
+
+    private List<Project> handleProjectsWithUserMap(
+            List<Project> projects, Map<UUID,
+            List<ProjectUsersDto>> usersByProjectId,
+            Map<UUID, User> usersMap) {
+                projects.stream()
+                .map(project -> {
+                    List<ProjectUsersDto> projectUserDtos = usersByProjectId.getOrDefault(project.getId(), Collections.emptyList());
+                    List<UserDto> userDtos = projectUserDtos.stream()
+                            .map(dto -> {
+                                User user = usersMap.get(dto.getUserId());
+                                return user != null ? UserMapper.toDto(user) : null;
+                            })
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+                    project.setProjectUsers(userDtos);
+                    logger.info("ProjectService: enrichProjectsWithUsers: Project users: {}", project.getProjectUsers().size());
+                    return project;
+                })
+                .toList();
+
+        return projects;
     }
 
     private Project enrichProjectWithUsers(Project project) {
@@ -205,6 +193,5 @@ public class ProjectsService implements ProjectServiceSynchro {
             logger.error("ProjectService: enrichProjectWithUsers: Error enriching project with users", e);
             throw new RuntimeException(e);
         }
-
     }
 }

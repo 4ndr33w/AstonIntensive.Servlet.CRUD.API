@@ -164,14 +164,6 @@ public class UsersService implements UserService {
         return user;
     }
 
-
-    //TODO: Реализовать остальные методы
-
-    @Override
-    public CompletableFuture<User> getUserByEmailAsync(String email) {
-        return CompletableFuture.completedFuture(null);
-    }
-
     @Override
     public CompletableFuture<User> updateByIdAsync(User user) {
         Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
@@ -180,20 +172,27 @@ public class UsersService implements UserService {
                 .thenCompose(updatedUser -> {
                     if (updatedUser == null) {
                         throw new CompletionException(
-                                new UserNotFoundException("User with id " + user.getId() + " not found"));
+                                new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE + " id: " + user.getId()));
                     }
                     return enrichUserWithProjects(updatedUser);
 
                 })
                 .exceptionally(ex -> {
                     if (ex.getCause() instanceof NoSuchElementException) {
-                        logger.error("User with id {} not found", user.getId(), ex.getCause());
+                        logger.error(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, user.getId(), ex.getCause()));
                         throw new CompletionException(
                                 new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, user.getId(), ex.getCause())));
                     }
-                    logger.error("Failed to update user with id: {}", user.getId(), ex);
-                    throw new CompletionException("Failed to update user", ex.getCause());
+                    logger.error(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, user.getId()));
+                    throw new CompletionException(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, user.getId()), ex.getCause());
                 });
+    }
+
+    //TODO: Остальные методы пока не реализованы
+
+    @Override
+    public CompletableFuture<User> getUserByEmailAsync(String email) {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
