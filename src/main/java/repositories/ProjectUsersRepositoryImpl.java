@@ -4,6 +4,8 @@ import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import configurations.ThreadPoolConfiguration;
 import models.dtos.ProjectUsersDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import repositories.interfaces.ProjectUserRepository;
 import utils.StaticConstants;
 import utils.sqls.SqlQueryStrings;
@@ -26,6 +28,7 @@ import static utils.mappers.ProjectUserMapper.mapResultSetToProjectUser;
  */
 public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
 
+    Logger logger = LoggerFactory.getLogger(ProjectUsersRepositoryImpl.class);
     private final SqlQueryStrings sqlQueryStrings;
     private static final ExecutorService dbExecutor;
     private static final String schema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
@@ -110,17 +113,22 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
                 try {
                     int affected = statement.executeUpdate(query);
                     if (affected == 0) {
+                        logger.warn("No rows affected");
                         throw new SQLDataException("No rows affected");
                     }
                     connection.commit();
+                    logger.info("ProjectUserRepositoryImpl: Deleted {} users from {}", userId.toString(), projectId.toString());
                     return true;
                 } catch (SQLException e) {
+                    logger.error("ProjectUserRepositoryImpl: Failed to delete user from project", e);
                     connection.rollback();
                     throw e;
                 }
             } catch (SQLException e) {
+                logger.error("ProjectUserRepositoryImpl: Failed to delete user from project", e);
                 throw new CompletionException("Database error", e);
             } catch (Exception e) {
+                logger.error("ProjectUserRepositoryImpl: Failed to delete user from project", e);
                 throw new RuntimeException(e);
             }
         }, dbExecutor).handle((result, ex) -> {
@@ -145,17 +153,22 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
                 try {
                     int affected = statement.executeUpdate(query);
                     if (affected == 0) {
+                        logger.warn("No rows affected");
                         throw new SQLDataException("No rows affected");
                     }
                     connection.commit();
+                    logger.info("ProjectUserRepositoryImpl: Added user {} to project {}", userId.toString(), projectId.toString());
                     return true;
                 } catch (SQLException e) {
+                    logger.error("ProjectUserRepositoryImpl: Failed to add user to project", e);
                     connection.rollback();
                     throw e;
                 }
             } catch (SQLException e) {
+                logger.error("ProjectUserRepositoryImpl: Failed to add user to project", e);
                 throw new CompletionException("Database error", e);
             } catch (Exception e) {
+                logger.error("ProjectUserRepositoryImpl: Failed to add user to project", e);
                 throw new RuntimeException(e);
             }
         }, dbExecutor).handle((result, ex) -> {

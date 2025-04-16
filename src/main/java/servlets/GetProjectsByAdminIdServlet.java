@@ -5,6 +5,8 @@ import controllers.ProjectControllerSynchronous;
 import controllers.ProjectsController;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.Utils;
 
@@ -64,6 +66,8 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
+        Logger logger = LoggerFactory.getLogger(GetProjectsByAdminIdServlet.class);
+
         try {
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
@@ -77,6 +81,7 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
             if (id == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+                logger.error("Servlet: Bad request. Id is null.");
                 return;
             }
             boolean idValidation = utils.validateId(id);
@@ -84,6 +89,7 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
 
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+                logger.error("Servlet: Bad request. Invalid Id format.");
                 return;
 
             }
@@ -93,18 +99,21 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
             if(projects == null || projects.size() == 0) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
+                logger.error("Servlet: Not found. User not found.");
             }
             else {
                 ObjectMapper mapper = new ObjectMapper();
                 String jsonResponse = mapper.writeValueAsString(projects);
 
 
+                logger.info("Servlet: Sending response. Response code: 200 OK.");
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
                 out.flush();
             }
         }
         catch (Exception e) {
+            logger.error("Servlet: Exception.", e);
             throw new RuntimeException(e);
         }
     }

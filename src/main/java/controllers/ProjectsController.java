@@ -3,9 +3,12 @@ package controllers;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import models.entities.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import services.ProjectServiceImplNew;
 import services.ProjectsService;
 import services.interfaces.ProjectService;
+import servlets.ProjectsServlet;
 import utils.StaticConstants;
 import utils.mappers.ProjectMapper;
 
@@ -28,6 +31,8 @@ import java.util.concurrent.ExecutionException;
  * @version 1.0
  */
 public class ProjectsController implements ProjectControllerInterface {
+
+    Logger logger = LoggerFactory.getLogger(ProjectsController.class);
 
     private final ProjectService projectService;
 
@@ -56,11 +61,14 @@ public class ProjectsController implements ProjectControllerInterface {
 
         try {
             var result = projectService.getByUserIdAsync(userId).get();
+            logger.info("ProjectController: getByUserId: {}", userId);
             return result.stream().map(ProjectMapper::toDto).toList();
         }
         catch (NoSuchElementException e) {
+            logger.warn("ProjectController: getByUserId: {}", e.getMessage());
             throw new NoSuchElementException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
         } catch (ExecutionException | InterruptedException e) {
+            logger.error("ProjectController: getByUserId: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -84,11 +92,14 @@ public class ProjectsController implements ProjectControllerInterface {
         Objects.requireNonNull(adminId);
 
         try {
+            logger.info("ProjectController: getByAdminId: {}", adminId);
             return projectService.getByAdminIdAsync(adminId).get().stream().map(ProjectMapper::toDto).toList();
         }
         catch (NoSuchElementException e) {
+            logger.warn("ProjectController: getByAdminId: {}", e.getMessage());
             throw new NoSuchElementException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
         } catch (ExecutionException | InterruptedException e) {
+            logger.error("ProjectController: getByAdminId: {}", e.getMessage());
             throw new RuntimeException(e);
         }
 
@@ -114,11 +125,14 @@ public class ProjectsController implements ProjectControllerInterface {
 
         try {
             var result = projectService.getByIdAsync(projectId).get();
+            logger.info("ProjectController: getById: {}", projectId);
             return ProjectMapper.toDto(result);
         }
         catch (NoSuchElementException e) {
+            logger.warn("ProjectController: getById: {}", e.getMessage());
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
         } catch (ExecutionException | InterruptedException e) {
+            logger.error("ProjectController: getById: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -140,11 +154,14 @@ public class ProjectsController implements ProjectControllerInterface {
         Objects.requireNonNull(project);
 
         try {
+            logger.info("ProjectController: create: {}", project);
             return ProjectMapper.toDto(projectService.createAsync(project).get());
         }
         catch (NoSuchElementException e) {
+            logger.warn("ProjectController: create: {}", e.getMessage());
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
         } catch (ExecutionException | InterruptedException e) {
+            logger.error("ProjectController: create: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -168,11 +185,14 @@ public class ProjectsController implements ProjectControllerInterface {
         Objects.requireNonNull(projectId);
 
         try {
+            logger.info("ProjectController: deleteById: {}", projectId);
             return projectService.deleteByIdAsync(projectId).get();
         }
         catch (NoSuchElementException e) {
+            logger.warn("ProjectController: deleteById: {}", e.getMessage());
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
         } catch (ExecutionException | InterruptedException e) {
+            logger.error("ProjectController: deleteById: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -194,16 +214,20 @@ public class ProjectsController implements ProjectControllerInterface {
         try {
             CompletableFuture<Project> future = projectService.addUserToProjectAsync(userId, projectId);
             Project project = future.get();
+            logger.info("ProjectController: addUserToProject:\n Successfully added {}", project);
             return ProjectMapper.toDto(project);
         }
         catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            logger.error("ProjectController: addUserToProject:\n InterruptedException(221) {}", e.getMessage());
+            //Thread.currentThread().interrupt();
             throw new RuntimeException("ProjectController; Operation was interrupted", e);
         }
         catch (ExecutionException e) {
+            logger.error("ProjectController: addUserToProject: ExecutionException(226) {}", e.getMessage());
             throw convertExecutionException(e.getCause());
         }
         catch (Exception e) {
+            logger.error("ProjectController: addUserToProject:\n Exception(230) {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -225,28 +249,37 @@ public class ProjectsController implements ProjectControllerInterface {
         try {
             CompletableFuture<Project> future = projectService.removeUserFromProjectAsync(userId, projectId);
             Project project = future.get();
+            logger.info("ProjectController: removeUserFromProject: {}", project);
             return ProjectMapper.toDto(project);
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            logger.error("ProjectController: removeUserFromProject: {}", e.getMessage());
+            //Thread.currentThread().interrupt();
             throw new RuntimeException("ProjectController; Operation was interrupted", e);
         } catch (ExecutionException e) {
+            logger.error("ProjectController: removeUserFromProject: {}", e.getMessage());
             throw convertExecutionException(e.getCause());
         } catch (Exception e) {
+            logger.error("ProjectController: removeUserFromProject: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
     private RuntimeException convertExecutionException(Throwable cause) {
         if (cause instanceof IllegalArgumentException) {
+            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
             return (IllegalArgumentException) cause;
         } else if (cause instanceof NoSuchElementException) {
+            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
             return (NoSuchElementException) cause;
         } else if (cause instanceof IllegalStateException) {
+            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
             return (IllegalStateException) cause;
         } else if (cause instanceof SQLException) {
+            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
             String message = String.format("ProjectController; %s: %s, %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, cause.getMessage(), cause);
             return new RuntimeException(message);
         } else {
+            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
             String message = String.format("ProjectController; %s: %s, %s", StaticConstants.UNEXPECTED_ERROR_EXCEPTION_MESSAGE, cause.getMessage(), cause);
             return new RuntimeException(message);
         }

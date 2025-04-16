@@ -4,6 +4,8 @@ import models.dtos.ProjectUsersDto;
 import models.dtos.UserDto;
 import models.entities.Project;
 import models.entities.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import repositories.ProjectUsersRepositoryImpl;
 import repositories.ProjectsRepositoryImplementation;
 import repositories.UsersRepositoryImplementation;
@@ -11,6 +13,7 @@ import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.ProjectService;
+import services.synchronous.ProjectsService;
 import utils.StaticConstants;
 import utils.mappers.UserMapper;
 
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
  */
 public class ProjectServiceImplNew implements ProjectService {
 
+    Logger logger = LoggerFactory.getLogger(ProjectServiceImplNew .class);
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectUserRepository projectUserRepository;
@@ -41,9 +45,11 @@ public class ProjectServiceImplNew implements ProjectService {
         Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         CompletableFuture<Project> projectFuture = projectRepository.createAsync(project);
+        logger.info("ProjectServiceImplNew: Creating project: {}", project.getName());
 
         return projectFuture
                 .exceptionally(ex -> {
+                    logger.error("ProjectServiceImplNew: Failed to create project: {}", project.getName(), ex);
                     throw new CompletionException(ex.getCause() != null ? ex.getCause() : ex);
                 });
     }
@@ -57,8 +63,10 @@ public class ProjectServiceImplNew implements ProjectService {
 
                 .exceptionally(ex -> {
                     if (ex.getCause() instanceof SQLException) {
+                        logger.error("ProjectServiceImplNew: Failed to delete project: {}", id, ex.getCause());
                         throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, ex.getCause());
                     } else {
+                        logger.error("ProjectServiceImplNew: Failed to delete project: {}", id, ex);
                         throw new CompletionException(ex);
                     }});
     }
@@ -68,11 +76,15 @@ public class ProjectServiceImplNew implements ProjectService {
         return projectRepository.findByIdAsync(id)
                 .thenCompose(project -> {
                     if (project == null) {
+                        logger.warn("ProjectServiceImplNew: Project not found: {}", id);
+
                         return CompletableFuture.completedFuture(null);
                     }
+                    logger.info("ProjectServiceImplNew: Getting project: {}", project.getName());
                     return fillProjectUsers(project);
                 })
                 .exceptionally(ex -> {
+                    logger.error("ProjectServiceImplNew: Failed to get project by id: {}", id, ex);
                     throw new CompletionException("Failed to get project by id: " + id, ex);
                 });
     }
@@ -82,15 +94,18 @@ public class ProjectServiceImplNew implements ProjectService {
                 .thenCompose(projectUsersDtos -> {
                     if (projectUsersDtos.isEmpty()) {
                         project.setProjectUsers(Collections.emptyList());
+                        logger.info("ProjectServiceImplNew: fillProjectUsers:\n Project has no users: {}", project.getName());
                         return CompletableFuture.completedFuture(project);
                     }
 
                     List<CompletableFuture<User>> userFutures = projectUsersDtos.stream()
                             .map(dto -> {
                                 try {
+                                    logger.info("ProjectServiceImplNew: fillProjectUsers:\n Getting user: {}", dto.getUserId());
                                     return userRepository.findByIdAsync(dto.getUserId());
                                 }
                                 catch (Exception e) {
+                                    logger.error("ProjectServiceImplNew: fillProjectUsers:\n Failed to get user by id: {}", dto.getUserId(), e);
                                     throw new RuntimeException(e);
                                 }
                             })
@@ -103,6 +118,7 @@ public class ProjectServiceImplNew implements ProjectService {
                                         .filter(Objects::nonNull)
                                         .map(UserMapper::toDto)
                                         .collect(Collectors.toList());
+                                logger.info("ProjectServiceImplNew: fillProjectUsers:\n Project has users: {}", project.getName());
 
                                 project.setProjectUsers(users);
                                 return project;
@@ -121,11 +137,14 @@ public class ProjectServiceImplNew implements ProjectService {
         return projectRepository.findByUserIdAsync(userId)
                 .thenCompose(projects -> {
                     if (projects == null || projects.isEmpty()) {
+                        logger.warn("ProjectServiceImplNew: Projects not found for user id: {}", userId);
                         return CompletableFuture.completedFuture(Collections.emptyList());
                     }
+                    logger.info("ProjectServiceImplNew: Getting projects by user id: {}", userId);
                     return fillProjectsWithUsers(projects);
                 })
                 .exceptionally(ex -> {
+                    logger.error("ProjectServiceImplNew: Failed to get projects by user id: {}", userId, ex);
                     throw new CompletionException("Failed to get projects by user id: " + userId, ex);
                 });
     }
@@ -133,17 +152,22 @@ public class ProjectServiceImplNew implements ProjectService {
     @Override
     public CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) {
         if (adminId == null) {
+            logger.warn("User ID cannot be null");
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("User ID cannot be null"));
         }
         return projectRepository.findByAdminIdAsync(adminId)
                 .thenCompose(projects -> {
+                    logger.info("ProjectServiceImplNew: Getting projects by admin id: {}", adminId);
                     if (projects == null || projects.isEmpty()) {
+                        logger.warn("ProjectServiceImplNew: Projects not found for admin id: {}", adminId);
                         return CompletableFuture.completedFuture(Collections.emptyList());
                     }
+                    logger.info("ProjectServiceImplNew: Getting projects by admin id: {}", adminId);
                     return fillProjectsWithUsers(projects);
                 })
                 .exceptionally(ex -> {
+                    logger.error("ProjectServiceImplNew: Failed to get projects by admin id: {}", adminId, ex);
                     throw new CompletionException("Failed to get projects by admin id: " + adminId, ex);
                 });
     }
@@ -163,14 +187,17 @@ public class ProjectServiceImplNew implements ProjectService {
                                     ProjectUsersDto::getProjectId,
                                     Collectors.mapping(ProjectUsersDto::getUserId, Collectors.toList())
                             ));
+                    logger.info("ProjectServiceImplNew: fillProjectsWithUsers:\n Projects has users: {}", projects.get(0).getName());
 
                     // Для каждого проекта получаем данные пользователей
                     List<CompletableFuture<Project>> projectFutures = projects.stream()
                             .map(project -> {
                                 List<UUID> userIds = usersByProjectId.getOrDefault(project.getId(), Collections.emptyList());
+                                logger.info("ProjectServiceImplNew: fillProjectsWithUsers:\n userIds.size: : {}", userIds.size());
                                 return fillUsersForProject(project, userIds);
                             })
-                            .collect(Collectors.toList());
+                            .toList();
+                    logger.info("ProjectServiceImplNew: fillProjectsWithUsers:\n Project has users: {}", projects.get(0).getName());
 
                     return CompletableFuture.allOf(projectFutures.toArray(new CompletableFuture[0]))
                             .thenApply(v -> projectFutures.stream()
@@ -182,6 +209,7 @@ public class ProjectServiceImplNew implements ProjectService {
     // Протестировано, работает.
     public CompletableFuture<Project> fillUsersForProject(Project project, List<UUID> userIds) {
         if (userIds.isEmpty()) {
+            logger.info("ProjectServiceImplNew: fillUsersForProject:\n Project has no users: {}", project.getName());
             project.setProjectUsers(Collections.emptyList());
             return CompletableFuture.completedFuture(project);
         }
@@ -193,6 +221,7 @@ public class ProjectServiceImplNew implements ProjectService {
                             .map(UserMapper::toDto)
                             .collect(Collectors.toList());
                     project.setProjectUsers(userDtos);
+                    logger.info("ProjectServiceImplNew: fillUsersForProject:\n Project has users count: {}", project.getProjectUsers().size());
                     return project;
                 });
     }
@@ -201,20 +230,22 @@ public class ProjectServiceImplNew implements ProjectService {
     @Override
     public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) {
         if (userId == null || projectId == null) {
+            logger.warn("ProjectServiceImplNew: Failed to add user to project. User ID or Project ID is null.");
             return CompletableFuture.failedFuture(
-                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE)
+                                        new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE)
             );
         }
         return projectRepository.findByIdAsync(projectId)
                 .thenCompose(project -> {
                     if (project == null) {
+                        logger.warn("ProjectServiceImplNew: Failed to add user to project. Project not found.");
                         return CompletableFuture.failedFuture(
-
                                 new NoSuchElementException(String.format("$s: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, projectId))
                         );
                     }
 
                     if (userId.equals(project.getAdminId())) {
+                        logger.warn("ProjectServiceImplNew: Failed to add user to project. Admin cannot be added.");
                         return CompletableFuture.failedFuture(
                                 new IllegalArgumentException(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE)
                         );
@@ -224,6 +255,7 @@ public class ProjectServiceImplNew implements ProjectService {
                     return projectUserRepository.addUserToProject(userId, projectId)
                             .thenApply(success -> {
                                 if (!success) {
+                                    logger.warn("ProjectServiceImplNew: Failed to add user to project. Failed to add user to database.");
                                     throw new CompletionException(
                                             new SQLException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE)
                                     );
@@ -238,6 +270,7 @@ public class ProjectServiceImplNew implements ProjectService {
                                 newUserDto.setId(userId);
                                 //-----------------------------------------
                                 updatedUsers.add(newUserDto);
+                                logger.info("ProjectServiceImplNew: Added user to project. Project ID: {}", projectId);
                                 project.setProjectUsers(updatedUsers.stream().toList());
 
                                 return project;

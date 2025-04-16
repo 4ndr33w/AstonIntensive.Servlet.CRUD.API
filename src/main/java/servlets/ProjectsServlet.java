@@ -1,11 +1,14 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import controllers.ProjectControllerSynchronous;
 import controllers.ProjectsController;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import models.entities.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.Utils;
 
@@ -28,14 +31,16 @@ import java.util.UUID;
 @WebServlet("/api/v1/projects")
 public class ProjectsServlet extends HttpServlet {
 
+    Logger logger = LoggerFactory.getLogger(ProjectsServlet.class);
+
     private final ProjectControllerInterface projectController;
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Utils utils;
 
     public ProjectsServlet() {
         super();
-        this.projectController = new ProjectControllerSynchronous();
-        //this.projectController = new ProjectsController();
+        //this.projectController = new ProjectControllerSynchronous();
+        this.projectController = new ProjectsController();
         utils = new Utils();
     }
 
@@ -59,7 +64,9 @@ public class ProjectsServlet extends HttpServlet {
      * @throws RuntimeException
      */
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+
+        Logger logger = LoggerFactory.getLogger(ProjectsServlet.class);
 
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -75,6 +82,7 @@ public class ProjectsServlet extends HttpServlet {
             if (id == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+                logger.error(String.format("Servlet: Error. Invalid ID format. Request path: %s", path));
                 return;
             }
 
@@ -83,6 +91,7 @@ public class ProjectsServlet extends HttpServlet {
 
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+                logger.error(String.format("Servlet: Error. Invalid ID format. Request path: %s", path));
                 return;
             }
             UUID projectId = UUID.fromString(id);
@@ -98,12 +107,17 @@ public class ProjectsServlet extends HttpServlet {
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
                 out.flush();
+                logger.info(String.format("Servlet: Request path: %s. Response: %s", path, jsonResponse));
 
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE));
+                logger.error(String.format("Servlet: Error. Project not found. Request path: %s", path));
             }
         } catch (Exception e) {
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INTERNAL_SERVER_ERROR_MESSAGE));
+            logger.error(String.format("Servlet: Error. Request path: %s\nException: %s", path, e.getMessage()));
             throw new RuntimeException(e);
         }
     }
@@ -133,33 +147,44 @@ public class ProjectsServlet extends HttpServlet {
      */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
+
+
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
         try {
             Project project = parseProjectFromRequest(req);
 
+            logger.info("Servlet: Парсинг выполнен\n Выполнение метода создания проекта");
             ProjectDto createdProject = projectController.create(project);
-
+            logger.info(String.format("Servlet: Проект создан. Created project: %s", objectMapper.writeValueAsString(createdProject)));
             resp.setStatus(HttpServletResponse.SC_CREATED);
             ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
             objectMapper.writeValue(resp.getWriter(), createdProject);
+
+            logger.info(String.format("Servlet: Отображение данных на клиент. Response: %s", objectMapper.writeValueAsString(createdProject)));
 
         } catch (IllegalArgumentException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             //resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
+            logger.error(String.format("Servlet: Error %s\nException: %s", IllegalArgumentException.class.getName(), e.getMessage()));
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             //resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
             e.printStackTrace();
+            logger.error(String.format("Servlet: Error. Request path: %s\nException: %s\nstackTrace: %s", "Ошибка сервере", e.getMessage(), e.getStackTrace()));
         }
     }
 
     private Project parseProjectFromRequest(HttpServletRequest req) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            logger.info(String.format("Servlet: парсинг объекта проекта в объект класса Project. Request body: %s", objectMapper.writeValueAsString(req.getInputStream())));
             return objectMapper.readValue(req.getInputStream(), Project.class);
         } catch (IOException e) {
+            logger.error(String.format("Servlet: Error. Парсинг не удался. Request path: %s\nException: %s", "/projects", e.getMessage()));
             throw new RuntimeException(e);
         }
     }
@@ -197,6 +222,7 @@ public class ProjectsServlet extends HttpServlet {
             if (id == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+                logger.error(String.format("Servlet: Error. Id required in request path. Request path: %s", "/projects"));
                 return;
             }
             UUID projectId = UUID.fromString(id);
@@ -206,15 +232,18 @@ public class ProjectsServlet extends HttpServlet {
             if (isDeleted) {
                 resp.setStatus(HttpServletResponse.SC_OK);
                 resp.getWriter().write(String.format("{\"message\":\"%s\"}", StaticConstants.REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE));
+                logger.info(String.format("Servlet: Request path: %s. Response: %s", "/projects", "{\"message\":\"Request completed successfully\"}"));
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE));
+                logger.error(String.format("Servlet: Error. Project not found. Request path: %s", "/projects"));
             }
 
         } catch (java.io.IOException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             //throw new IllegalArgumentException(e);
             resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+            logger.error(String.format("Servlet: Error. Invalid ID format. Request path: %s", "/projects"));
         }
     }
 }

@@ -4,12 +4,15 @@ import models.dtos.ProjectUsersDto;
 import models.dtos.UserDto;
 import models.entities.Project;
 import models.entities.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import repositories.ProjectUsersRepositoryImpl;
 import repositories.ProjectsRepositoryImplementation;
 import repositories.UsersRepositoryImplementation;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import repositories.synchronous.ProjectUsersRepositorySynchronous;
+import repositories.synchronous.ProjectsRepository;
 import services.interfaces.synchronous.ProjectServiceSynchro;
 import utils.StaticConstants;
 import utils.mappers.UserMapper;
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
  */
 public class ProjectsService implements ProjectServiceSynchro {
 
+    Logger logger = LoggerFactory.getLogger(ProjectsService.class);
     private final repositories.interfaces.synchronous.ProjectRepoSynchro projectRepository;
     private final UserRepository userRepository;
     private final ProjectUsersRepositoryImpl projectUsersRepository;
@@ -75,11 +79,14 @@ public class ProjectsService implements ProjectServiceSynchro {
         // Получаем проекты, где пользователь является админом
         Optional<List<Project>> projectsOpt = projectRepository.findByAdminId(adminId);
         if (projectsOpt.isEmpty() || projectsOpt.get().isEmpty()) {
+            logger.error("ProjectService: Projects not found for admin with id: {}", adminId);
             return Collections.emptyList();
         }
 
+        logger.info("ProjectService: Projects found for admin with id: {}", adminId);
         List<Project> projects = projectsOpt.get();
         var result = enrichProjectsWithUsers(projects);
+        logger.info("ProjectService: Projects found: {}", result);
         return result;
     }
 
@@ -131,18 +138,23 @@ public class ProjectsService implements ProjectServiceSynchro {
 
         try {
             List<ProjectUsersDto> projectUsers = projectUsersRepository.findByProjectIds(projectIds).get();
+            logger.info("ProjectService: enrichProjectsWithUsers: Project users: {}", projectUsers);
 
             Map<UUID, List<ProjectUsersDto>> usersByProjectId = projectUsers.stream()
                     .collect(Collectors.groupingBy(ProjectUsersDto::getProjectId));
+
+            logger.info("ProjectService: enrichProjectsWithUsers: Users by project ID: {}", usersByProjectId.size());
 
             Set<UUID> userIds = projectUsers.stream()
                     .map(ProjectUsersDto::getUserId)
                     .collect(Collectors.toSet());
 
+            logger.info("ProjectService: enrichProjectsWithUsers: User IDs: {}", userIds.size());
             Map<UUID, User> usersMap = userRepository.findAllByIdsAsync(new ArrayList<>(userIds))
                     .get()
                     .stream()
                     .collect(Collectors.toMap(User::getId, user -> user));
+            logger.info("ProjectService: enrichProjectsWithUsers: Users map: {}", usersMap.size());
 
             return projects.stream()
                     .map(project -> {
@@ -155,11 +167,13 @@ public class ProjectsService implements ProjectServiceSynchro {
                                 .filter(Objects::nonNull)
                                 .collect(Collectors.toList());
                         project.setProjectUsers(userDtos);
+                        logger.info("ProjectService: enrichProjectsWithUsers: Project users: {}", project.getProjectUsers().size());
                         return project;
                     })
                     .collect(Collectors.toList());
         }
         catch (CompletionException | InterruptedException | ExecutionException e) {
+            logger.error("ProjectService: enrichProjectsWithUsers: Error enriching projects with users", e);
             throw new RuntimeException(e);
         }
     }
@@ -180,12 +194,16 @@ public class ProjectsService implements ProjectServiceSynchro {
                         .map(UserMapper::toDto)
                         .collect(Collectors.toList());
                 project.setProjectUsers(userDtos);
+                logger.info("ProjectService: enrichProjectWithUsers: Project users: {}", project.getProjectUsers().size());
             } else {
+                logger.info("ProjectService: enrichProjectWithUsers: No users found for project");
                 project.setProjectUsers(Collections.emptyList());
             }
+            logger.info("ProjectService: enrichProjectWithUsers: Project: {}", project);
             return project;
         }
         catch (CompletionException | InterruptedException | ExecutionException e) {
+            logger.error("ProjectService: enrichProjectWithUsers: Error enriching project with users", e);
             throw new RuntimeException(e);
         }
 

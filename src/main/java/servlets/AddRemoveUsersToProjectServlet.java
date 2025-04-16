@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.ProjectControllerSynchronous;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -26,8 +28,8 @@ public class AddRemoveUsersToProjectServlet extends HttpServlet {
 
 
     public AddRemoveUsersToProjectServlet() {
-        this.projectController = new ProjectControllerSynchronous();
-        //this.projectController = new controllers.ProjectsController();
+        //this.projectController = new ProjectControllerSynchronous();
+        this.projectController = new controllers.ProjectsController();
     }
 
     /**
@@ -50,23 +52,28 @@ public class AddRemoveUsersToProjectServlet extends HttpServlet {
      */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+
+        Logger logger = LoggerFactory.getLogger(AddRemoveUsersToProjectServlet.class);
         try {
             UUID projectId = UUID.fromString(req.getParameter("projectid"));
             UUID userId = UUID.fromString(req.getParameter("userid"));
 
             ProjectDto result = projectController.addUserToProject(userId, projectId);
 
+            logger.info("User with id {} was added to project with id {}", userId, projectId);
             resp.setContentType("application/json");
             new ObjectMapper().writeValue(resp.getWriter(), result);
         } catch (IOException e) {
             resp.setStatus(HttpServletResponse.SC_CONFLICT);
             resp.getWriter().write(e.getCause().getMessage());
+            logger.error(e.getCause().getMessage());
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write(e.getCause().getMessage());
             resp.getWriter().write("\n");
             resp.getWriter().write(e.getMessage());
             resp.getWriter().write("\n");
+            logger.error(e.getCause().getMessage());
         }
     }
 
@@ -90,15 +97,19 @@ public class AddRemoveUsersToProjectServlet extends HttpServlet {
      */
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
+
+        Logger logger = LoggerFactory.getLogger(AddRemoveUsersToProjectServlet.class);
         try {
             UUID projectId = UUID.fromString(req.getParameter("projectId"));
             UUID userId = UUID.fromString(req.getParameter("userId"));
 
             ProjectDto result = projectController.removeUserFromProject(userId, projectId);
 
+            logger.info("User with id {} was removed from project with id {}", userId, projectId);
             resp.setContentType("application/json");
             new ObjectMapper().writeValue(resp.getWriter(), result);
         } catch (Exception e) {
+            logger.error(e.getCause().getMessage());
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         }
     }

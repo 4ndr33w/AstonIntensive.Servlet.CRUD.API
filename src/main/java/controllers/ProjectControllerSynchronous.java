@@ -3,6 +3,8 @@ package controllers;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import models.entities.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.mappers.ProjectMapper;
 
@@ -23,6 +25,7 @@ import java.util.UUID;
  */
 public class ProjectControllerSynchronous implements ProjectControllerInterface {
 
+    Logger logger = LoggerFactory.getLogger(ProjectControllerSynchronous.class);
     private final services.interfaces.synchronous.ProjectServiceSynchro projectService;
 
     public ProjectControllerSynchronous() {
@@ -40,8 +43,10 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
 
         try {
             var result = projectService.getByUserId(userId);
+            logger.info("ProjectControllerSynchro: getByUserId Получение всех проектов пользователя");
             return result.stream().map(ProjectMapper::toDto).toList();
         } catch (NoSuchElementException e) {
+            logger.error(String.format("ProjectControllerSynchro: getByUserId Ошибка получения всех проектов пользователя: %s", e.getMessage()));
             throw new NoSuchElementException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
         }
     }
@@ -56,9 +61,11 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         Objects.requireNonNull(adminId);
 
         try {
+            logger.info("ProjectControllerSynchro: getByAdminId Получение всех проектов администратора");
             return projectService.getByAdminId(adminId).stream().map(ProjectMapper::toDto).toList();
         }
         catch (NoSuchElementException e) {
+            logger.error(String.format("ProjectControllerSynchro: getByAdminId Ошибка получения проектов администратора: %s", e.getMessage()));
             throw new NoSuchElementException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
         }
     }
@@ -72,10 +79,12 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         Objects.requireNonNull(projectId);
 
         try {
+            logger.info("ProjectControllerSynchro: getProject Получение проекта по id");
             var result = projectService.getById(projectId);
             return ProjectMapper.toDto(result);
         }
         catch (NoSuchElementException e) {
+            logger.error(String.format("ProjectControllerSynchro: getProject Ошибка получения проекта по id: %s", e.getMessage()));
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
         }
     }
@@ -89,9 +98,11 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         Objects.requireNonNull(project);
 
         try {
+            logger.info("ProjectControllerSynchro: create Создание нового проекта");
             return ProjectMapper.toDto(projectService.create(project));
         }
         catch (NoSuchElementException e) {
+            logger.error(String.format("ProjectControllerSynchro: create Ошибка создания нового проекта: %s", e.getMessage()));
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
         }
     }
@@ -105,9 +116,11 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         Objects.requireNonNull(projectId);
 
         try {
+            logger.info("ProjectControllerSynchro: delete Удаление проекта по id");
             return projectService.deleteById(projectId);
         }
         catch (NoSuchElementException e) {
+            logger.error(String.format("ProjectControllerSynchro: delete Ошибка удаления проекта по id: %s", e.getMessage()));
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
         }
     }
@@ -121,11 +134,13 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      */
     public ProjectDto addUserToProject(UUID userId, UUID projectId) {
         try {
+            logger.info("ProjectControllerSynchro: addUserToProject Добавление пользователя в проект");
             Project project = projectService.addUserToProject(userId, projectId);
 
             return ProjectMapper.toDto(project);
         }
         catch (Exception e) {
+            logger.error(String.format("ProjectControllerSynchro: addUserToProject Ошибка добавления пользователя в проект: %s", e.getMessage()));
             throw new RuntimeException(e);
         }
     }
@@ -139,10 +154,12 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      */
     public ProjectDto removeUserFromProject(UUID userId, UUID projectId) {
         try {
+            logger.info("ProjectControllerSynchro: removeUserFromProject Удаление пользователя из проекта");
             Project project = projectService.removeUserFromProject(userId, projectId);
             return ProjectMapper.toDto(project);
         }
         catch (Exception e) {
+            logger.error(String.format("ProjectControllerSynchro: removeUserFromProject Ошибка удаления пользователя из проекта: %s", e.getMessage()));
             throw new RuntimeException(e);
         }
     }

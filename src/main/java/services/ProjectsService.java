@@ -2,6 +2,8 @@ package services;
 
 import models.dtos.UserDto;
 import models.entities.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import repositories.ProjectRepositoryNew;
 import repositories.ProjectUsersRepositoryImpl;
 import repositories.ProjectsRepositoryImplementation;
@@ -24,6 +26,7 @@ import java.util.concurrent.CompletionException;
  */
 public class ProjectsService implements ProjectService {
 
+    Logger logger = LoggerFactory.getLogger(ProjectsService.class);
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectUserRepository projectUserRepository;
@@ -150,12 +153,12 @@ public class ProjectsService implements ProjectService {
                     }
 
                     if (userId.equals(project.getAdminId())) {
+                        logger.error(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE);
                         return CompletableFuture.failedFuture(
                                 new IllegalArgumentException(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE)
                         );
                     }
 
-                    // Добавляем пользователя в проект через репозиторий
                     return projectUserRepository.addUserToProject(userId, projectId)
                             .thenApply(success -> {
                                 if (!success) {
@@ -163,12 +166,18 @@ public class ProjectsService implements ProjectService {
                                             new SQLException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE)
                                     );
                                 }
-                                Set<UserDto> updatedUsers = new HashSet<>(project.getProjectUsers());
+                                List<UserDto> updatedUsers = new ArrayList<>();
+                                //logger.error(String.format("%s: %s - ProjectName: %s", StaticConstants.STATIC_TEST_STRING, userId, project.getName()));
+
+                                if(project.getProjectUsers() != null) {
+                                    updatedUsers = new ArrayList<>(project.getProjectUsers());
+                                }
                                 //-----------------------------------------
                                 // Так как в данном случае позже в ProjectDto
                                 // у нас List<UserDto> будет урезан до
                                 // List<UUID> userIds, то в данной ситуации
                                 // считаю это допустимым решением
+
                                 UserDto newUserDto = new UserDto();
                                 newUserDto.setId(userId);
                                 //-----------------------------------------
@@ -210,12 +219,23 @@ public class ProjectsService implements ProjectService {
                                     );
                                 }
 
-                                List<UserDto> updatedUsers = new ArrayList<>(project.getProjectUsers());
-                                var user = updatedUsers.stream().filter(userDto -> userDto.getId().equals(userId)).findFirst();
-                                updatedUsers.remove(user);
-                                project.setProjectUsers(updatedUsers);
+                                List<UserDto> updatedUsers = new ArrayList<>();
 
-                                return project;
+                                if (project.getProjectUsers() == null) {
+
+                                    project.setProjectUsers(new ArrayList<UserDto>());
+
+                                    return project;
+                                }
+                                else {
+                                    updatedUsers = new ArrayList<>(project.getProjectUsers());
+                                    var user = updatedUsers.stream().filter(userDto -> userDto.getId().equals(userId)).findFirst();
+                                    updatedUsers.remove(user);
+                                    project.setProjectUsers(updatedUsers);
+
+                                    return project;
+                                }
+
                             });
                 });
     }

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.UsersController;
 import models.dtos.UserDto;
 import models.entities.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.Utils;
 
@@ -21,6 +23,8 @@ import java.util.UUID;
  */
 @WebServlet("/api/v1/users")
 public class UsersServlet extends HttpServlet {
+
+    Logger logger = LoggerFactory.getLogger(ProjectsServlet.class);
 
     private final UsersController userController;
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -47,6 +51,7 @@ public class UsersServlet extends HttpServlet {
         if (id == null) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+            logger.error("Параметр запроса ID не найден");
             return;
         }
 
@@ -55,6 +60,7 @@ public class UsersServlet extends HttpServlet {
 
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+            logger.error("Параметр запроса ID не прошел валидацию");
             return;
 
         }
@@ -71,11 +77,13 @@ public class UsersServlet extends HttpServlet {
             PrintWriter out = resp.getWriter();
             out.print(jsonResponse);
             out.flush();
+            logger.info("Пользователь найден и отправлен в ответ");
 
         }
         else {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
             resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
+            logger.error("Пользователь не найден");
         }
     }
 
@@ -120,30 +128,37 @@ public class UsersServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_CREATED);
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(resp.getWriter(), createdUser);
+            logger.info("Пользователь успешно создан");
 
         } catch (IllegalArgumentException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
+            logger.error("Параметры запроса не прошли валидацию");
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.OPERATION_FAILED_ERROR_MESSAGE));
             e.printStackTrace();
+            logger.error("Ошибка сервера");
         }
     }
 
     private User parseUserFromRequest(HttpServletRequest req) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper();
+        logger.info("Парсинг данных пользователя из запроса...");
         return objectMapper.readValue(req.getInputStream(), User.class);
     }
 
     private void validateUser(User user) throws IllegalArgumentException {
         if (user.getUserName() == null || user.getUserName().trim().isEmpty()) {
+            logger.error("Параметр запроса USERNAME не валиден");
             throw new IllegalArgumentException("Username is required");
         }
         if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            logger.error("Параметр запроса EMAIL не валиден");
             throw new IllegalArgumentException("Email is required");
         }
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            logger.error("Параметр запроса PASSWORD не валиден");
             throw new IllegalArgumentException("Password is required");
         }
     }
@@ -181,6 +196,7 @@ public class UsersServlet extends HttpServlet {
             if (id == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+                logger.error("Параметр запроса ID не найден");
                 return;
             }
             UUID userId = UUID.fromString(id);
@@ -190,14 +206,17 @@ public class UsersServlet extends HttpServlet {
             if (isDeleted) {
                 resp.setStatus(HttpServletResponse.SC_OK);
                 resp.getWriter().write(String.format("{\"message\":\"%s\"}", StaticConstants.REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE));
+                logger.info("Пользователь успешно удален");
             } else {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
+                logger.error("Пользователь не найден");
             }
 
         } catch (IllegalArgumentException | IOException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+            logger.error("Параметр запроса ID не прошел валидацию");
         }
     }
 }

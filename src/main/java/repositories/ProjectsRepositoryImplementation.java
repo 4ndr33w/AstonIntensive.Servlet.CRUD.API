@@ -6,6 +6,8 @@ import configurations.ThreadPoolConfiguration;
 import models.dtos.ProjectDto;
 import models.dtos.UserDto;
 import models.entities.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
@@ -35,6 +37,8 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
     private static final String projectsTable = PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
     private static final String projectUsersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
     String tableName = String.format("%s.%s", schema, projectsTable);
+
+    Logger logger = LoggerFactory.getLogger(ProjectsRepositoryImplementation.class);
 
     private final SqlQueryStrings sqlQueryStrings;
     private static final ExecutorService dbExecutor;
@@ -164,18 +168,22 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
                 int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
 
                 if (affectedRows == 0) {
+                    logger.error("RepositoryImplementation: Failed to create user");
                     throw new RuntimeException("Failed to create user, no rows affected");
                 }
 
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         project.setId((UUID) generatedKeys.getObject(1));
+                        logger.info("RepositoryImplementation: Successfully created user");
                         return project;
                     }
+                    logger.error("RepositoryImplementation: Failed to retrieve generated keys");
                     throw new RuntimeException("Failed to retrieve generated keys");
                 }
             }
             catch (Exception e) {
+                logger.error("RepositoryImplementation: Failed to create user", e.getMessage());
                 throw new RuntimeException(e);
             }
         }, dbExecutor);
@@ -184,6 +192,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
     @Override
     public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) {
         if (userId == null || projectId == null) {
+            logger.error("RepositoryImplementation: Parameters cannot be null");
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Parameters cannot be null"));
         }
@@ -194,9 +203,11 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
                     List<UUID> updatedUsers = new ArrayList<>(projectDto.getProjectUsersIds());
                     updatedUsers.add(userId);
 
+                    logger.info("RepositoryImplementation: Adding user into project: {}", userId);
                     return insertUsersIntoProjectUsersTable(userId, projectId)
                             .thenApply(v -> {
                                 projectDto.setProjectUsersIds(updatedUsers);
+                                logger.info("RepositoryImplementation: Successfully added user into project: {}", userId);
                                 return projectDto;
                             });
                 });
@@ -215,16 +226,21 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
                 try {
                     int affected = statement.executeUpdate(query);
                     if (affected == 0) {
+                        logger.error("RepositoryImplementation: Failed to add user into project: {}", userId);
                         throw new SQLDataException("No rows affected");
                     }
+                    logger.info("RepositoryImplementation: Successfully added user into project: {}", userId);
                     connection.commit();
                 } catch (SQLException e) {
+                    logger.error("RepositoryImplementation: Failed to add user into project: {}", userId, e);
                     connection.rollback();
                     throw e;
                 }
             } catch (SQLException e) {
+                logger.error("RepositoryImplementation: Failed to add user into project: {}", userId, e);
                 throw new CompletionException("Database error", e);
             } catch (Exception e) {
+                logger.error("RepositoryImplementation: Failed to add user into project: {}", userId, e);
                 throw new RuntimeException(e);
             }
         }, dbExecutor);
@@ -313,6 +329,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
     @Override
     public CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, UUID projectId) {
         if (userId == null || projectId == null) {
+            logger.error("RepositoryImplementation: Parameters cannot be null");
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Parameters cannot be null"));
         }
@@ -325,6 +342,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
 
                     return deleteUsersFromProjectUsersTable(userId, projectId)
                             .thenApply(v -> {
+                                logger.info("RepositoryImplementation: Removed user from project: {}", userId);
                                 projectDto.setProjectUsersIds(updatedUsers);
                                 return projectDto;
                             });
@@ -344,16 +362,21 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
                 try {
                     int affected = statement.executeUpdate(query);
                     if (affected == 0) {
+                        logger.error("RepositoryImplementation: Failed to remove user from project: {}\nNo rows affected", userId);
                         throw new SQLDataException("No rows affected");
                     }
+                    logger.info("RepositoryImplementation: Successfully removed user from project: {}", userId);
                     connection.commit();
                 } catch (SQLException e) {
+                    logger.error("RepositoryImplementation: Failed to remove user from project: {}", userId, e);
                     connection.rollback();
                     throw e;
                 }
             } catch (SQLException e) {
+                logger.error("RepositoryImplementation: Failed to remove user from project: {}", userId, e);
                 throw new CompletionException("Database error", e);
             } catch (Exception e) {
+                logger.error("RepositoryImplementation: Failed to remove user from project: {}", userId, e.getMessage());
                 throw new RuntimeException(e);
             }
         }, dbExecutor);

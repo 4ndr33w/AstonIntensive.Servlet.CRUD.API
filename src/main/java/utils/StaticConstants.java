@@ -32,4 +32,6 @@ public class StaticConstants {
     public static final String OPERATION_FAILED_ERROR_MESSAGE = PropertiesConfiguration.getConstants().getProperty("OPERATION_FAILED_ERROR_MESSAGE");
     public static final String ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE");
     public static final String UNEXPECTED_ERROR_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("UNEXPECTED_ERROR_EXCEPTION_MESSAGE");
+    public static final String INTERNAL_SERVER_ERROR_MESSAGE = PropertiesConfiguration.getConstants().getProperty("INTERNAL_SERVER_ERROR_MESSAGE");
+    public static final String STATIC_TEST_STRING = PropertiesConfiguration.getConstants().getProperty("STATIC_TEST_STRING");
 }

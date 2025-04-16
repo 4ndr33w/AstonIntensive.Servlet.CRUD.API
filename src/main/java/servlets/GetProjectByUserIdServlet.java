@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.ProjectControllerSynchronous;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.Utils;
 
@@ -61,6 +63,8 @@ public class GetProjectByUserIdServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
+        Logger logger = LoggerFactory.getLogger(GetProjectByUserIdServlet.class);
+
         try {
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
@@ -74,22 +78,26 @@ public class GetProjectByUserIdServlet extends HttpServlet {
             if (id == null) {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+                logger.error(String.format("%s", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
                 return;
             }
             boolean idValidation = utils.validateId(id);
             if(!idValidation) {
 
+                logger.error(String.format("%s", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
                 return;
 
             }
 
+            logger.info(String.format("Все идет штатно"));
             List<ProjectDto> projects = projectController.getByUserId(UUID.fromString(id));
 
             if(projects == null || projects.size() == 0) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
+                logger.error(String.format("%s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
             }
             else{
                 ObjectMapper mapper = new ObjectMapper();
@@ -98,9 +106,12 @@ public class GetProjectByUserIdServlet extends HttpServlet {
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
                 out.flush();
+                logger.info("Ответ отправлен клиенту");
             }
         }
         catch (Exception e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            logger.error(String.format("%s", e.getMessage()));
             throw new RuntimeException(e);
         }
     }

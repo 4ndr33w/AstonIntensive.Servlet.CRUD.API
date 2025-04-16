@@ -4,6 +4,8 @@ import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import models.dtos.UserDto;
 import models.entities.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.sqls.SqlQueryStrings;
 
@@ -21,6 +23,7 @@ import static utils.mappers.ProjectMapper.mapResultSetToProjectOptional;
  */
 public class ProjectsRepository implements repositories.interfaces.synchronous.ProjectRepoSynchro{
 
+    Logger logger = LoggerFactory.getLogger(ProjectsRepository.class);
     private static final String schema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
     private static final String projectsTable = PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
     private static final String projectUsersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
@@ -46,18 +49,22 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
             int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
 
             if (affectedRows == 0) {
+                logger.error("ProjectRepository: Create: Failed to create a project. Query string: {}", queryString);
                 throw new RuntimeException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
             }
 
             try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
+                    logger.info("ProjectRepository: Create: Created project: {}", project);
                     project.setId((UUID) generatedKeys.getObject(1));
                     return project;
                 }
+                logger.error("ProjectRepository: Create: Failed to create a project. Query string: {}", queryString);
                 throw new RuntimeException(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
             }
         }
         catch (Exception e) {
+            logger.error("ProjectRepository: Create: Failed to create a project. Query string: {}", queryString);
             throw new RuntimeException(e);
         }
     }
@@ -114,10 +121,12 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
             }
 
         } catch (Exception e) {
+            logger.error("ProjectRepository: findByAdminId: Failed to find projects. Query string: {}", queryString);
             String message = String.format("%s; adminId: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, adminId);
             throw new RuntimeException(message , e);
         }
 
+        logger.info("ProjectRepository: findByAdminId: Found projects: {}", projects);
         return Optional.of(projects);
     }
 
@@ -164,10 +173,13 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
             var result = projectUsersRepository.addUserToProject(userId, projectId);
             if(result ) {
+                logger.info("User: {} was added to project: {}", userId, projectId);
                 project.setProjectUsers(updatedUsers);
             }
+            logger.info("ProjectRepository: addUserToProject: Added user: {} to project: {}", userId, projectId);
             return project;
         }
+        logger.error("ProjectRepository: addUserToProject: Optional.isEmpty()\n Failed to add user: {} to project: {}", userId, projectId);
         return null;
     }
 
@@ -185,11 +197,14 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
             var result = projectUsersRepository.deleteUserFromProject(userId, projectId);
             if(result) {
+                logger.info("User: {} was removed from project: {}", userId, projectId);
                 updatedUsers.remove(userDto);
                 project.setProjectUsers(updatedUsers);
             }
+            logger.info("ProjectRepository: RemoveUserFromProject: Removed user: {} from project: {}", userId, projectId);
             return project;
         }
+        logger.error("ProjectRepository: RemoveUserFromProject: Optional.isEmpty()\n Failed to remove user: {} from project: {}", userId, projectId);
         return null;
     }
 
