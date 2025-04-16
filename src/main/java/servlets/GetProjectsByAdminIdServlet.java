@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 @WebServlet("/api/v1/projects/admin")
 public class GetProjectsByAdminIdServlet extends HttpServlet {
 
+    Logger logger = LoggerFactory.getLogger(GetProjectsByAdminIdServlet.class);
     private final ProjectControllerInterface projectController;
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Utils utils;
@@ -42,7 +43,6 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
         super();
         this.utils = new Utils();
         this.projectController = new ProjectControllerSynchronous();
-        //this.projectController = new controllers.ProjectsController();
     }
 
     /**
@@ -65,8 +65,6 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
      */
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-
-        Logger logger = LoggerFactory.getLogger(GetProjectsByAdminIdServlet.class);
 
         try {
             resp.setContentType("application/json");
@@ -91,7 +89,6 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
                 logger.error("Servlet: Bad request. Invalid Id format.");
                 return;
-
             }
 
             List<ProjectDto> projects = projectController.getByAdminId(UUID.fromString(id));
@@ -104,7 +101,6 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
             else {
                 ObjectMapper mapper = new ObjectMapper();
                 String jsonResponse = mapper.writeValueAsString(projects);
-
 
                 logger.info("Servlet: Sending response. Response code: 200 OK.");
                 PrintWriter out = resp.getWriter();

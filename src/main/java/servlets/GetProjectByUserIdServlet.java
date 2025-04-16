@@ -27,11 +27,9 @@ import java.util.UUID;
 @WebServlet("/api/v1/projects/user")
 public class GetProjectByUserIdServlet extends HttpServlet {
 
-    //private final Project
-
     private final ProjectControllerInterface projectController;
 
-    //private final ProjectsController controller;// = new ProjectsController();
+    Logger logger = LoggerFactory.getLogger(GetProjectByUserIdServlet.class);
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Utils utils;
 
@@ -39,7 +37,6 @@ public class GetProjectByUserIdServlet extends HttpServlet {
         super();
         this.utils = new Utils();
         this.projectController = new ProjectControllerSynchronous();
-        //this.projectController = new controllers.ProjectsController();
     }
 
     /**
@@ -63,13 +60,9 @@ public class GetProjectByUserIdServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
-        Logger logger = LoggerFactory.getLogger(GetProjectByUserIdServlet.class);
-
         try {
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
-
-            var path = req.getPathInfo();
 
             // Не получилось вычленить Id из req.getPathInfo(), разделяя строку на массив
             // если быть точнее, то /{id} воспринимался как несуществующий endpoint
@@ -88,7 +81,6 @@ public class GetProjectByUserIdServlet extends HttpServlet {
                 resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
                 return;
-
             }
 
             logger.info(String.format("Все идет штатно"));

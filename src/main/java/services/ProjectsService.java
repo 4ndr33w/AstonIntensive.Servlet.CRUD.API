@@ -181,8 +181,8 @@ public class ProjectsService implements ProjectService {
                                 UserDto newUserDto = new UserDto();
                                 newUserDto.setId(userId);
                                 //-----------------------------------------
-                                updatedUsers.add(newUserDto);
-                                project.setProjectUsers(updatedUsers.stream().toList());
+                                    updatedUsers.add(newUserDto);
+                                    project.setProjectUsers(updatedUsers.stream().toList());
 
                                 return project;
                             });
@@ -223,19 +223,18 @@ public class ProjectsService implements ProjectService {
 
                                 if (project.getProjectUsers() == null) {
 
-                                    project.setProjectUsers(new ArrayList<UserDto>());
+                                    project.setProjectUsers(new ArrayList<>());
 
                                     return project;
                                 }
                                 else {
                                     updatedUsers = new ArrayList<>(project.getProjectUsers());
                                     var user = updatedUsers.stream().filter(userDto -> userDto.getId().equals(userId)).findFirst();
-                                    updatedUsers.remove(user);
-                                    project.setProjectUsers(updatedUsers);
+                                    updatedUsers.remove(user.get());
 
+                                    project.setProjectUsers(updatedUsers);
                                     return project;
                                 }
-
                             });
                 });
     }

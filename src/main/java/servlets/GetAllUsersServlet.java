@@ -14,8 +14,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.util.List;
 
-import static configurations.LoggerConfiguration.logger;
-
 /**
  * Servlet для получения списка всех пользователей
  *
@@ -25,17 +23,12 @@ import static configurations.LoggerConfiguration.logger;
 @WebServlet("/api/v1/users/all")
 public class GetAllUsersServlet extends HttpServlet {
 
-    //Logger log = LoggerFactory.getLogger(GetAllUsersServlet.class);
-
-
-
-
+    Logger logger = LoggerFactory.getLogger(GetAllUsersServlet.class);
     private final UsersController userController;
 
     public GetAllUsersServlet() {
         super();
         userController = new UsersController();
-
     }
 
     /**
@@ -50,7 +43,6 @@ public class GetAllUsersServlet extends HttpServlet {
      */
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
-        Logger logger = LoggerFactory.getLogger(GetAllUsersServlet.class);
         try {
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
@@ -65,11 +57,6 @@ public class GetAllUsersServlet extends HttpServlet {
             out.flush();
 
             logger.info("GetAllUsersServlet started");
-
-            //LoggerConfiguration.logger.
-            //LoggerConfiguration.logger.info("GetAllUsersServlet started");
-            //LoggerConfiguration.logger.info("doGet GetAllUsersServlet: " + users.toString());
-            //LoggerConfiguration.logger.debug("doGet GetAllUsersServlet: " );
         }
         catch (Exception e) {
             throw new RuntimeException(e);

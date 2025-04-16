@@ -85,6 +85,22 @@ public class User {
         this.projects = new java.util.ArrayList<>();
     }
 
+    public User(User user) {
+        this.id = user.id;
+        this.userName = user.userName;
+        this.password = user.password;
+        this.email = user.email;
+        this.firstName = user.firstName;
+        this.lastName = user.lastName;
+        this.phoneNumber = user.phoneNumber;
+        this.userRole = user.userRole;
+        this.userImage = user.userImage;
+        this.createdAt = user.createdAt == null ? new Date() : createdAt;
+        this.updatedAt = user.updatedAt == null ? new Date() : createdAt;
+        this.lastLoginDate = user.lastLoginDate == null ? new Date() : createdAt;
+        this.projects = user.projects;
+    }
+
     public String getUserName() {
         return userName;
     }

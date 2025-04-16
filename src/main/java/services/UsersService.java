@@ -22,6 +22,9 @@ import java.util.stream.Collectors;
 /**
  * Клас сервиса, предоставляющий методы для
  * {@code CRUD} операции над объектом {@code User}
+ * <p>
+ *     Выполняются асинхронные операции с репозиторием
+ * </p>
  * @author 4ndr33w
  * @version 1.0
  */
@@ -37,8 +40,15 @@ public class UsersService implements UserService {
         logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
     }
 
+    public UsersService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+        logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
+        projectsRepository = new ProjectsRepositoryImplementation();
+    }
+
     @Override
     public CompletableFuture<User> getByIdAsync(UUID id) {
+        Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         return userRepository.findByIdAsync(id)
                 .thenCompose(user -> {
                     if (user == null) {

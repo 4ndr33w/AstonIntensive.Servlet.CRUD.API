@@ -13,7 +13,6 @@ import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.ProjectService;
-import services.synchronous.ProjectsService;
 import utils.StaticConstants;
 import utils.mappers.UserMapper;
 
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
  * @author 4ndr33w
  * @version 1.0
  */
-public class ProjectServiceImplNew implements ProjectService {
+/*public class ProjectServiceImplNew implements ProjectService {
 
     Logger logger = LoggerFactory.getLogger(ProjectServiceImplNew .class);
     private final ProjectRepository projectRepository;
@@ -328,3 +327,4 @@ public class ProjectServiceImplNew implements ProjectService {
         return null;
     }
 }
+*/

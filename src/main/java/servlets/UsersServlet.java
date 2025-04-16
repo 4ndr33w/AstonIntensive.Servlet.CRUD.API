@@ -42,8 +42,6 @@ public class UsersServlet extends HttpServlet {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
-        var path = req.getPathInfo();
-
         // Не получилось вычленить Id из req.getPathInfo(), разделяя строку на массив
         // если быть точнее, то /{id} воспринимался как несуществующий endpoint
         // поэтому пришлось использовать параметр запроса
@@ -78,7 +76,6 @@ public class UsersServlet extends HttpServlet {
             out.print(jsonResponse);
             out.flush();
             logger.info("Пользователь найден и отправлен в ответ");
-
         }
         else {
             resp.setStatus(HttpServletResponse.SC_NOT_FOUND);

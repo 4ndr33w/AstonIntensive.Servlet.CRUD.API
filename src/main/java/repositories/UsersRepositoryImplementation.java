@@ -10,10 +10,7 @@ import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -182,12 +179,12 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
         }, dbExecutor);
     }
 
+
+
     @Override
     public CompletableFuture<User> findByIdAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
-            if (id == null) {
-                throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-            }
+            Objects.requireNonNull(id);
 
             String queryString = sqlQueryStrings.findByIdString(usersTableName, id.toString());
 

@@ -39,7 +39,6 @@ public class ProjectsServlet extends HttpServlet {
 
     public ProjectsServlet() {
         super();
-        //this.projectController = new ProjectControllerSynchronous();
         this.projectController = new ProjectsController();
         utils = new Utils();
     }
@@ -148,7 +147,6 @@ public class ProjectsServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
 
-
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
 
@@ -241,7 +239,6 @@ public class ProjectsServlet extends HttpServlet {
 
         } catch (java.io.IOException e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            //throw new IllegalArgumentException(e);
             resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
             logger.error(String.format("Servlet: Error. Invalid ID format. Request path: %s", "/projects"));
         }
