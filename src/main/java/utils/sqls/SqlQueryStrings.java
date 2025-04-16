@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static configurations.DataSourceProvider.user;
-
 /**
  * Утильный класс для получения SQL-запросов при указанных параметрах.
  *
@@ -48,11 +46,13 @@ public class SqlQueryStrings {
     public String updateByIdString(String tableName, String id, Project project) {
         StringBuilder query = new StringBuilder();
         query.append(String.format("UPDATE %s SET ", tableName));
-        query.append("name = '" + project.getName() + "', ");
-        query.append("description = '" + project.getDescription() + "', ");
-        query.append("updated_at = '" + new Date() + "', ");
-        query.append("image = '" + project.getImage() + "', ");
-        query.append("project_status = '" + project.getProjectStatus().ordinal() + "'; ");
+        query.append(String.format("name = '%s', ", project.getName()));
+        query.append(String.format("description = '%s', ", project.getDescription()));
+        query.append(String.format("updated_at = '%s', ", project.getUpdatedAt()));
+        query.append(String.format("image = '%s', ", Arrays.toString(project.getImage())));
+        query.append(String.format("project_status = '%s' ", project.getProjectStatus().ordinal()));
+        query.append(String.format("WHERE id = '%s';", id));
+
         return query.toString();
     }
 

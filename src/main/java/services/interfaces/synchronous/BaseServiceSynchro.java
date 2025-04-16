@@ -11,5 +11,5 @@ public interface BaseServiceSynchro<T> {
     T create(T entity);
     T getById(UUID id);
     boolean deleteById(UUID id);
-    T updateById(UUID id, T entity);
+    T updateById(T entity);
 }

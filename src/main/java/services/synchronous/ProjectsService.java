@@ -126,7 +126,7 @@ public class ProjectsService implements ProjectServiceSynchro {
     }
 
     @Override
-    public Project updateById(UUID id, Project entity) {
+    public Project updateById(Project entity) {
         return null;
     }
 

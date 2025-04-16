@@ -9,6 +9,8 @@ import services.ProjectsService;
 import services.interfaces.ProjectService;
 import servlets.ProjectsServlet;
 import utils.StaticConstants;
+import utils.exceptions.ProjectNotFoundException;
+import utils.exceptions.ProjectUpdateException;
 import utils.mappers.ProjectMapper;
 
 import java.sql.SQLException;
@@ -17,6 +19,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -260,6 +263,28 @@ public class ProjectsController implements ProjectControllerInterface {
         } catch (Exception e) {
             logger.error("ProjectController: removeUserFromProject: {}", e.getMessage());
             throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ProjectDto updateProject(ProjectDto projectDto) {
+        Objects.requireNonNull(projectDto);
+
+        Project project = ProjectMapper.mapToEntity(projectDto, List.of());
+
+        try {
+              Project updatedProject = projectService.updateByIdAsync(project).join();
+
+              logger.info("ProjectController: updateProject:\n Successfully updated {}", updatedProject);
+            return ProjectMapper.toDto(updatedProject);
+
+        } catch (CompletionException ex) {
+            if (ex.getCause() instanceof NoSuchElementException) {
+                logger.warn("ProjectController: updateProject:\n {}", ex.getMessage());
+                throw new ProjectNotFoundException("Project not found with id: " + projectDto.getId());
+            }
+            logger.error("ProjectController: updateProject: {}", ex.getMessage());
+            throw new ProjectUpdateException("Failed to update project", ex);
         }
     }
 

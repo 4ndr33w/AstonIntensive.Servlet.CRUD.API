@@ -82,4 +82,6 @@ public interface ProjectControllerInterface {
      * @return {@code ProjectDto}
      */
     ProjectDto removeUserFromProject(UUID userId, UUID projectId);
+
+    ProjectDto updateProject(ProjectDto projectDto);
 }

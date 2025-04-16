@@ -14,6 +14,6 @@ public interface BaseService<T> {
     CompletableFuture<T> createAsync(T entity);
     CompletableFuture<T> getByIdAsync(UUID id);
     CompletableFuture<Boolean> deleteByIdAsync(UUID id);
-    CompletableFuture<T> updateByIdAsync(UUID id, T entity);
+    CompletableFuture<T> updateByIdAsync(T entity);
 
 }

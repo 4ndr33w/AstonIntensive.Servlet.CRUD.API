@@ -172,7 +172,7 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<User> updateByIdAsync(UUID id, User entity) {
+    public CompletableFuture<User> updateByIdAsync(User entity) {
         return CompletableFuture.completedFuture(null);
     }
 

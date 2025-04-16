@@ -264,49 +264,41 @@ public class ProjectRepositoryNew implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Project> updateAsync(Project item) {
+    public CompletableFuture<Project> updateAsync(Project project) {
         return CompletableFuture.supplyAsync(() -> {
-            Objects.requireNonNull(item, "Project item cannot be null");
-            Objects.requireNonNull(item.getId(), "Project ID cannot be null");
+            Objects.requireNonNull(project, "Project project cannot be null");
+            Objects.requireNonNull(project.getId(), "Project ID cannot be null");
 
             String updateQuery = sqlQueryStrings.updateByIdString(
-                    tableName, item.getId().toString(), item);
-            /*
-                    query.append(String.format("UPDATE %s SET ", tableName));
-        query.append("user_name = '" + user.getUserName() + "', ");
-        query.append("first_name = '" + user.getFirstName() + "', ");
-        query.append("last_name = '" + user.getLastName() + "', ");
-        query.append("email = '" + user.getEmail() + "', ");
-             */
+                    tableName, project.getId().toString(), project);
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
                 jdbcConnection.setAutoCommit(false);
 
                 try {
-                    // 1. Обновляем основную информацию о проекте
                     int affectedRows = jdbcConnection.executeUpdate(updateQuery);
 
                     if (affectedRows == 0) {
-                        throw new NoSuchElementException("Project with id " + item.getId() + " not found");
+                        logger.error(String.format("Repository: update: error: Project with id %s not found", project.getId()));
+                        throw new NoSuchElementException("Project with id " + project.getId() + " not found");
                     }
 
-                    // 2. Обновляем связи с пользователями (если нужно)
-                    if (item.getUserIds() != null && !item.getUserIds().isEmpty()) {
-                        updateProjectUsers(jdbcConnection, item.getId(), item.getUserIds());
-                    }
-
+                    logger.info("Repository: update: committed changes");
                     jdbcConnection.commit();
 
-                    // 3. Возвращаем обновленный проект (можно дополнительно запросить из БД)
-                    return item;
+                    logger.info("Repository: update: return updated project: ");
+                    return project;
 
                 } catch (SQLException e) {
                     jdbcConnection.rollback();
+                    logger.error(String.format("Repository: update: error: %s", e.getMessage()));
                     throw new CompletionException("Failed to update project", e);
                 }
             } catch (SQLException e) {
+                logger.error(String.format("Repository: update: error: %s", e.getMessage()));
                 throw new CompletionException("Database connection error", e);
             } catch (Exception e) {
+                logger.error(String.format("Repository: update: error: %s", e.getMessage()));
                 throw new CompletionException("Unexpected error", e);
             }
         }, dbExecutor);

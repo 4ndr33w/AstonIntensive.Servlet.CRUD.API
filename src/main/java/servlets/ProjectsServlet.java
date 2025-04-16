@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.Utils;
+import utils.exceptions.ProjectNotFoundException;
+import utils.mappers.ProjectMapper;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -18,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -242,5 +245,49 @@ public class ProjectsServlet extends HttpServlet {
             resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
             logger.error(String.format("Servlet: Error. Invalid ID format. Request path: %s", "/projects"));
         }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+
+        String id = req.getParameter("id");
+
+        if(utils.validateId(id)) {
+            UUID projectId = UUID.fromString(id);
+
+            try {
+                Project project = parseProjectFromRequest(req);
+                project.setId(projectId);
+
+                logger.info("Servlet: Парсинг выполнен\n Выполнение метода апдейта проекта");
+                ProjectDto updatedProject = projectController.updateProject(ProjectMapper.toDto(project));
+                logger.info(String.format("Servlet: Проект обновлён. Updated project: %s", objectMapper.writeValueAsString(updatedProject)));
+                resp.setStatus(HttpServletResponse.SC_ACCEPTED);
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+                objectMapper.writeValue(resp.getWriter(), updatedProject);
+
+            } catch (IllegalArgumentException e) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                objectMapper.writeValue(resp.getWriter(),
+                        Map.of("error", "Invalid input", "message", e.getMessage()));
+
+            } catch (ProjectNotFoundException e) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                objectMapper.writeValue(resp.getWriter(),
+                        Map.of("error", "Project not found", "message", e.getMessage()));
+
+            } catch (Exception e) {
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                objectMapper.writeValue(resp.getWriter(),
+                        Map.of("error", "Server error", "message", e.getMessage()));
+            }
+        }
+
+        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+        logger.error(String.format("Servlet: Error. Invalid ID format. Request path: %s", "/projects"));
     }
 }

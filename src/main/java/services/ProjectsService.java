@@ -1,5 +1,6 @@
 package services;
 
+import configurations.ThreadPoolConfiguration;
 import models.dtos.UserDto;
 import models.entities.Project;
 import org.slf4j.Logger;
@@ -13,12 +14,13 @@ import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.ProjectService;
 import utils.StaticConstants;
+import utils.exceptions.ProjectNotFoundException;
 
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-
+import java.util.concurrent.ExecutorService;
 
 /**
  * @author 4ndr33w
@@ -30,11 +32,15 @@ public class ProjectsService implements ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectUserRepository projectUserRepository;
+    private static final ExecutorService dbExecutor;
 
     public ProjectsService() {
         this.projectRepository = new ProjectRepositoryNew();
         this.userRepository = new UsersRepositoryImplementation();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
+    }
+    static {
+        dbExecutor = ThreadPoolConfiguration.getDbExecutor();
     }
 
     @Override
@@ -227,10 +233,52 @@ public class ProjectsService implements ProjectService {
                         throw new CompletionException(ex);
                 }});
     }
+/*
+    @Override
+    public CompletableFuture<Project> updateByIdAsync(Project project) {
+        return CompletableFuture.supplyAsync(() -> {
+            Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+
+            return projectRepository.updateAsync(project)
+                    .thenApply(updatedProject -> {
+                        if (updatedProject == null) {
+                            throw new NoSuchElementException("Project with id " + project.getId() + " not found");
+                        }
+                        return updatedProject;
+                    })
+                    .exceptionally(ex -> {
+                        if (ex.getCause() instanceof NoSuchElementException) {
+                            logger.error("Project with id {} not found", project.getId(), ex.getCause());
+                            throw new CompletionException(new ProjectNotFoundException(
+                                    String.format("%s; id: %s; %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, project.getId(), ex.getCause())));
+                        }
+                        logger.error("Failed to update project with id: {}", project.getId(), ex);
+                        throw new CompletionException("Failed to update project", ex.getCause());
+                    })
+                    .join();
+        }, dbExecutor);
+    }*/
 
     @Override
-    public CompletableFuture<Project> updateByIdAsync(UUID id, Project entity) {
+    public CompletableFuture<Project> updateByIdAsync(Project project) {
+        Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        return null;
+        return projectRepository.updateAsync(project)
+                .thenApply(updatedProject -> {
+                    if (updatedProject == null) {
+                        throw new CompletionException(
+                                new ProjectNotFoundException("Project with id " + project.getId() + " not found"));
+                    }
+                    return updatedProject;
+                })
+                .exceptionally(ex -> {
+                    if (ex.getCause() instanceof NoSuchElementException) {
+                        logger.error("Project with id {} not found", project.getId(), ex.getCause());
+                        throw new CompletionException(
+                                new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, project.getId(), ex.getCause())));
+                    }
+                    logger.error("Failed to update project with id: {}", project.getId(), ex);
+                    throw new CompletionException("Failed to update project", ex.getCause());
+                });
     }
 }

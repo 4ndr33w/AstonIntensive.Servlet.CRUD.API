@@ -163,4 +163,9 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public ProjectDto updateProject(ProjectDto projectDto) {
+        return null;
+    }
 }
