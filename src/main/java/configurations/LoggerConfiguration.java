@@ -11,7 +11,7 @@ import java.util.logging.LogManager;
  * @author 4ndr33w
  * @version 1.0
  */
-public class LoggerConfiguration {
+/*public class LoggerConfiguration {
     public static final Logger logger = LoggerFactory.getLogger(LoggerConfiguration.class);
 
     static {
@@ -61,7 +61,7 @@ public class LoggerConfiguration {
     /**
      * Дополнительный метод для проверки конфигурации логирования
      */
-    public static void logConfigurationTest() {
+    /*public static void logConfigurationTest() {
         logger.trace("This is a TRACE message");
         logger.debug("This is a DEBUG message");
         logger.info("This is an INFO message");
@@ -78,3 +78,4 @@ public class LoggerConfiguration {
         julLogger.severe("JUL SEVERE message");
     }
 }
+*/

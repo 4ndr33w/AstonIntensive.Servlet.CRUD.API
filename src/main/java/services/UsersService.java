@@ -4,12 +4,13 @@ import models.dtos.ProjectDto;
 import models.entities.Project;
 import models.entities.User;
 import org.slf4j.Logger;
-import repositories.ProjectsRepositoryImplementation;
+import repositories.ProjectRepositoryNew;
 import repositories.UsersRepositoryImplementation;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.UserService;
 import utils.StaticConstants;
+import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.UserNotFoundException;
 import utils.mappers.ProjectMapper;
 
@@ -36,14 +37,14 @@ public class UsersService implements UserService {
 
     public UsersService() {
         this.userRepository = new UsersRepositoryImplementation();
-        this.projectsRepository = new ProjectsRepositoryImplementation();
+        this.projectsRepository = new ProjectRepositoryNew();
         logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
     }
 
     public UsersService(UserRepository userRepository) {
         this.userRepository = userRepository;
         logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
-        projectsRepository = new ProjectsRepositoryImplementation();
+        this.projectsRepository = new ProjectRepositoryNew();
     }
 
     @Override
@@ -172,8 +173,27 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<User> updateByIdAsync(User entity) {
-        return CompletableFuture.completedFuture(null);
+    public CompletableFuture<User> updateByIdAsync(User user) {
+        Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+
+        return userRepository.updateAsync(user)
+                .thenCompose(updatedUser -> {
+                    if (updatedUser == null) {
+                        throw new CompletionException(
+                                new UserNotFoundException("User with id " + user.getId() + " not found"));
+                    }
+                    return enrichUserWithProjects(updatedUser);
+
+                })
+                .exceptionally(ex -> {
+                    if (ex.getCause() instanceof NoSuchElementException) {
+                        logger.error("User with id {} not found", user.getId(), ex.getCause());
+                        throw new CompletionException(
+                                new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, user.getId(), ex.getCause())));
+                    }
+                    logger.error("Failed to update user with id: {}", user.getId(), ex);
+                    throw new CompletionException("Failed to update user", ex.getCause());
+                });
     }
 
     @Override

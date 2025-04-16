@@ -1,17 +1,26 @@
 package controllers;
 
+import models.dtos.ProjectDto;
 import models.dtos.UserDto;
+import models.entities.Project;
 import models.entities.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import services.UsersService;
 import services.interfaces.UserService;
 import utils.StaticConstants;
+import utils.exceptions.ProjectNotFoundException;
+import utils.exceptions.ProjectUpdateException;
+import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 /**
  * Класс контроллера,
@@ -23,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 public class UsersController {
 
     public UserService userService;
+    Logger logger = LoggerFactory.getLogger(ProjectsController.class);
 
     public UsersController() {
         this.userService = new UsersService();
@@ -112,6 +122,27 @@ public class UsersController {
         }
         catch (Exception ex) {
             throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
+        }
+    }
+
+    public UserDto updateUser(UserDto userDto) {
+        Objects.requireNonNull(userDto);
+
+        User user = UserMapper.mapToEntity(userDto);
+
+        try {
+            User updatedUser = userService.updateByIdAsync(user).join();
+
+            logger.info("UserController: updateUser:\n Successfully updated {}", updatedUser);
+            return UserMapper.toDto(updatedUser);
+
+        } catch (CompletionException ex) {
+            if (ex.getCause() instanceof NoSuchElementException) {
+                logger.warn("UserController: updateUser:\n {}", ex.getMessage());
+                throw new ProjectNotFoundException("User not found with id: " + userDto.getId());
+            }
+            logger.error("UserController: updateUser: {}", ex.getMessage());
+            throw new ProjectUpdateException("Failed to update user", ex);
         }
     }
 }

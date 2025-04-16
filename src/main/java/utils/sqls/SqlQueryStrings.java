@@ -1,13 +1,14 @@
 package utils.sqls;
 
-import models.dtos.ProjectDto;
 import models.entities.Project;
 import models.entities.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import servlets.ProjectsServlet;
 
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -43,7 +44,7 @@ public class SqlQueryStrings {
         return query.toString();
     }
 
-    public String updateByIdString(String tableName, String id, Project project) {
+    public String updateProjectByIdString(String tableName, String id, Project project) {
         StringBuilder query = new StringBuilder();
         query.append(String.format("UPDATE %s SET ", tableName));
         query.append(String.format("name = '%s', ", project.getName()));
@@ -53,6 +54,23 @@ public class SqlQueryStrings {
         query.append(String.format("project_status = '%s' ", project.getProjectStatus().ordinal()));
         query.append(String.format("WHERE id = '%s';", id));
 
+        return query.toString();
+    }
+
+    public String updateUsertByIdString(String tableName, String id, User user) {
+        StringBuilder query = new StringBuilder();
+        query.append(String.format("UPDATE %s SET ", tableName));
+        query.append(String.format("first_name = '%s', ", user.getFirstName()));
+        query.append(String.format("last_name = '%s', ", user.getLastName()));
+        query.append(String.format("phone = '%s', ", user.getPhoneNumber()));
+        query.append(String.format("updated_at = '%s', ", new Date()));
+        query.append(String.format("image = '%s', ", Arrays.toString(user.getUserImage())));
+        query.append(String.format("last_login_date = '%s' ", new Date()));
+        query.append(String.format("WHERE id = '%s';", id));
+
+        Logger logger = LoggerFactory.getLogger(SqlQueryStrings.class);
+
+        logger.info("Query for updating user: " + query.toString());
         return query.toString();
     }
 

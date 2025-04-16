@@ -31,10 +31,10 @@ public class ThreadPoolConfiguration {
     }
     public static ExecutorService getDbExecutor() {
         if (dbExecutor != null) {
-            logger.info("Thread Pool is initialized");
+            logger.info("Получен пул потоков dbExecutor");
             return dbExecutor;
         } else {
-            logger.error("Thread Pool is not initialized");
+            logger.error("Ошибка инициализации Thread Pool");
             throw new IllegalStateException("dbExecutor is not initialized");
         }
     }

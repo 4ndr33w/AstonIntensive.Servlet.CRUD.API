@@ -1,7 +1,7 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import configurations.LoggerConfiguration;
+//import configurations.LoggerConfiguration;
 import controllers.UsersController;
 import models.dtos.UserDto;
 import org.slf4j.Logger;

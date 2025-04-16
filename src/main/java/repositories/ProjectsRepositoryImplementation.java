@@ -31,7 +31,7 @@ import static utils.mappers.ProjectMapper.mapResultSetToProject;
  * @author 4ndr33w
  * @version 1.0
  */
-public class ProjectsRepositoryImplementation implements ProjectRepository {
+/*public class ProjectsRepositoryImplementation implements ProjectRepository {
 
     private static final String schema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
     private static final String projectsTable = PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
@@ -248,6 +248,7 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
 
     @Override
     public CompletableFuture<List<Project>> findByUserIdAsync(UUID userId) {
+
         return CompletableFuture.supplyAsync(() -> {
             if (userId == null) {
                 return Collections.emptyList();
@@ -402,3 +403,4 @@ public class ProjectsRepositoryImplementation implements ProjectRepository {
         return null;
     }
 }
+*/

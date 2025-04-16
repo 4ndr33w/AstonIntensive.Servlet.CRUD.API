@@ -58,6 +58,7 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws InterruptedException
      * @throws NoSuchElementException
      */
+    @Override
     public List<ProjectDto> getByUserId(UUID userId) {
         Objects.requireNonNull(userId);
 
@@ -90,6 +91,7 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws NoSuchElementException
      * @throws RuntimeException
      */
+    @Override
     public List<ProjectDto> getByAdminId(UUID adminId) {
         Objects.requireNonNull(adminId);
 
@@ -122,6 +124,7 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws NoSuchElementException
      * @throws RuntimeException
      */
+    @Override
     public ProjectDto getProject(UUID projectId) {
         Objects.requireNonNull(projectId);
 
@@ -152,6 +155,7 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws InterruptedException
      * @throws RuntimeException
      */
+    @Override
     public ProjectDto create(Project project) {
         Objects.requireNonNull(project);
 
@@ -183,6 +187,7 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws NoSuchElementException
      * @throws RuntimeException
      */
+    @Override
     public boolean delete(UUID projectId) {
         Objects.requireNonNull(projectId);
 
@@ -202,31 +207,23 @@ public class ProjectsController implements ProjectControllerInterface {
     /**
      * Добавить пользователя в проект по
      * {@code userId} и {@code projectId}
+     *
      * @param projectId
      * @param userId
      * @return {@code ProjectDto}
-     * @throws SQLException
-     * @throws ExecutionException
-     * @throws InterruptedException
-     * @throws NoSuchElementException
+     *
      * @throws RuntimeException
-     * @throws IllegalArgumentException
+     * @throws NullPointerException
      */
+    @Override
     public ProjectDto addUserToProject(UUID userId, UUID projectId) {
+        Objects.requireNonNull(userId);
+        Objects.requireNonNull(projectId);
         try {
             CompletableFuture<Project> future = projectService.addUserToProjectAsync(userId, projectId);
             Project project = future.get();
             logger.info("ProjectController: addUserToProject:\n Successfully added {}", project);
             return ProjectMapper.toDto(project);
-        }
-        catch (InterruptedException e) {
-            logger.error("ProjectController: addUserToProject:\n InterruptedException(221) {}", e.getMessage());
-            //Thread.currentThread().interrupt();
-            throw new RuntimeException("ProjectController; Operation was interrupted", e);
-        }
-        catch (ExecutionException e) {
-            logger.error("ProjectController: addUserToProject: ExecutionException(226) {}", e.getMessage());
-            throw convertExecutionException(e.getCause());
         }
         catch (Exception e) {
             logger.error("ProjectController: addUserToProject:\n Exception(230) {}", e.getMessage());
@@ -237,35 +234,40 @@ public class ProjectsController implements ProjectControllerInterface {
     /**
      * Удалить пользователя из проекта по
      * {@code userId} и {@code projectId}
+     *
      * @param projectId
      * @param userId
      * @return {@code ProjectDto}
-     * @throws SQLException
-     * @throws ExecutionException
-     * @throws InterruptedException
-     * @throws NoSuchElementException
+     *
      * @throws RuntimeException
-     * @throws IllegalArgumentException
+     * @throws NullPointerException
      */
+    @Override
     public ProjectDto removeUserFromProject(UUID userId, UUID projectId) {
+        Objects.requireNonNull(userId);
+        Objects.requireNonNull(projectId);
         try {
             CompletableFuture<Project> future = projectService.removeUserFromProjectAsync(userId, projectId);
             Project project = future.get();
             logger.info("ProjectController: removeUserFromProject: {}", project);
             return ProjectMapper.toDto(project);
-        } catch (InterruptedException e) {
-            logger.error("ProjectController: removeUserFromProject: {}", e.getMessage());
-            //Thread.currentThread().interrupt();
-            throw new RuntimeException("ProjectController; Operation was interrupted", e);
-        } catch (ExecutionException e) {
-            logger.error("ProjectController: removeUserFromProject: {}", e.getMessage());
-            throw convertExecutionException(e.getCause());
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error("ProjectController: removeUserFromProject: {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Обновить данные проекта
+     *
+     * @param projectDto
+     * @return {@code ProjectDto}
+     *
+     * @throws NullPointerException
+     * @throws ProjectNotFoundException
+     * @throws ProjectUpdateException
+     */
     @Override
     public ProjectDto updateProject(ProjectDto projectDto) {
         Objects.requireNonNull(projectDto);
@@ -287,7 +289,7 @@ public class ProjectsController implements ProjectControllerInterface {
             throw new ProjectUpdateException("Failed to update project", ex);
         }
     }
-
+/*
     private RuntimeException convertExecutionException(Throwable cause) {
         if (cause instanceof IllegalArgumentException) {
             logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
@@ -307,5 +309,5 @@ public class ProjectsController implements ProjectControllerInterface {
             String message = String.format("ProjectController; %s: %s, %s", StaticConstants.UNEXPECTED_ERROR_EXCEPTION_MESSAGE, cause.getMessage(), cause);
             return new RuntimeException(message);
         }
-    }
+    }*/
 }

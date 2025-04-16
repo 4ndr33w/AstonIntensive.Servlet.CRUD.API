@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.ProjectRepositoryNew;
 import repositories.ProjectUsersRepositoryImpl;
-import repositories.ProjectsRepositoryImplementation;
 import repositories.UsersRepositoryImplementation;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
@@ -36,6 +35,12 @@ public class ProjectsService implements ProjectService {
 
     public ProjectsService() {
         this.projectRepository = new ProjectRepositoryNew();
+        this.userRepository = new UsersRepositoryImplementation();
+        this.projectUserRepository = new ProjectUsersRepositoryImpl();
+    }
+
+    public ProjectsService(ProjectRepository projectRepository) {
+        this.projectRepository = projectRepository;
         this.userRepository = new UsersRepositoryImplementation();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
     }
@@ -185,16 +190,13 @@ public class ProjectsService implements ProjectService {
 
     @Override
     public CompletableFuture<Project> createAsync(Project project) {
-        if (project == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("User cannot be null"));
-        }
+        Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         CompletableFuture<Project> projectFuture = projectRepository.createAsync(project);
 
         return projectFuture
                 .exceptionally(ex -> {
-                    throw new CompletionException(ex.getCause() != null ? ex.getCause() : ex);
+                    throw new RuntimeException("Error creating project by id");
                 });
     }
 
@@ -214,50 +216,19 @@ public class ProjectsService implements ProjectService {
 
     @Override
     public CompletableFuture<Boolean> deleteByIdAsync(UUID id) {
-        if (id == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("User ID cannot be null"));
-        }
+        Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.deleteAsync(id)
                 .thenApply(deleted -> {
                     if (!deleted) {
-                        throw new NoSuchElementException("User with id " + id + " not found");
+                        return false;
                     }
                     return true;
                 })
                 .exceptionally(ex -> {
-                    if (ex.getCause() instanceof SQLException) {
-                        throw new CompletionException("Database error while deleting user", ex.getCause());
-                    } else {
-                        throw new CompletionException(ex);
-                }});
+                    throw new RuntimeException("Error deleting project by id");
+                });
     }
-/*
-    @Override
-    public CompletableFuture<Project> updateByIdAsync(Project project) {
-        return CompletableFuture.supplyAsync(() -> {
-            Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-
-            return projectRepository.updateAsync(project)
-                    .thenApply(updatedProject -> {
-                        if (updatedProject == null) {
-                            throw new NoSuchElementException("Project with id " + project.getId() + " not found");
-                        }
-                        return updatedProject;
-                    })
-                    .exceptionally(ex -> {
-                        if (ex.getCause() instanceof NoSuchElementException) {
-                            logger.error("Project with id {} not found", project.getId(), ex.getCause());
-                            throw new CompletionException(new ProjectNotFoundException(
-                                    String.format("%s; id: %s; %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, project.getId(), ex.getCause())));
-                        }
-                        logger.error("Failed to update project with id: {}", project.getId(), ex);
-                        throw new CompletionException("Failed to update project", ex.getCause());
-                    })
-                    .join();
-        }, dbExecutor);
-    }*/
 
     @Override
     public CompletableFuture<Project> updateByIdAsync(Project project) {

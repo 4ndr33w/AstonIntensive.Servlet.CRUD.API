@@ -60,6 +60,7 @@ public interface ProjectControllerInterface {
 
     /**
      * Удалить проект
+     *
      * @param projectId
      * @return {@code boolean}
      */
@@ -68,6 +69,7 @@ public interface ProjectControllerInterface {
     /**
      * Добавить пользователя в проект по
      * {@code userId} и {@code projectId}
+     *
      * @param projectId
      * @param userId
      * @return {@code ProjectDto}
@@ -77,11 +79,18 @@ public interface ProjectControllerInterface {
     /**
      * Удалить пользователя из проекта по
      * {@code userId} и {@code projectId}
+     *
      * @param projectId
      * @param userId
      * @return {@code ProjectDto}
      */
     ProjectDto removeUserFromProject(UUID userId, UUID projectId);
 
+    /**
+     * Обновить проект
+     *
+     * @param projectDto
+     * @return {@code ProjectDto}
+     */
     ProjectDto updateProject(ProjectDto projectDto);
 }

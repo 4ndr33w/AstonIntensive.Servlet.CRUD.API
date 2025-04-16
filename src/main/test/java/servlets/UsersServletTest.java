@@ -22,14 +22,12 @@ public class UsersServletTest {
 
     @Test
     public void doDelete_ShouldReturnSuccess_WhenUserExists() throws Exception {
-        // Arrange
+
         UUID testUserId = UUID.randomUUID();
 
-        // Mock сервлетных объектов
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
 
-        // Mock UsersController
         UsersController controller = new UsersController();// = mock(UsersController.class);
         controller = mock(UsersController.class);
         when(controller.delete(testUserId)).thenReturn(true);

@@ -34,9 +34,20 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
     }
 
     /**
-     * Получить список всех проектов по id пользователя
+     * Получить список всех проектов по {@code userId},
+     * который является администратором
+     * <p>
+     *     Применяется в сервлете {@code GetProjectsByUserIdServlet}
+     *     для загрузки в проект списка проектов пользователя
+     * </p>
+     * <p>
+     *     Не получилось в установленные сроки реализовать этот функционал
+     *     в асинхронном контроллере
+     * </p>
      * @param userId
      * @return {@code List<ProjectDto>}
+     * @throws NoSuchElementException
+     * @throws NullPointerException
      */
     public List<ProjectDto> getByUserId(UUID userId) {
         Objects.requireNonNull(userId);
@@ -54,8 +65,18 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
     /**
      * Получить список всех проектов по {@code adminId},
      * который является администратором
+     * <p>
+     *     Применяется в сервлете {@code GetProjectsByUserIdServlet}
+     *     для загрузки в проект списка проектов пользователя
+     * </p>
+     * <p>
+     *     Не получилось в установленные сроки реализовать этот функционал
+     *     в асинхронном контроллере
+     * </p>
      * @param adminId
      * @return {@code List<ProjectDto>}
+     * @throws NoSuchElementException
+     * @throws NullPointerException
      */
     public List<ProjectDto> getByAdminId(UUID adminId){
         Objects.requireNonNull(adminId);
@@ -72,11 +93,15 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
 
     /**
      * Получить проект по {@code Id} проекта
+     * <p>
+     *     Метод не применяется.
+     *     Используется в асинхроной реализации интерфейса
+     * </p>
      * @param projectId
      * @return {@code ProjectDto}
      */
     public ProjectDto getProject(UUID projectId) {
-        Objects.requireNonNull(projectId);
+        /*Objects.requireNonNull(projectId);
 
         try {
             logger.info("ProjectControllerSynchro: getProject Получение проекта по id");
@@ -86,16 +111,21 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         catch (NoSuchElementException e) {
             logger.error(String.format("ProjectControllerSynchro: getProject Ошибка получения проекта по id: %s", e.getMessage()));
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        }
+        }*/
+        return null;
     }
 
     /**
      * Создать новый проект: {@code project}
+     * <p>
+     *     Метод не применяется.
+     *     Используется в асинхроной реализации интерфейса
+     * </p>
      * @param project
      * @return {@code ProjectDto}
      */
     public ProjectDto create(Project project) {
-        Objects.requireNonNull(project);
+        /*Objects.requireNonNull(project);
 
         try {
             logger.info("ProjectControllerSynchro: create Создание нового проекта");
@@ -104,16 +134,21 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         catch (NoSuchElementException e) {
             logger.error(String.format("ProjectControllerSynchro: create Ошибка создания нового проекта: %s", e.getMessage()));
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        }
+        }*/
+        return null;
     }
 
     /**
      * Удалить проект
+     * <p>
+     *     Метод не применяется.
+     *     Используется в асинхроной реализации интерфейса
+     * </p>
      * @param projectId
      * @return {@code boolean}
      */
     public boolean delete(UUID projectId) {
-        Objects.requireNonNull(projectId);
+        /*Objects.requireNonNull(projectId);
 
         try {
             logger.info("ProjectControllerSynchro: delete Удаление проекта по id");
@@ -122,18 +157,23 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         catch (NoSuchElementException e) {
             logger.error(String.format("ProjectControllerSynchro: delete Ошибка удаления проекта по id: %s", e.getMessage()));
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        }
+        }*/
+        return false;
     }
 
     /**
      * Добавить пользователя в проект по
      * {@code userId} и {@code projectId}
+     * <p>
+     *     Метод не применяется.
+     *     Используется в асинхроной реализации интерфейса
+     * </p>
      * @param projectId
      * @param userId
      * @return {@code ProjectDto}
      */
     public ProjectDto addUserToProject(UUID userId, UUID projectId) {
-        try {
+        /*try {
             logger.info("ProjectControllerSynchro: addUserToProject Добавление пользователя в проект");
             Project project = projectService.addUserToProject(userId, projectId);
 
@@ -142,18 +182,23 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         catch (Exception e) {
             logger.error(String.format("ProjectControllerSynchro: addUserToProject Ошибка добавления пользователя в проект: %s", e.getMessage()));
             throw new RuntimeException(e);
-        }
+        }*/
+        return null;
     }
 
     /**
      * Удалить пользователя из проекта по
      * {@code userId} и {@code projectId}
+     * <p>
+     *     Метод не применяется.
+     *     Используется в асинхроной реализации интерфейса
+     * </p>
      * @param projectId
      * @param userId
      * @return {@code ProjectDto}
      */
     public ProjectDto removeUserFromProject(UUID userId, UUID projectId) {
-        try {
+       /* try {
             logger.info("ProjectControllerSynchro: removeUserFromProject Удаление пользователя из проекта");
             Project project = projectService.removeUserFromProject(userId, projectId);
             return ProjectMapper.toDto(project);
@@ -161,9 +206,20 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         catch (Exception e) {
             logger.error(String.format("ProjectControllerSynchro: removeUserFromProject Ошибка удаления пользователя из проекта: %s", e.getMessage()));
             throw new RuntimeException(e);
-        }
+        }*/
+        return null;
     }
 
+    /**
+     * Обновить проект
+     * <p>
+     *     Метод не используется;
+     *     Применяется метод другой реализации контроллера {@code ProjectsController}
+     * </p>
+     *
+     * @param projectDto
+     * @return {@code null}
+     */
     @Override
     public ProjectDto updateProject(ProjectDto projectDto) {
         return null;

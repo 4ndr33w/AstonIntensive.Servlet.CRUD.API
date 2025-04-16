@@ -7,7 +7,7 @@ import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.ProjectUsersRepositoryImpl;
-import repositories.ProjectsRepositoryImplementation;
+
 import repositories.UsersRepositoryImplementation;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;

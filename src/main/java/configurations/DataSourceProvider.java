@@ -3,6 +3,9 @@ package configurations;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import repositories.synchronous.ProjectUsersRepositorySynchronous;
 
 import javax.sql.DataSource;
 
@@ -18,6 +21,7 @@ public class DataSourceProvider {
     static String dbUrl = PropertiesConfiguration.getProperties().getProperty("jdbc.url");
     static String user = PropertiesConfiguration.getProperties().getProperty("jdbc.username");
     static String pass = PropertiesConfiguration.getProperties().getProperty("jdbc.password");
+    static Logger logger = LoggerFactory.getLogger(DataSourceProvider.class);
 
     private static final HikariDataSource dataSource;
 
@@ -34,6 +38,7 @@ public class DataSourceProvider {
     }
 
     public static DataSource getDataSource() {
+        logger.info("Предоставлен источник DataSource");
         return dataSource;
     }
 }

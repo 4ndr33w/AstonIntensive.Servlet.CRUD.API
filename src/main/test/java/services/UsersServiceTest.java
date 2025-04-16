@@ -13,6 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.interfaces.UserRepository;
 import testUtils.Utils;
+import utils.StaticConstants;
+import utils.exceptions.ProjectNotFoundException;
+import utils.exceptions.UserNotFoundException;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +35,6 @@ import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class UsersServiceTest extends Utils{
 
-    Logger logger = LoggerFactory.getLogger(UsersServiceTest.class);
     @Mock private UserRepository userRepository;
     @InjectMocks private UsersService userService;
 
@@ -252,6 +255,82 @@ public class UsersServiceTest extends Utils{
 
     //---------------------------------------------------------------
     // GetByIdTest
+    //---------------------------------------------------------------
+
+    //---------------------------------------------------------------
+    // UpdateTest
+    //---------------------------------------------------------------
+    @Test
+    @Description("Успешное обновление пользователя")
+    public void updateByIdAsync_ShouldReturnUpdatedUser_WhenUserExists() {
+        User updatedUser = testUser1;
+
+        when(userRepository.updateAsync(updatedUser))
+                .thenReturn(CompletableFuture.completedFuture(updatedUser));
+
+        CompletableFuture<User> resultFuture = userService.updateByIdAsync(updatedUser);
+        User result = resultFuture.join();
+       assertNotNull(result);
+        assertEquals(testUser1.getUserName(), result.getUserName());
+        verify(userRepository).updateAsync(updatedUser);
+    }
+
+    @Test
+    @Description("Попытка обновления пользователя, которого не существует")
+    public void updateByIdAsync_ShouldThrow_WhenUserNotFound() {
+
+        UUID userId = UUID.randomUUID();
+        User user = testUser1;
+        user.setId(userId);
+
+        when(userRepository.updateAsync(user))
+                .thenReturn(CompletableFuture.completedFuture(null));
+
+        CompletableFuture<User> future = userService.updateByIdAsync(user);
+        CompletionException exception = assertThrows(CompletionException.class, future::join);
+
+        assertTrue(exception.getCause() instanceof UserNotFoundException);
+        assertEquals(
+                "User with id " + userId + " not found",
+                exception.getCause().getMessage()
+        );
+    }
+
+    @Test
+    @Description("Ошибка при обновлении пользователя")
+    public void updateByIdAsync_ShouldThrow_WhenRepositoryFails() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        User user = testUser1;
+        user.setId(userId);
+        RuntimeException dbError = new RuntimeException("Database error");
+
+        when(userRepository.updateAsync(user))
+                .thenReturn(CompletableFuture.failedFuture(dbError));
+
+        // Act & Assert
+        CompletableFuture<User> future = userService.updateByIdAsync(user);
+        CompletionException exception = assertThrows(CompletionException.class, future::join);
+
+        assertEquals("Failed to update user", exception.getMessage());
+        assertSame(dbError, exception.getCause());
+    }
+
+    @Test
+    @Description("NullPointerException при передаче в качестве параметра null")
+    public void updateByIdAsync_ShouldThrow_WhenUserIsNull() {
+
+        NullPointerException exception = assertThrows(
+                NullPointerException.class,
+                () -> userService.updateByIdAsync(null)
+        );
+
+        assertEquals(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE, exception.getMessage());
+        verifyNoInteractions(userRepository);
+    }
+
+    //---------------------------------------------------------------
+    // UpdateTest
     //---------------------------------------------------------------
 
 }

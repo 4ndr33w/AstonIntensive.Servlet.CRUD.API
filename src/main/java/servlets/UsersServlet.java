@@ -1,13 +1,20 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import controllers.UsersController;
+import models.dtos.ProjectDto;
 import models.dtos.UserDto;
+import models.entities.Project;
 import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.Utils;
+import utils.exceptions.ProjectNotFoundException;
+import utils.exceptions.UserNotFoundException;
+import utils.mappers.ProjectMapper;
+import utils.mappers.UserMapper;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -15,6 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -215,5 +223,55 @@ public class UsersServlet extends HttpServlet {
             resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
             logger.error("Параметр запроса ID не прошел валидацию");
         }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
+
+        String id = req.getParameter("id");
+
+        if(utils.validateId(id)) {
+            UUID userId = UUID.fromString(id);
+
+            try {
+                User user = parseUserFromRequest(req);
+                user.setId(userId);
+
+                logger.info("Servlet: Парсинг выполнен\n Выполнение метода апдейта проекта");
+
+                UserDto updatedUser = userController.updateUser(UserMapper.toDto(user));
+                updatedUser.setUserRole(user.getUserRole());
+                updatedUser.setUserName(user.getUserName());
+                updatedUser.setEmail(user.getEmail());
+                updatedUser.setCreatedAt(user.getCreatedAt());
+
+                logger.info(String.format("Servlet: Данные пользователя обновлены. Updated user: %s", objectMapper.writeValueAsString(updatedUser)));
+                resp.setStatus(HttpServletResponse.SC_ACCEPTED);
+                ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+                objectMapper.writeValue(resp.getWriter(), updatedUser);
+
+            } catch (IllegalArgumentException e) {
+                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                objectMapper.writeValue(resp.getWriter(),
+                        Map.of("error", "Invalid input", "message", e.getMessage()));
+
+            } catch (UserNotFoundException e) {
+                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                objectMapper.writeValue(resp.getWriter(),
+                        Map.of("error", "User not found", "message", e.getMessage()));
+
+            } catch (Exception e) {
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                objectMapper.writeValue(resp.getWriter(),
+                        Map.of("error", "Server error", "message", e.getMessage()));
+            }
+        }
+
+        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+        logger.error(String.format("Servlet: Error. Invalid ID format. Request path: %s", "/projects"));
     }
 }

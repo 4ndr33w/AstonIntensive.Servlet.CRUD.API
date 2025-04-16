@@ -11,10 +11,7 @@ import utils.StaticConstants;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -23,6 +20,9 @@ import java.util.stream.Collectors;
 import static utils.mappers.ProjectUserMapper.mapResultSetToProjectUser;
 
 /**
+ * Вспомогательный репозиторий для работы с
+ * связями между проектами и пользователями.
+ *
  * @author 4ndr33w
  * @version 1.0
  */
@@ -43,26 +43,18 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
         this.sqlQueryStrings = new SqlQueryStrings();
     }
 
-    public CompletableFuture<List<ProjectUsersDto>> findAll() {
-        return CompletableFuture.supplyAsync(() -> {
-            try (JdbcConnection conn = new JdbcConnection();
-                 PreparedStatement stmt = conn.prepareStatement(tableName);
-                 ResultSet rs = stmt.executeQuery()) {
-
-                List<ProjectUsersDto> projectUsers = new ArrayList<>();
-                while (rs.next()) {
-                    projectUsers.add(mapResultSetToProjectUser(rs));
-                }
-                return projectUsers;
-            }
-            catch (Exception e) {
-                throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
-            }
-        }, dbExecutor);
-    }
-
+    /**
+     * Ищет связи между проектами и
+     * пользователями по id пользователя
+     *
+     * @param userId
+     * @return {@code CompletableFuture<List<ProjectUsersDto>>}
+     * @throws CompletionException
+     * @throws NullPointerException
+     */
     @Override
     public CompletableFuture<List<ProjectUsersDto>> findByUserId(UUID userId) {
+        Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         String queryString = sqlQueryStrings.findProjectUserByUserIdString(tableName, userId.toString());
         return CompletableFuture.supplyAsync(() -> {
             try (JdbcConnection conn = new JdbcConnection();
@@ -80,8 +72,19 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
         }, dbExecutor);
     }
 
+    /**
+     * Ищет связи между проектами и
+     * пользователями по id проекта
+     *
+     * @param projectId
+     * @return {@code CompletableFuture<List<ProjectUsersDto>>}
+     * @throws CompletionException
+     * @throws NullPointerException
+     */
     @Override
     public CompletableFuture<List<ProjectUsersDto>> findByProjectId(UUID projectId) {
+        Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+
         String queryString = sqlQueryStrings.findProjectUserByProjectIdString(tableName, projectId.toString());
         return CompletableFuture.supplyAsync(() -> {
             try (JdbcConnection conn = new JdbcConnection();
@@ -99,8 +102,23 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
         }, dbExecutor);
     }
 
+    /**
+     * Метод удаляет связи между проектами и пользователями
+     * по id пользователя и id проекта
+     *
+     * @param userId
+     * @param projectId
+     * @return {@code CompletableFuture<Boolean>}
+     * @throws CompletionException
+     * @throws NullPointerException
+     * @throws RuntimeException
+     * @throws SQLDataException
+     */
     @Override
     public CompletableFuture<Boolean> deleteUserFromProject(UUID userId, UUID projectId) {
+        Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+
         return CompletableFuture.supplyAsync(() -> {
             String tableName = String.format("%s.%s", schema, projectUsersTable);
             String query = sqlQueryStrings.removeUserFromProjectString(
@@ -139,6 +157,18 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
         });
     }
 
+    /**
+     *Метод добавляет связи
+     * между проектами и пользователями
+     * по id пользователя и id проекта
+     * @param userId
+     * @param projectId
+     * @return {@code CompletableFuture<Boolean>}
+     * @throws CompletionException
+     * @throws NullPointerException
+     * @throws RuntimeException
+     * @throws SQLDataException
+     */
     @Override
     public CompletableFuture<Boolean> addUserToProject(UUID userId, UUID projectId) {
         return CompletableFuture.supplyAsync(() -> {

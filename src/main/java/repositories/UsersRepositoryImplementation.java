@@ -3,7 +3,10 @@ package repositories;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import configurations.ThreadPoolConfiguration;
+import models.entities.Project;
 import models.entities.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
 import utils.mappers.UserMapper;
@@ -14,7 +17,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 import static utils.mappers.UserMapper.mapResultSetToUser;
 
@@ -29,6 +31,8 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
     private final String usersTableName = String.format("%s.%s", usersSchema, usersTable);
     private final SqlQueryStrings sqlQueryStrings;
     private static final ExecutorService dbExecutor;
+
+    Logger logger = LoggerFactory.getLogger(UsersRepositoryImplementation.class);
 
     static {
         dbExecutor = ThreadPoolConfiguration.getDbExecutor();
@@ -179,8 +183,6 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
         }, dbExecutor);
     }
 
-
-
     @Override
     public CompletableFuture<User> findByIdAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
@@ -234,15 +236,48 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
         }, dbExecutor);
     }
 
+    @Override
+    public CompletableFuture<User> updateAsync(User user) {
+        Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
+        return CompletableFuture.supplyAsync(() -> {
 
+            String updateQuery = sqlQueryStrings.updateUsertByIdString(
+                    usersTableName, user.getId().toString(), user);
+
+            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+                jdbcConnection.setAutoCommit(false);
+
+                try {
+                    int affectedRows = jdbcConnection.executeUpdate(updateQuery);
+
+                    if (affectedRows == 0) {
+                        logger.error(String.format("Repository: update: error: User with id %s not found", user.getId()));
+                        throw new NoSuchElementException("User with id " + user.getId() + " not found");
+                    }
+
+                    logger.info("Repository: update: committed changes");
+                    jdbcConnection.commit();
+
+                    logger.info("Repository: update: return updated project: ");
+                    return user;
+
+                } catch (SQLException e) {
+                    jdbcConnection.rollback();
+                    logger.error(String.format("Repository: update: error: %s", e.getMessage()));
+                    throw new CompletionException("Failed to update project", e);
+                }
+            } catch (SQLException e) {
+                logger.error(String.format("Repository: update: error: %s", e.getMessage()));
+                throw new CompletionException("Database connection error", e);
+            } catch (Exception e) {
+                logger.error(String.format("Repository: update: error: %s", e.getMessage()));
+                throw new CompletionException("Unexpected error", e);
+            }
+        }, dbExecutor);
+    }
 
     // TODO: реализовать остальные методы интерфейса UserRepository
-
-    @Override
-    public CompletableFuture<User> updateAsync(User item) {
-        return CompletableFuture.completedFuture(null);
-    }
 
     @Override
     public CompletableFuture<User> findByEmailAsync(String email) {
