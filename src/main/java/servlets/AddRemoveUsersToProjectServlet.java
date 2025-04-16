@@ -9,6 +9,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.UUID;
 
 /**
@@ -22,10 +23,11 @@ import java.util.UUID;
 public class AddRemoveUsersToProjectServlet extends HttpServlet {
 
     private final ProjectControllerInterface projectController;
-    //private final ProjectsController projectController;
+
 
     public AddRemoveUsersToProjectServlet() {
         this.projectController = new ProjectControllerSynchronous();
+        //this.projectController = new controllers.ProjectsController();
     }
 
     /**
@@ -34,8 +36,8 @@ public class AddRemoveUsersToProjectServlet extends HttpServlet {
      * <p>
      *     метод принимает два параметра в адресной строке:
      *     <ul>
-     *         <li>{@code projectId}</li>
-     *         <li>{@code userId}</li>
+     *         <li>{@code projectid}</li>
+     *         <li>{@code userid}</li>
      *     </ul>
      * </p>
      * @param req
@@ -47,17 +49,24 @@ public class AddRemoveUsersToProjectServlet extends HttpServlet {
      * @throws Exception
      */
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
-            UUID projectId = UUID.fromString(req.getParameter("projectId"));
-            UUID userId = UUID.fromString(req.getParameter("userId"));
+            UUID projectId = UUID.fromString(req.getParameter("projectid"));
+            UUID userId = UUID.fromString(req.getParameter("userid"));
 
             ProjectDto result = projectController.addUserToProject(userId, projectId);
 
             resp.setContentType("application/json");
             new ObjectMapper().writeValue(resp.getWriter(), result);
+        } catch (IOException e) {
+            resp.setStatus(HttpServletResponse.SC_CONFLICT);
+            resp.getWriter().write(e.getCause().getMessage());
         } catch (Exception e) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.getWriter().write(e.getCause().getMessage());
+            resp.getWriter().write("\n");
+            resp.getWriter().write(e.getMessage());
+            resp.getWriter().write("\n");
         }
     }
 

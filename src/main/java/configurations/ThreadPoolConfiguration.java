@@ -6,6 +6,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * Класс предоставляет Thread Pool
+ * для процесса работы приложения в параллельных потоках
+ *
  * @author 4ndr33w
  * @version 1.0
  */

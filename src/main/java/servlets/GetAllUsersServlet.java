@@ -4,16 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.UsersController;
 import models.dtos.UserDto;
 
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Servlet для получения списка всех пользователей
@@ -24,11 +20,12 @@ import java.util.concurrent.ExecutionException;
 @WebServlet("/api/v1/users/all")
 public class GetAllUsersServlet extends HttpServlet {
 
-    private final UsersController controller;
+    private final UsersController userController;
 
     public GetAllUsersServlet() {
         super();
-        controller = new UsersController();
+        userController = new UsersController();
+
     }
 
     /**
@@ -47,7 +44,7 @@ public class GetAllUsersServlet extends HttpServlet {
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
 
-            List<UserDto> users = controller.getAll();
+            List<UserDto> users = userController.getAll();
 
             ObjectMapper mapper = new ObjectMapper();
             String jsonResponse = mapper.writeValueAsString(users);

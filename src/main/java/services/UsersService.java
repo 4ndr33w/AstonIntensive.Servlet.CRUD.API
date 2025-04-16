@@ -20,6 +20,8 @@ import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 /**
+ * Клас сервиса, предоставляющий методы для
+ * {@code CRUD} операции над объектом {@code User}
  * @author 4ndr33w
  * @version 1.0
  */

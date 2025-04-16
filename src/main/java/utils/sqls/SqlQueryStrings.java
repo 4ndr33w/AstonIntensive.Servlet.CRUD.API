@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Утильный класс для возврата SQL-запросов при указанных параметрах.
+ * Утильный класс для получения SQL-запросов при указанных параметрах.
  *
  * @author 4ndr33w
  * @version 1.0

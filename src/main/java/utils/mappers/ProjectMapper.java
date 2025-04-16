@@ -16,6 +16,10 @@ import java.util.UUID;
 /**
  * Утильный класс для маппинга проектов
  *
+ * @see ProjectDto
+ * @see Project
+ * @see ResultSet
+ *
  * @author 4ndr33w
  * @version 1.0
  */

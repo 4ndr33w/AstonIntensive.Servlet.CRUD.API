@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.UUID;
 
 /**
@@ -23,13 +22,13 @@ import java.util.UUID;
 @WebServlet("/api/v1/users")
 public class UsersServlet extends HttpServlet {
 
-    private final UsersController controller;
+    private final UsersController userController;
     private ObjectMapper objectMapper = new ObjectMapper();
     private Utils utils;
 
     public UsersServlet() {
         super();
-        controller = new UsersController();
+        userController = new UsersController();
         utils = new Utils();
     }
 
@@ -61,7 +60,7 @@ public class UsersServlet extends HttpServlet {
         }
         UUID userId = UUID.fromString(id);
 
-        UserDto userDto = controller.getUser(userId);
+        UserDto userDto = userController.getUser(userId);
 
         if (userDto != null) {
 
@@ -116,7 +115,7 @@ public class UsersServlet extends HttpServlet {
 
             validateUser(user);
 
-            UserDto createdUser = controller.create(user);
+            UserDto createdUser = userController.create(user);
 
             resp.setStatus(HttpServletResponse.SC_CREATED);
             ObjectMapper objectMapper = new ObjectMapper();
@@ -186,7 +185,7 @@ public class UsersServlet extends HttpServlet {
             }
             UUID userId = UUID.fromString(id);
 
-            boolean isDeleted = controller.delete(userId);
+            boolean isDeleted = userController.delete(userId);
 
             if (isDeleted) {
                 resp.setStatus(HttpServletResponse.SC_OK);

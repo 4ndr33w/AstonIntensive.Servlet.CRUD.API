@@ -1,6 +1,8 @@
 package utils.mappers;
 
+import models.dtos.ProjectDto;
 import models.dtos.UserDto;
+import models.entities.Project;
 import models.entities.User;
 import models.enums.UserRoles;
 import utils.StaticConstants;
@@ -14,6 +16,10 @@ import java.util.UUID;
 
 /**
  * Утильный класс для маппинга пользователей
+ *
+ * @see UserDto
+ * @see User
+ * @see ResultSet
  *
  * @author 4ndr33w
  * @version 1.0

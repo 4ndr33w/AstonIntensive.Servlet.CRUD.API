@@ -38,10 +38,7 @@ public class ProjectServiceImplNew implements ProjectService {
 
     @Override
     public CompletableFuture<Project> createAsync(Project project) {
-        if (project == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("User cannot be null"));
-        }
+        Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         CompletableFuture<Project> projectFuture = projectRepository.createAsync(project);
 
@@ -53,18 +50,14 @@ public class ProjectServiceImplNew implements ProjectService {
 
     @Override
     public CompletableFuture<Boolean> deleteByIdAsync(UUID id) {
-        if (id == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE));
-        }
+        Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.deleteAsync(id)
-                .thenApply(deleted -> {
-                    return deleted;
-                })
+                .thenApply(deleted -> deleted)
+
                 .exceptionally(ex -> {
                     if (ex.getCause() instanceof SQLException) {
-                        throw new CompletionException("Database error while deleting user", ex.getCause());
+                        throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, ex.getCause());
                     } else {
                         throw new CompletionException(ex);
                     }});

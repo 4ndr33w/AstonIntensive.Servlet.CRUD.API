@@ -4,6 +4,7 @@ import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import models.entities.Project;
 import services.ProjectServiceImplNew;
+import services.ProjectsService;
 import services.interfaces.ProjectService;
 import utils.StaticConstants;
 import utils.mappers.ProjectMapper;
@@ -29,13 +30,11 @@ import java.util.concurrent.ExecutionException;
 public class ProjectsController implements ProjectControllerInterface {
 
     private final ProjectService projectService;
-    //private final services.interfaces.synchronous.ProjectServiceSynchro projectService;
 
     public ProjectsController() {
 
-        //this.projectService = new services.synchronous.ProjectsService();
-        this.projectService = new ProjectServiceImplNew();
-        //this.projectService = new ProjectsService();
+        //this.projectService = new ProjectServiceImplNew();
+        this.projectService = new ProjectsService();
     }
 
     /**
@@ -196,10 +195,12 @@ public class ProjectsController implements ProjectControllerInterface {
             CompletableFuture<Project> future = projectService.addUserToProjectAsync(userId, projectId);
             Project project = future.get();
             return ProjectMapper.toDto(project);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Operation was interrupted", e);
-        } catch (ExecutionException e) {
+            throw new RuntimeException("ProjectController; Operation was interrupted", e);
+        }
+        catch (ExecutionException e) {
             throw convertExecutionException(e.getCause());
         }
         catch (Exception e) {
@@ -227,7 +228,7 @@ public class ProjectsController implements ProjectControllerInterface {
             return ProjectMapper.toDto(project);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Operation was interrupted", e);
+            throw new RuntimeException("ProjectController; Operation was interrupted", e);
         } catch (ExecutionException e) {
             throw convertExecutionException(e.getCause());
         } catch (Exception e) {
@@ -243,10 +244,10 @@ public class ProjectsController implements ProjectControllerInterface {
         } else if (cause instanceof IllegalStateException) {
             return (IllegalStateException) cause;
         } else if (cause instanceof SQLException) {
-            String message = String.format("%s: %s, %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, cause.getMessage(), cause);
+            String message = String.format("ProjectController; %s: %s, %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, cause.getMessage(), cause);
             return new RuntimeException(message);
         } else {
-            String message = String.format("%s: %s, %s", StaticConstants.UNEXPECTED_ERROR_EXCEPTION_MESSAGE, cause.getMessage(), cause);
+            String message = String.format("ProjectController; %s: %s, %s", StaticConstants.UNEXPECTED_ERROR_EXCEPTION_MESSAGE, cause.getMessage(), cause);
             return new RuntimeException(message);
         }
     }

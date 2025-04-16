@@ -40,7 +40,7 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
         super();
         this.utils = new Utils();
         this.projectController = new ProjectControllerSynchronous();
-        //this.projectController = new ProjectsController();
+        //this.projectController = new controllers.ProjectsController();
     }
 
     /**

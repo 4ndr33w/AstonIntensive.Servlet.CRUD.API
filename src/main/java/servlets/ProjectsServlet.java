@@ -9,17 +9,13 @@ import models.entities.Project;
 import utils.StaticConstants;
 import utils.Utils;
 
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
-import java.util.InvalidPropertiesFormatException;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Сервлет представляет эндпойнт
@@ -32,14 +28,14 @@ import java.util.concurrent.ExecutionException;
 @WebServlet("/api/v1/projects")
 public class ProjectsServlet extends HttpServlet {
 
-    private final ProjectControllerInterface controller;
+    private final ProjectControllerInterface projectController;
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Utils utils;
 
     public ProjectsServlet() {
         super();
-        this.controller = new ProjectControllerSynchronous();
-        //this.controller = new ProjectsController();
+        this.projectController = new ProjectControllerSynchronous();
+        //this.projectController = new ProjectsController();
         utils = new Utils();
     }
 
@@ -91,7 +87,7 @@ public class ProjectsServlet extends HttpServlet {
             }
             UUID projectId = UUID.fromString(id);
 
-            ProjectDto project = controller.getProject(projectId);
+            ProjectDto project = projectController.getProject(projectId);
 
             if (project != null) {
 
@@ -143,7 +139,7 @@ public class ProjectsServlet extends HttpServlet {
         try {
             Project project = parseProjectFromRequest(req);
 
-            ProjectDto createdProject = controller.create(project);
+            ProjectDto createdProject = projectController.create(project);
 
             resp.setStatus(HttpServletResponse.SC_CREATED);
             ObjectMapper objectMapper = new ObjectMapper();
@@ -205,7 +201,7 @@ public class ProjectsServlet extends HttpServlet {
             }
             UUID projectId = UUID.fromString(id);
 
-            boolean isDeleted = controller.delete(projectId);
+            boolean isDeleted = projectController.delete(projectId);
 
             if (isDeleted) {
                 resp.setStatus(HttpServletResponse.SC_OK);

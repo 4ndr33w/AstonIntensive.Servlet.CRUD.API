@@ -27,7 +27,7 @@ public class GetProjectByUserIdServlet extends HttpServlet {
 
     //private final Project
 
-    private final ProjectControllerInterface controller;
+    private final ProjectControllerInterface projectController;
 
     //private final ProjectsController controller;// = new ProjectsController();
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -35,9 +35,9 @@ public class GetProjectByUserIdServlet extends HttpServlet {
 
     public GetProjectByUserIdServlet() {
         super();
-        //this.controller = new ProjectsController();
         this.utils = new Utils();
-        this.controller = new ProjectControllerSynchronous();
+        this.projectController = new ProjectControllerSynchronous();
+        //this.projectController = new controllers.ProjectsController();
     }
 
     /**
@@ -85,7 +85,7 @@ public class GetProjectByUserIdServlet extends HttpServlet {
 
             }
 
-            List<ProjectDto> projects = controller.getByUserId(UUID.fromString(id));
+            List<ProjectDto> projects = projectController.getByUserId(UUID.fromString(id));
 
             if(projects == null || projects.size() == 0) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);

@@ -7,6 +7,9 @@ import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 
 /**
+ * Класс предоставляет DataSource,
+ * пул потоков и конфигурацию для подключения к БД
+ *
  * @author 4ndr33w
  * @version 1.0
  */

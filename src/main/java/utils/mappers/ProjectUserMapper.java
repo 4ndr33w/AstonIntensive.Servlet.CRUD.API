@@ -9,6 +9,12 @@ import java.util.UUID;
 
 /**
  * Утильный класс для маппинга {@code ResultSet} в {@code ProjectUsersDto}.
+ * <p>
+ *     {@code ProjectUsersDto} длля организации связи между {@code User} и {@code Project}
+ * </p>
+ *
+ * @see ProjectUsersDto
+ * @see ResultSet
  *
  * @author 4ndr33w
  * @version 1.0
