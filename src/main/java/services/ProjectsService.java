@@ -39,79 +39,22 @@ public class ProjectsService implements ProjectService {
 
     @Override
     public CompletableFuture<List<Project>> getByUserIdAsync(UUID userId) {
-        // 1. Валидация входного параметра
         if (userId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("User ID cannot be null"));
         }
 
-        // 2. Асинхронный запрос к репозиторию
         return projectRepository.findByUserIdAsync(userId)
                 .thenApply(projects -> {
-                    // 3. Обработка результата
                     if (projects == null) {
                         return new ArrayList<Project>();
                     }
                     return projects;
                 })
                 .exceptionally(ex -> {
-                    // 4. Обработка ошибок
                     System.out.println(String.format("Failed to load user projects for user ID: %s", userId));
-                    return Collections.emptyList(); // Или можно пробросить исключение дальше
+                    return Collections.emptyList();
                 });
-    }
-    /*public CompletableFuture<List<Project>> getByUserIdAsync(UUID userId) {
-        if (userId == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("User ID cannot be null"));
-        }
-
-        var projectFuture = projectRepository.findByUserIdAsync(userId)
-                .thenCompose(projects -> {
-                    if (projects.isEmpty()) {
-                        return CompletableFuture.completedFuture(Collections.emptyList());
-                    }
-                    return projectFuture;
-                });
-
-        return projectRepository.findByUserIdAsync(userId)
-                .thenCompose(projects -> {
-                    if (projects.isEmpty()) {
-                        return CompletableFuture.completedFuture(Collections.emptyList());
-                    }
-
-                    // Загружаем дополнительные данные для проектов (если нужно)
-                    //return enrichProjectsWithAdditionalData(projects);
-                    return enrichProjectsWithAdditionalData(projects);
-                    //return CompletableFuture.completedFuture(Collections.emptyList());
-                })
-                .exceptionally(ex -> {
-                    //log.error("Failed to get projects for user {}: {}", userId, ex.getMessage());
-                    throw new CompletionException("Failed to load user projects", ex);
-                });
-    }*/
-
-    private CompletableFuture<List<Project>> enrichProjectsWithAdditionalData(List<Project> projects) {
-        // Здесь можно добавить загрузку дополнительных данных
-        // Например, информации о пользователях проектов
-
-        // В простейшем случае просто возвращаем проекты без изменений
-        return CompletableFuture.completedFuture(projects);
-
-    /* Пример с загрузкой пользователей:
-    List<UUID> projectIds = projects.stream()
-        .map(Project::getId)
-        .collect(Collectors.toList());
-
-    return projectUserRepository.findByProjectIds(projectIds)
-        .thenApply(projectUsers -> {
-            Map<UUID, List<User>> usersByProjectId = ... // группировка
-            projects.forEach(project ->
-                project.setUsers(usersByProjectId.get(project.getId()))
-            );
-            return projects;
-        });
-    */
     }
 
     @Override
@@ -125,14 +68,12 @@ public class ProjectsService implements ProjectService {
         // 2. Асинхронный запрос к репозиторию
         return projectRepository.findByAdminIdAsync(adminId)
                 .thenApply(projects -> {
-                    // 3. Обработка результата
                     if (projects == null) {
                         return new ArrayList<Project>();
                     }
                     return projects;
                 })
                 .exceptionally(ex -> {
-                    // 4. Обработка ошибок
                     System.out.println(String.format("Failed to load user projects for user ID: %s", adminId));
                     return Collections.emptyList(); // Или можно пробросить исключение дальше
                 });
@@ -140,8 +81,8 @@ public class ProjectsService implements ProjectService {
 
     @Override
     public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) {
-        //Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-        //Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.findByIdAsync(projectId)
                 .thenCompose(project -> {
@@ -151,7 +92,6 @@ public class ProjectsService implements ProjectService {
                                 new NoSuchElementException(String.format("$s: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, projectId))
                         );
                     }
-
                     if (userId.equals(project.getAdminId())) {
                         logger.error(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE);
                         return CompletableFuture.failedFuture(
@@ -167,7 +107,6 @@ public class ProjectsService implements ProjectService {
                                     );
                                 }
                                 List<UserDto> updatedUsers = new ArrayList<>();
-                                //logger.error(String.format("%s: %s - ProjectName: %s", StaticConstants.STATIC_TEST_STRING, userId, project.getName()));
 
                                 if(project.getProjectUsers() != null) {
                                     updatedUsers = new ArrayList<>(project.getProjectUsers());
@@ -177,7 +116,6 @@ public class ProjectsService implements ProjectService {
                                 // у нас List<UserDto> будет урезан до
                                 // List<UUID> userIds, то в данной ситуации
                                 // считаю это допустимым решением
-
                                 UserDto newUserDto = new UserDto();
                                 newUserDto.setId(userId);
                                 //-----------------------------------------
@@ -254,7 +192,6 @@ public class ProjectsService implements ProjectService {
                 });
     }
 
-
     @Override
     public CompletableFuture<Project> getByIdAsync(UUID id) {
         return projectRepository.findByIdAsync(id)
@@ -291,9 +228,9 @@ public class ProjectsService implements ProjectService {
                 }});
     }
 
-
     @Override
     public CompletableFuture<Project> updateByIdAsync(UUID id, Project entity) {
+
         return null;
     }
 }

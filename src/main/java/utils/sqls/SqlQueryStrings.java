@@ -1,11 +1,16 @@
 package utils.sqls;
 
+import models.dtos.ProjectDto;
 import models.entities.Project;
 import models.entities.User;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import static configurations.DataSourceProvider.user;
 
 /**
  * Утильный класс для получения SQL-запросов при указанных параметрах.
@@ -37,6 +42,17 @@ public class SqlQueryStrings {
                 user.getLastLoginDate(),
                 user.getUserRole().ordinal()));
 
+        return query.toString();
+    }
+
+    public String updateByIdString(String tableName, String id, Project project) {
+        StringBuilder query = new StringBuilder();
+        query.append(String.format("UPDATE %s SET ", tableName));
+        query.append("name = '" + project.getName() + "', ");
+        query.append("description = '" + project.getDescription() + "', ");
+        query.append("updated_at = '" + new Date() + "', ");
+        query.append("image = '" + project.getImage() + "', ");
+        query.append("project_status = '" + project.getProjectStatus().ordinal() + "'; ");
         return query.toString();
     }
 

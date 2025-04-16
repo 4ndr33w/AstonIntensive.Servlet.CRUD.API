@@ -1,46 +1,29 @@
 package services;
 
-import controllers.ProjectsController;
 import jdk.jfr.Description;
 import models.entities.User;
-import org.junit.Ignore;
 import org.junit.Test;
-//import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.runner.RunWith;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import repositories.UsersRepositoryImplementation;
 import repositories.interfaces.UserRepository;
-import servlets.ProjectsServlet;
 import testUtils.Utils;
-import utils.StaticConstants;
-
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static java.util.Collections.emptyList;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-
 /**
+ * Тестовый класс
+ * Для тестирования функциональности класса UsersService
+ *
  * @author 4ndr33w
  * @version 1.0
  */

@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -264,6 +265,50 @@ public class ProjectRepositoryNew implements ProjectRepository {
 
     @Override
     public CompletableFuture<Project> updateAsync(Project item) {
-        return null;
+        return CompletableFuture.supplyAsync(() -> {
+            Objects.requireNonNull(item, "Project item cannot be null");
+            Objects.requireNonNull(item.getId(), "Project ID cannot be null");
+
+            String updateQuery = sqlQueryStrings.updateByIdString(
+                    tableName, item.getId().toString(), item);
+            /*
+                    query.append(String.format("UPDATE %s SET ", tableName));
+        query.append("user_name = '" + user.getUserName() + "', ");
+        query.append("first_name = '" + user.getFirstName() + "', ");
+        query.append("last_name = '" + user.getLastName() + "', ");
+        query.append("email = '" + user.getEmail() + "', ");
+             */
+
+            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+                jdbcConnection.setAutoCommit(false);
+
+                try {
+                    // 1. Обновляем основную информацию о проекте
+                    int affectedRows = jdbcConnection.executeUpdate(updateQuery);
+
+                    if (affectedRows == 0) {
+                        throw new NoSuchElementException("Project with id " + item.getId() + " not found");
+                    }
+
+                    // 2. Обновляем связи с пользователями (если нужно)
+                    if (item.getUserIds() != null && !item.getUserIds().isEmpty()) {
+                        updateProjectUsers(jdbcConnection, item.getId(), item.getUserIds());
+                    }
+
+                    jdbcConnection.commit();
+
+                    // 3. Возвращаем обновленный проект (можно дополнительно запросить из БД)
+                    return item;
+
+                } catch (SQLException e) {
+                    jdbcConnection.rollback();
+                    throw new CompletionException("Failed to update project", e);
+                }
+            } catch (SQLException e) {
+                throw new CompletionException("Database connection error", e);
+            } catch (Exception e) {
+                throw new CompletionException("Unexpected error", e);
+            }
+        }, dbExecutor);
     }
 }
