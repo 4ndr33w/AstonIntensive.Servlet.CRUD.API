@@ -6,11 +6,14 @@ import controllers.UsersController;
 import models.dtos.UserDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import servlets.abstractions.BaseServlet;
+import utils.StaticConstants;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
@@ -21,7 +24,7 @@ import java.util.List;
  * @version 1.0
  */
 @WebServlet("/api/v1/users/all")
-public class GetAllUsersServlet extends HttpServlet {
+public class GetAllUsersServlet extends BaseServlet {
 
     Logger logger = LoggerFactory.getLogger(GetAllUsersServlet.class);
     private final UsersController userController;
@@ -41,7 +44,7 @@ public class GetAllUsersServlet extends HttpServlet {
      * @return 400 Bad Request
      *     * @throws RuntimeException
      */
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         try {
             resp.setContentType("application/json");
@@ -59,7 +62,12 @@ public class GetAllUsersServlet extends HttpServlet {
             logger.info("GetAllUsersServlet started");
         }
         catch (Exception e) {
-            throw new RuntimeException(e);
+            printResponse(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "/api/v1/users/all",
+                    StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
+                    e,
+                    resp);
         }
     }
 }

@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * Класс, представляющий модель проекта
+ *
  * @author 4ndr33w
  * @version 1.0
  */
@@ -24,7 +26,16 @@ public class Project {
     private List<UserDto> projectUsers;
 
     public Project() {}
-    public Project(UUID id, String name, String description, Date createdAt, Date updatedAt, byte[] image, UUID adminId, ProjectStatus projectStatus, List<UserDto> projectUsers) {
+    public Project(
+            UUID id,
+            String name,
+            String description,
+            Date createdAt,
+            Date updatedAt,
+            byte[] image,
+            UUID adminId,
+            ProjectStatus projectStatus,
+            List<UserDto> projectUsers) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -35,7 +46,16 @@ public class Project {
         this.projectStatus = projectStatus;
         this.projectUsers = projectUsers;
     }
-    public Project(String name, String description, Date createdAt, Date updatedAt, byte[] image, UUID adminId, ProjectStatus projectStatus, List<UserDto> projectUsers) {
+
+    public Project(
+            String name,
+            String description,
+            Date createdAt,
+            Date updatedAt,
+            byte[] image,
+            UUID adminId,
+            ProjectStatus projectStatus,
+            List<UserDto> projectUsers) {
         this.name = name;
         this.description = description;
         this.createdAt = createdAt;
@@ -45,7 +65,15 @@ public class Project {
         this.projectStatus = projectStatus;
         this.projectUsers = projectUsers;
     }
-    public Project(UUID id, String name, String description, Date createdAt, Date updatedAt, byte[] image, UUID adminId, ProjectStatus projectStatus) {
+
+    public Project(UUID id,
+                   String name,
+                   String description,
+                   Date createdAt,
+                   Date updatedAt,
+                   byte[] image,
+                   UUID adminId,
+                   ProjectStatus projectStatus) {
         this.id = id;
         this.name = name;
         this.description = description;

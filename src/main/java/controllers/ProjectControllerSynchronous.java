@@ -101,17 +101,6 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code ProjectDto}
      */
     public ProjectDto getProject(UUID projectId) {
-        /*Objects.requireNonNull(projectId);
-
-        try {
-            logger.info("ProjectControllerSynchro: getProject Получение проекта по id");
-            var result = projectService.getById(projectId);
-            return ProjectMapper.toDto(result);
-        }
-        catch (NoSuchElementException e) {
-            logger.error(String.format("ProjectControllerSynchro: getProject Ошибка получения проекта по id: %s", e.getMessage()));
-            throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        }*/
         return null;
     }
 
@@ -125,16 +114,6 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code ProjectDto}
      */
     public ProjectDto create(Project project) {
-        /*Objects.requireNonNull(project);
-
-        try {
-            logger.info("ProjectControllerSynchro: create Создание нового проекта");
-            return ProjectMapper.toDto(projectService.create(project));
-        }
-        catch (NoSuchElementException e) {
-            logger.error(String.format("ProjectControllerSynchro: create Ошибка создания нового проекта: %s", e.getMessage()));
-            throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        }*/
         return null;
     }
 
@@ -148,17 +127,7 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code boolean}
      */
     public boolean delete(UUID projectId) {
-        /*Objects.requireNonNull(projectId);
-
-        try {
-            logger.info("ProjectControllerSynchro: delete Удаление проекта по id");
-            return projectService.deleteById(projectId);
-        }
-        catch (NoSuchElementException e) {
-            logger.error(String.format("ProjectControllerSynchro: delete Ошибка удаления проекта по id: %s", e.getMessage()));
-            throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        }*/
-        return false;
+         return false;
     }
 
     /**
@@ -173,17 +142,7 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code ProjectDto}
      */
     public ProjectDto addUserToProject(UUID userId, UUID projectId) {
-        /*try {
-            logger.info("ProjectControllerSynchro: addUserToProject Добавление пользователя в проект");
-            Project project = projectService.addUserToProject(userId, projectId);
-
-            return ProjectMapper.toDto(project);
-        }
-        catch (Exception e) {
-            logger.error(String.format("ProjectControllerSynchro: addUserToProject Ошибка добавления пользователя в проект: %s", e.getMessage()));
-            throw new RuntimeException(e);
-        }*/
-        return null;
+         return null;
     }
 
     /**
@@ -198,16 +157,7 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code ProjectDto}
      */
     public ProjectDto removeUserFromProject(UUID userId, UUID projectId) {
-       /* try {
-            logger.info("ProjectControllerSynchro: removeUserFromProject Удаление пользователя из проекта");
-            Project project = projectService.removeUserFromProject(userId, projectId);
-            return ProjectMapper.toDto(project);
-        }
-        catch (Exception e) {
-            logger.error(String.format("ProjectControllerSynchro: removeUserFromProject Ошибка удаления пользователя из проекта: %s", e.getMessage()));
-            throw new RuntimeException(e);
-        }*/
-        return null;
+          return null;
     }
 
     /**

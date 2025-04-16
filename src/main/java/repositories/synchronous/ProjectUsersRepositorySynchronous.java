@@ -2,7 +2,6 @@ package repositories.synchronous;
 
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
-import configurations.ThreadPoolConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.sqls.SqlQueryStrings;
@@ -11,9 +10,7 @@ import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
 
 /**
  * @author 4ndr33w

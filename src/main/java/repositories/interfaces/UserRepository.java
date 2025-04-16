@@ -3,14 +3,13 @@ package repositories.interfaces;
 import models.entities.User;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Интерфецс для поиска пользователя:
- * <p>по логину {@code findByUserName} </p>
- * <p>и email {@code findByEmail}</p>
+ * Generic интерфейс для CRUD операций для работы
+ * с репозиторием пользователей
+
  * @see models.entities.User
  * @author 4ndr33w
  * @version 1.0

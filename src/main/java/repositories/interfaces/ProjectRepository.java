@@ -3,12 +3,14 @@ package repositories.interfaces;
 import models.dtos.ProjectDto;
 import models.entities.Project;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Generic интерфейс для CRUD операций для работы
+ * с репозиторием проектов
+ *
  * @author 4ndr33w
  * @version 1.0
  */

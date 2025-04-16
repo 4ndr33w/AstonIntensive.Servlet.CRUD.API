@@ -6,6 +6,8 @@ import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import servlets.abstractions.BaseServlet;
+import utils.StaticConstants;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -22,7 +24,7 @@ import java.util.UUID;
  * @version 1.0
  */
 @WebServlet("/api/v1/projects/users")
-public class AddRemoveUsersToProjectServlet extends HttpServlet {
+public class AddRemoveUsersToProjectServlet extends BaseServlet {
 
     private final ProjectControllerInterface projectController;
 
@@ -63,17 +65,13 @@ public class AddRemoveUsersToProjectServlet extends HttpServlet {
             logger.info("User with id {} was added to project with id {}", userId, projectId);
             resp.setContentType("application/json");
             new ObjectMapper().writeValue(resp.getWriter(), result);
-        } catch (IOException e) {
-            resp.setStatus(HttpServletResponse.SC_CONFLICT);
-            resp.getWriter().write(e.getCause().getMessage());
-            logger.error(e.getCause().getMessage());
-        } catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write(e.getCause().getMessage());
-            resp.getWriter().write("\n");
-            resp.getWriter().write(e.getMessage());
-            resp.getWriter().write("\n");
-            logger.error(e.getCause().getMessage());
+        }  catch (Exception e) {
+            printResponse(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "/api/v1/projects/users",
+                    StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
+                    e,
+                    resp);
         }
     }
 
@@ -96,7 +94,7 @@ public class AddRemoveUsersToProjectServlet extends HttpServlet {
      * @throws Exception
      */
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         Logger logger = LoggerFactory.getLogger(AddRemoveUsersToProjectServlet.class);
         try {
@@ -109,8 +107,12 @@ public class AddRemoveUsersToProjectServlet extends HttpServlet {
             resp.setContentType("application/json");
             new ObjectMapper().writeValue(resp.getWriter(), result);
         } catch (Exception e) {
-            logger.error(e.getCause().getMessage());
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            printResponse(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "/api/v1/projects/users",
+                    StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
+                    e,
+                    resp);
         }
     }
 }

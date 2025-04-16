@@ -2,25 +2,22 @@ package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.ProjectControllerSynchronous;
-import controllers.ProjectsController;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
 import utils.Utils;
 
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Сервлет обработки GET-запроса
@@ -32,7 +29,7 @@ import java.util.concurrent.ExecutionException;
  * @version 1.0
  */
 @WebServlet("/api/v1/projects/admin")
-public class GetProjectsByAdminIdServlet extends HttpServlet {
+public class GetProjectsByAdminIdServlet extends BaseServlet {
 
     Logger logger = LoggerFactory.getLogger(GetProjectsByAdminIdServlet.class);
     private final ProjectControllerInterface projectController;
@@ -64,7 +61,7 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
      * @throws RuntimeException
      */
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         try {
             resp.setContentType("application/json");
@@ -77,40 +74,49 @@ public class GetProjectsByAdminIdServlet extends HttpServlet {
             // поэтому пришлось использовать параметр запроса
             String id = req.getParameter("id");
             if (id == null) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
-                logger.error("Servlet: Bad request. Id is null.");
+                printResponse(
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "/api/v1/projects/admin",
+                        StaticConstants.ID_REQUIRED_AS_PARAMETER_ERROR_MESSAGE,
+                        resp);
                 return;
             }
             boolean idValidation = utils.validateId(id);
             if(!idValidation) {
-
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
-                logger.error("Servlet: Bad request. Invalid Id format.");
+                printResponse(
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "/api/v1/projects/admin",
+                        StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE,
+                        resp);
                 return;
             }
 
             List<ProjectDto> projects = projectController.getByAdminId(UUID.fromString(id));
 
             if(projects == null || projects.size() == 0) {
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
-                logger.error("Servlet: Not found. User not found.");
+                printResponse(
+                        HttpServletResponse.SC_NOT_FOUND,
+                        "/api/v1/projects/admin",
+                        StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE,
+                        resp);
             }
             else {
                 ObjectMapper mapper = new ObjectMapper();
                 String jsonResponse = mapper.writeValueAsString(projects);
 
                 logger.info("Servlet: Sending response. Response code: 200 OK.");
+                resp.setStatus(HttpServletResponse.SC_OK);
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
                 out.flush();
             }
         }
         catch (Exception e) {
-            logger.error("Servlet: Exception.", e);
-            throw new RuntimeException(e);
+            printResponse(
+                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "/api/v1/projects/admin",
+                    StaticConstants.INTERNAL_SERVER_ERROR_MESSAGE,
+                    resp);
         }
     }
 }

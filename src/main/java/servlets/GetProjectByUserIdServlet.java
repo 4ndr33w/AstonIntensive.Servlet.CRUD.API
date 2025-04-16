@@ -6,6 +6,7 @@ import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
 import utils.Utils;
 
@@ -13,6 +14,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +27,7 @@ import java.util.UUID;
  * @version 1.0
  */
 @WebServlet("/api/v1/projects/user")
-public class GetProjectByUserIdServlet extends HttpServlet {
+public class GetProjectByUserIdServlet extends BaseServlet {
 
     private final ProjectControllerInterface projectController;
 
@@ -58,28 +60,28 @@ public class GetProjectByUserIdServlet extends HttpServlet {
      * @throws RuntimeException
      */
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         try {
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
 
-            // Не получилось вычленить Id из req.getPathInfo(), разделяя строку на массив
-            // если быть точнее, то /{id} воспринимался как несуществующий endpoint
-            // поэтому пришлось использовать параметр запроса
             String id = req.getParameter("id");
             if (id == null) {
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
-                logger.error(String.format("%s", StaticConstants.ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE));
+                printResponse(
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "/api/v1/projects/user",
+                        StaticConstants.ID_REQUIRED_AS_PARAMETER_ERROR_MESSAGE,
+                        resp);
                 return;
             }
             boolean idValidation = utils.validateId(id);
             if(!idValidation) {
-
-                logger.error(String.format("%s", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
-                resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE));
+                printResponse(
+                        HttpServletResponse.SC_BAD_REQUEST,
+                        "/api/v1/projects/user",
+                        StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE,
+                        resp);
                 return;
             }
 
@@ -87,9 +89,11 @@ public class GetProjectByUserIdServlet extends HttpServlet {
             List<ProjectDto> projects = projectController.getByUserId(UUID.fromString(id));
 
             if(projects == null || projects.size() == 0) {
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write(String.format("{\"error\":\"%s\"}", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
-                logger.error(String.format("%s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE));
+                printResponse(
+                        HttpServletResponse.SC_NOT_FOUND,
+                        "/api/v1/projects/user",
+                        StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE,
+                        resp);
             }
             else{
                 ObjectMapper mapper = new ObjectMapper();
@@ -102,9 +106,12 @@ public class GetProjectByUserIdServlet extends HttpServlet {
             }
         }
         catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            logger.error(String.format("%s", e.getMessage()));
-            throw new RuntimeException(e);
+            printResponse(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "/api/v1/projects/user",
+                    StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
+                    e,
+                    resp);
         }
     }
 }

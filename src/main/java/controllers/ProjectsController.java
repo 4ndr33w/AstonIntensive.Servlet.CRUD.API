@@ -289,25 +289,4 @@ public class ProjectsController implements ProjectControllerInterface {
             throw new ProjectUpdateException("Failed to update project", ex);
         }
     }
-/*
-    private RuntimeException convertExecutionException(Throwable cause) {
-        if (cause instanceof IllegalArgumentException) {
-            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
-            return (IllegalArgumentException) cause;
-        } else if (cause instanceof NoSuchElementException) {
-            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
-            return (NoSuchElementException) cause;
-        } else if (cause instanceof IllegalStateException) {
-            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
-            return (IllegalStateException) cause;
-        } else if (cause instanceof SQLException) {
-            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
-            String message = String.format("ProjectController; %s: %s, %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, cause.getMessage(), cause);
-            return new RuntimeException(message);
-        } else {
-            logger.error("ProjectController: convertExecutionException: {}", cause.getMessage());
-            String message = String.format("ProjectController; %s: %s, %s", StaticConstants.UNEXPECTED_ERROR_EXCEPTION_MESSAGE, cause.getMessage(), cause);
-            return new RuntimeException(message);
-        }
-    }*/
 }

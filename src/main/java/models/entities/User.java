@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * Класс представляющий модель пользователя
+ *
  * @author 4ndr33w
  * @version 1.0
  */

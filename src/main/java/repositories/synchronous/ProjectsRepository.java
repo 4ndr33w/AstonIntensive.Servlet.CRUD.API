@@ -18,10 +18,13 @@ import static utils.mappers.ProjectMapper.mapResultSetToProject;
 import static utils.mappers.ProjectMapper.mapResultSetToProjectOptional;
 
 /**
+ * Реализация интерфейса {@code ProjectRepoSynchro} для CRUD операций для работы
+ * с репозиторием проектов в синхронном режиме
+ *
  * @author 4ndr33w
  * @version 1.0
  */
-public class ProjectsRepository implements repositories.interfaces.synchronous.ProjectRepoSynchro{
+public class ProjectsRepository implements repositories.interfaces.synchronous.ProjectRepoSynchro {
 
     Logger logger = LoggerFactory.getLogger(ProjectsRepository.class);
     private static final String schema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");

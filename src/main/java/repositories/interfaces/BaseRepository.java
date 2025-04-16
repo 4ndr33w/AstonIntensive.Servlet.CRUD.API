@@ -1,10 +1,6 @@
 package repositories.interfaces;
 
-import models.entities.User;
-
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 

@@ -28,10 +28,12 @@ public class StaticConstants {
     public static final String PROJECT_NOT_FOUND_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("PROJECT_NOT_FOUND_EXCEPTION_MESSAGE");
     public static final String INVALID_ID_FORMAT_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("INVALID_ID_FORMAT_EXCEPTION_MESSAGE");
     public static final String REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE = PropertiesConfiguration.getConstants().getProperty("REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE");
-    public static final String ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE = PropertiesConfiguration.getConstants().getProperty("ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE");
+    public static final String ID_REQUIRED_AS_PARAMETER_ERROR_MESSAGE = PropertiesConfiguration.getConstants().getProperty("ID_REQUIRED_AD_PARAMETER_ERROR_MESSAGE");
     public static final String OPERATION_FAILED_ERROR_MESSAGE = PropertiesConfiguration.getConstants().getProperty("OPERATION_FAILED_ERROR_MESSAGE");
     public static final String ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE");
     public static final String UNEXPECTED_ERROR_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("UNEXPECTED_ERROR_EXCEPTION_MESSAGE");
     public static final String INTERNAL_SERVER_ERROR_MESSAGE = PropertiesConfiguration.getConstants().getProperty("INTERNAL_SERVER_ERROR_MESSAGE");
     public static final String STATIC_TEST_STRING = PropertiesConfiguration.getConstants().getProperty("STATIC_TEST_STRING");
+    public static final String REQUEST_VALIDATION_ERROR_MESSAGE = PropertiesConfiguration.getConstants().getProperty("REQUEST_VALIDATION_ERROR_MESSAGE");
+    public static final String ILLEGAL_ARGUMENT_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("ILLEGAL_ARGUMENT_EXCEPTION_MESSAGE");
 }

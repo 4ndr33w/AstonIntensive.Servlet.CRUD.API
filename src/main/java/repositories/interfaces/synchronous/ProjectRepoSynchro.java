@@ -1,6 +1,5 @@
 package repositories.interfaces.synchronous;
 
-import models.dtos.ProjectDto;
 import models.entities.Project;
 
 import java.util.List;
@@ -8,7 +7,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Интерфейс для синхронной работы с репозиторием проектов
+ * Базовый интерфейс CRUD-операций для работы с репозиторием проектов
+ *
  * @author 4ndr33w
  * @version 1.0
  */

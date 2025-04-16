@@ -4,6 +4,9 @@ import java.util.Date;
 import java.util.UUID;
 
 /**
+ * Вспомогательный класс для организации взаимосвязи
+ * Many To Many между пользователями и проектами
+ *
  * @author 4ndr33w
  * @version 1.0
  */
@@ -16,14 +19,20 @@ public class ProjectUsersDto {
 
     public ProjectUsersDto() {}
 
-        public ProjectUsersDto(UUID userId, UUID projectId, Date createdAt, Date updatedAt) {
+        public ProjectUsersDto(
+                UUID userId,
+                UUID projectId,
+                Date createdAt,
+                Date updatedAt) {
         this.userId = userId;
         this.projectId = projectId;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
 
-    public ProjectUsersDto(UUID userId, UUID projectId) {
+    public ProjectUsersDto(
+            UUID userId,
+            UUID projectId) {
         this.userId = userId;
         this.projectId = projectId;
     }

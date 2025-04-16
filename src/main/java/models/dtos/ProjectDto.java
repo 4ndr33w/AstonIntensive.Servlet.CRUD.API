@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * Класс Dto для объекта Project
+ *
  * @author 4ndr33w
  * @version 1.0
  */
@@ -23,7 +25,16 @@ public class ProjectDto {
     private List<UUID> projectUsersIds;
 
     public ProjectDto() {}
-    public ProjectDto(UUID id, String name, String description, Date createdAt, Date updatedAt, byte[] image, UUID adminId, ProjectStatus projectStatus, List<UUID> projectUsersIds) {
+    public ProjectDto(
+            UUID id,
+            String name,
+            String description,
+            Date createdAt,
+            Date updatedAt,
+            byte[] image,
+            UUID adminId,
+            ProjectStatus projectStatus,
+            List<UUID> projectUsersIds) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -34,7 +45,15 @@ public class ProjectDto {
         this.projectStatus = projectStatus;
         this.projectUsersIds = projectUsersIds;
     }
-    public ProjectDto(String name, String description, Date createdAt, Date updatedAt, byte[] image, UUID adminId, ProjectStatus projectStatus, List<UUID> projectUsersIds) {
+    public ProjectDto(
+            String name,
+            String description,
+            Date createdAt,
+            Date updatedAt,
+            byte[] image,
+            UUID adminId,
+            ProjectStatus projectStatus,
+            List<UUID> projectUsersIds) {
         this.name = name;
         this.description = description;
         this.createdAt = createdAt;
