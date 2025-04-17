@@ -31,7 +31,7 @@ public class ThreadPoolConfiguration {
     }
     public static ExecutorService getDbExecutor() {
         if (dbExecutor != null) {
-            logger.info("Получен пул потоков dbExecutor");
+            //logger.info("Получен пул потоков dbExecutor");
             return dbExecutor;
         } else {
             logger.error("Ошибка инициализации Thread Pool");

@@ -21,7 +21,7 @@ import java.io.PrintWriter;
  * @version 1.0
  */
 @WebServlet
-public class BaseServlet extends HttpServlet {
+public abstract class BaseServlet extends HttpServlet {
 
     protected Logger logger = LoggerFactory.getLogger(BaseServlet.class);
     protected ObjectMapper objectMapper = new ObjectMapper();
@@ -31,8 +31,9 @@ public class BaseServlet extends HttpServlet {
 
         ErrorDto error = new ErrorDto(
                 statusCode,
-                "/api/v1/users",
+                path,
                 message);
+        resp.setContentType("application/json");
         try {
             String jsonResponse = objectMapper.writeValueAsString(error);
             resp.setStatus(statusCode);
@@ -55,8 +56,9 @@ public class BaseServlet extends HttpServlet {
 
         ErrorDto error = new ErrorDto(
                 statusCode,
-                "/api/v1/users",
+                path,
                 message);
+        resp.setContentType("application/json");
         try {
             String jsonResponse = objectMapper.writeValueAsString(error);
             resp.setStatus(statusCode);

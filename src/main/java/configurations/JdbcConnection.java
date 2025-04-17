@@ -99,7 +99,7 @@ public class JdbcConnection implements AutoCloseable{
     private void closeResultSet() {
         if (resultSet != null) {
             try {
-                logger.info("Закрыт ResultSet");
+                //logger.info("Закрыт ResultSet");
                 resultSet.close();
             } catch (SQLException e) {
                 logger.error("Ошибка закрытия ResultSet");
@@ -112,7 +112,7 @@ public class JdbcConnection implements AutoCloseable{
     private void closeStatement() {
         if (statement != null) {
             try {
-                logger.info("Закрыт Statement");
+                //logger.info("Закрыт Statement");
                 statement.close();
             } catch (SQLException e) {
                 logger.error("Ошибка закрытия Statement");
@@ -125,7 +125,7 @@ public class JdbcConnection implements AutoCloseable{
     private void closeConnection() {
         if (connection != null) {
             try {
-                logger.info("Закрыт Connection");
+                //logger.info("Закрыт Connection");
                 connection.close();
             } catch (SQLException e) {
                 logger.error("Ошибка закрытия Connection");
