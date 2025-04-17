@@ -37,7 +37,6 @@ public class ProjectRepositoryNew implements ProjectRepository {
     private static final String projectsTable = PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
     private static final String projectUsersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
     String tableName = String.format("%s.%s", schema, projectsTable);
-    String projectUsersTableName = String.format("%s.%s", schema, projectUsersTable);
 
     Logger logger = LoggerFactory.getLogger(ProjectRepositoryNew.class);
 
@@ -58,12 +57,9 @@ public class ProjectRepositoryNew implements ProjectRepository {
 
     @Override
     public CompletableFuture<Project> createAsync(Project project) {
+        Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return CompletableFuture.supplyAsync(() -> {
-            if (project == null) {
-                logger.error("Repository: User project cannot be null");
-                throw new IllegalArgumentException("User project cannot be null");
-            }
             String tableName = String.format("%s.%s", schema, projectsTable);
             String queryString = sqlQueryStrings.createProjectString(tableName, project);
 
