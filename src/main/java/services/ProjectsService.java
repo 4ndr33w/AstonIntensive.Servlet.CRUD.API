@@ -62,7 +62,7 @@ public class ProjectsService implements ProjectService {
                     return projects;
                 })
                 .exceptionally(ex -> {
-                    System.out.println(String.format("Failed to load user projects for user ID: %s", userId));
+                    logger.error(String.format("Failed to load user projects for user ID: %s", userId));
                     return Collections.emptyList();
                 });
     }
@@ -79,7 +79,7 @@ public class ProjectsService implements ProjectService {
                     return projects;
                 })
                 .exceptionally(ex -> {
-                    System.out.println(String.format("Failed to load user projects for user ID: %s", adminId));
+                    logger.error(String.format("Failed to load user projects for user ID: %s", adminId));
                     return Collections.emptyList();
                 });
     }
@@ -182,7 +182,7 @@ public class ProjectsService implements ProjectService {
 
         return projectFuture
                 .exceptionally(ex -> {
-                    throw new RuntimeException("Error creating project by id");
+                    throw new RuntimeException("Error creating project by id", ex);
                 });
     }
 
@@ -205,12 +205,6 @@ public class ProjectsService implements ProjectService {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.deleteAsync(id)
-                .thenApply(deleted -> {
-                    if (!deleted) {
-                        return false;
-                    }
-                    return true;
-                })
                 .exceptionally(ex -> {
                     throw new RuntimeException("Error deleting project by id");
                 });

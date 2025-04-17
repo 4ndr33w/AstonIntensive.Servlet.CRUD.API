@@ -85,9 +85,6 @@ public class UsersService implements UserService {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return userRepository.deleteAsync(id)
-                .thenApply(deleted -> {
-                    return deleted;
-                })
                 .exceptionally(ex -> {
                     if (ex.getCause() instanceof SQLException) {
                         throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, ex.getCause());
