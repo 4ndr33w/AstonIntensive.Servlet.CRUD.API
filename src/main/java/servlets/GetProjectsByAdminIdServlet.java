@@ -46,12 +46,24 @@ public class GetProjectsByAdminIdServlet extends BaseServlet {
      * HTTP GET запрос
      * метод возвращает список всех проектов,
      * в которых пользователь с идентификатором {@code Id} является администратором,
-     *
      * <p>
-     *     метод принимает параметр в адресной строке:
-     *     <ul>
-     *         <li>{@code Id}</li>
-     *     </ul>
+     * Отдельно для этого сервлета и сервлета {@code GetProjectByUserIdServlet}
+     * отдельно были созданы:
+     * <ul>
+     *     <li>{@code ProjectControllerSynchronous}</li>
+     *     <li>{@code services.synchronous.ProjectsService}</li>
+     *     <li>{@code repositories.interfaces.synchronous.}</li>
+     *     <li>{@code repositories.synchronous.ProjectsRepository}</li>
+     *     <li>{@code repositories.synchronous.ProjectUserRepositorySynchronous}</li>
+     * </ul>
+     * </p>
+     *
+     * Так как не успевал в установленные сроки создать рабочий функционал своей изначальной идеи
+     * сделать все вызовы к БД асинхронно
+     * <p>
+     *     Так же, не имея до этого опыта работы с многопоточностью уже на этапе реализации сервлетов
+     *     (когда слои контролллеров - сервисов - репозиториев были готовы)
+     *     пришло понимание, что потоки следует начинать относительно сессии в сервлете.
      * </p>
      *
      * @param req
@@ -69,9 +81,6 @@ public class GetProjectsByAdminIdServlet extends BaseServlet {
 
             var path = req.getPathInfo();
 
-            // Не получилось вычленить Id из req.getPathInfo(), разделяя строку на массив
-            // если быть точнее, то /{id} воспринимался как несуществующий endpoint
-            // поэтому пришлось использовать параметр запроса
             String id = req.getParameter("id");
             if (id == null) {
                 printResponse(

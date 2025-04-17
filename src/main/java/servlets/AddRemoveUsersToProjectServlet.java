@@ -27,7 +27,7 @@ import java.util.UUID;
 public class AddRemoveUsersToProjectServlet extends BaseServlet {
 
     private final ProjectControllerInterface projectController;
-
+    protected Logger logger = LoggerFactory.getLogger(AddRemoveUsersToProjectServlet.class);
 
     public AddRemoveUsersToProjectServlet() {
         //this.projectController = new ProjectControllerSynchronous();

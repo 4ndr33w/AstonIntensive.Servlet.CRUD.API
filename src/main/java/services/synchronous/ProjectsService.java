@@ -8,16 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.ProjectUsersRepositoryImpl;
 import repositories.UsersRepositoryImplementation;
-import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
-import repositories.synchronous.ProjectUsersRepositorySynchronous;
-import repositories.synchronous.ProjectsRepository;
 import services.interfaces.synchronous.ProjectServiceSynchro;
 import utils.StaticConstants;
 import utils.mappers.UserMapper;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;

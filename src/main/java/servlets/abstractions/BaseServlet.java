@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.Utils;
 
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -19,6 +20,7 @@ import java.io.PrintWriter;
  * @author 4ndr33w
  * @version 1.0
  */
+@WebServlet
 public class BaseServlet extends HttpServlet {
 
     protected Logger logger = LoggerFactory.getLogger(BaseServlet.class);

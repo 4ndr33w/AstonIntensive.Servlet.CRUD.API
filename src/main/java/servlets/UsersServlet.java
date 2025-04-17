@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import controllers.UsersController;
 import models.dtos.UserDto;
 import models.entities.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
 import utils.Utils;
@@ -32,10 +34,8 @@ import java.util.UUID;
 @WebServlet("/api/v1/users")
 public class UsersServlet extends BaseServlet {
 
-
-
+    protected Logger logger = LoggerFactory.getLogger(UsersServlet .class);
     private final UsersController userController;
-
 
     public UsersServlet() {
         super();

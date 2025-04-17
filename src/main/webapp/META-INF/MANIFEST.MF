@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Created-By: Maven
+Implementation-Title: ServletWebApp2
+Implementation-Version: 1.0

@@ -18,10 +18,28 @@ import javax.sql.DataSource;
  */
 public class DataSourceProvider {
 
-    static String dbUrl = PropertiesConfiguration.getProperties().getProperty("jdbc.url");
+    static Logger logger = LoggerFactory.getLogger(DataSourceProvider.class);
+    /*static String dbUrl = PropertiesConfiguration.getProperties().getProperty("jdbc.url");
+    static String user = PropertiesConfiguration.getProperties().getProperty("jdbc.username");
+    static String pass = PropertiesConfiguration.getProperties().getProperty("jdbc.password");*/
+
+    /*static String dbUrl = PropertiesConfiguration.getProperties().getProperty("jdbc.url");
     static String user = PropertiesConfiguration.getProperties().getProperty("jdbc.username");
     static String pass = PropertiesConfiguration.getProperties().getProperty("jdbc.password");
-    static Logger logger = LoggerFactory.getLogger(DataSourceProvider.class);
+    */
+
+    static String dbUrl = System.getenv("JDBC_URL") != null
+            ? System.getenv("JDBC_URL")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.url");
+
+    static String user = System.getenv("JDBC_USERNAME") != null
+            ? System.getenv("JDBC_USERNAME")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.username");
+
+    static String pass = System.getenv("JDBC_PASSWORD") != null
+            ? System.getenv("JDBC_PASSWORD")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.password");
+
 
     private static final HikariDataSource dataSource;
 
@@ -39,6 +57,8 @@ public class DataSourceProvider {
 
     public static DataSource getDataSource() {
         logger.info("Предоставлен источник DataSource");
+        logger.info("Database URL:" + dbUrl);
+        logger.info("Database username:" + user);
         return dataSource;
     }
 }

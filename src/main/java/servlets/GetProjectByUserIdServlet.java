@@ -22,6 +22,25 @@ import java.util.UUID;
 /**
  * Сервлет обработки GET-запроса
  * для получения всех проектов пользователя
+ * <p>
+ * Отдельно для этого сервлета и сервлета {@code GetProjectByAdminIdServlet}
+ * отдельно были созданы:
+ * <ul>
+ *     <li>{@code ProjectControllerSynchronous}</li>
+ *     <li>{@code services.synchronous.ProjectsService}</li>
+ *     <li>{@code repositories.interfaces.synchronous.}</li>
+ *     <li>{@code repositories.synchronous.ProjectsRepository}</li>
+ *     <li>{@code repositories.synchronous.ProjectUserRepositorySynchronous}</li>
+ * </ul>
+ * </p>
+ *
+ * Так как не успевал в установленные сроки создать рабочий функционал своей изначальной идеи
+ * сделать все вызовы к БД асинхронно
+ * <p>
+ *     Так же, не имея до этого опыта работы с многопоточностью уже на этапе реализации сервлетов
+ *     (когда слои контролллеров - сервисов - репозиториев были готовы)
+ *     пришло понимание, что потоки следует начинать относительно сессии в сервлете.
+ * </p>
  *
  * @author 4ndr33w
  * @version 1.0
@@ -30,7 +49,6 @@ import java.util.UUID;
 public class GetProjectByUserIdServlet extends BaseServlet {
 
     private final ProjectControllerInterface projectController;
-
     Logger logger = LoggerFactory.getLogger(GetProjectByUserIdServlet.class);
     private ObjectMapper objectMapper = new ObjectMapper();
     private final Utils utils;

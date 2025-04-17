@@ -1,10 +1,23 @@
+version: "3.9"
+
 services:
   servletwebapp2:
     build: .
     image: servletwebapp2
     container_name: servletwebapp2
     ports:
-      - 8081:8081
+      - 8081:8080
+    environment:
+      - jdbc.url=jdbc:postgresql://webap-db:5432/postgres
+      - jdbc.username=postgres
+      - jdbc.password=1331
+      - jdbc.default-schema=servlets
+      - jdbc.users-table=users
+      - jdbc.projects-table=projects
+      - jdbc.project-users-table=project_users
+    depends_on:
+      webap-db:
+        condition: service_healthy
     networks:
       - webapp-net
 
@@ -12,19 +25,20 @@ services:
     image: postgres:16.1
     container_name: webap-db
     ports:
-      - 5432:5432
+      - 5433:5432
     environment:
-      - JDBC_URL=jdbc:postgresql://postgres:5432/postgres
-      - JDBC_USERNAME=postgres
-      - JDBC_PASSWORD=1331
-      - JDBC_DEFAULT_SCHEMA=servlets
-      - JDBC_USERS_TABLE=users
-      - JDBC_PROJECTS_TABLE=projects
-      - JDBC_PROJECT_USERS_TABLE=project_users
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1331
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql  # Инициализация БД
+
+
     healthcheck:
-      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
-      timeout: 5s
+      test: pg_isready -U postgres -d postgres
       interval: 5s
+      timeout: 5s
       retries: 5
     networks:
       - webapp-net
@@ -32,3 +46,7 @@ services:
 networks:
   webapp-net:
     driver: bridge
+    #external: true
+
+volumes:
+  postgres_data:

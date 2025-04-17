@@ -1,5 +1,7 @@
 package services;
 
+import configurations.PropertiesConfiguration;
+import configurations.ThreadPoolConfiguration;
 import models.dtos.ProjectDto;
 import models.entities.Project;
 import models.entities.User;
@@ -96,7 +98,6 @@ public class UsersService implements UserService {
 
     @Override
     public CompletableFuture<List<User>> getAllAsync() {
-
 
         return userRepository.findAllAsync()
                 .thenCompose(users -> {

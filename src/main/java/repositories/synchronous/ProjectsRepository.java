@@ -44,6 +44,8 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
     @Override
     public Project create(Project project) {
         Objects.requireNonNull(project);
+        logger.info("DB schema: {}", schema);
+        logger.info("DB projectsTable: {}", projectsTable);
 
         String queryString = sqlQueryStrings.createProjectString(tableName, project);
         try (JdbcConnection jdbcConnection = new JdbcConnection();
