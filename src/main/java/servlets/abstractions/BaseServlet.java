@@ -8,6 +8,7 @@ import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.Utils;
+import utils.exceptions.DataParsingException;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -28,10 +29,12 @@ public class BaseServlet extends HttpServlet {
     protected Utils utils;
 
     protected void printResponse(int statusCode, String path, String message, HttpServletResponse resp) throws IOException {
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
 
         ErrorDto error = new ErrorDto(
                 statusCode,
-                "/api/v1/users",
+                path,
                 message);
         try {
             String jsonResponse = objectMapper.writeValueAsString(error);
@@ -55,7 +58,7 @@ public class BaseServlet extends HttpServlet {
 
         ErrorDto error = new ErrorDto(
                 statusCode,
-                "/api/v1/users",
+                path,
                 message);
         try {
             String jsonResponse = objectMapper.writeValueAsString(error);
@@ -80,17 +83,24 @@ public class BaseServlet extends HttpServlet {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-            logger.info(String.format("Servlet: парсинг объекта проекта в объект класса Project. Request body: %s", objectMapper.writeValueAsString(req.getInputStream())));
             return objectMapper.readValue(req.getInputStream(), Project.class);
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error(String.format("Servlet: Error. Парсинг не удался. Request path: %s\nException: %s", "/projects", e.getMessage()));
-            throw new RuntimeException(e);
+            throw new DataParsingException("Ошибка чтения данных объекта", e);
         }
     }
 
     protected User parseUserFromRequest(HttpServletRequest req) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        logger.info("Парсинг данных пользователя из запроса...");
-        return objectMapper.readValue(req.getInputStream(), User.class);
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+            return objectMapper.readValue(req.getInputStream(), User.class);
+        }
+        catch (Exception e) {
+            logger.error(String.format("Servlet: Error. Парсинг не удался. Request path: %s\nException: %s", "/projects", e.getMessage()));
+            throw new DataParsingException("Ошибка чтения данных объекта", e);
+        }
+
     }
 }

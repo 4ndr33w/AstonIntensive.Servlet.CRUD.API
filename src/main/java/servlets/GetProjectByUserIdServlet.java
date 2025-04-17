@@ -102,8 +102,6 @@ public class GetProjectByUserIdServlet extends BaseServlet {
                         resp);
                 return;
             }
-
-            logger.info(String.format("Все идет штатно"));
             List<ProjectDto> projects = projectController.getByUserId(UUID.fromString(id));
 
             if(projects == null || projects.size() == 0) {
@@ -120,7 +118,6 @@ public class GetProjectByUserIdServlet extends BaseServlet {
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
                 out.flush();
-                logger.info("Ответ отправлен клиенту");
             }
         }
         catch (Exception e) {

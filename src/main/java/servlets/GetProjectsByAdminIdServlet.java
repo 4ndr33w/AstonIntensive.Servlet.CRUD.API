@@ -79,8 +79,6 @@ public class GetProjectsByAdminIdServlet extends BaseServlet {
             resp.setContentType("application/json");
             resp.setCharacterEncoding("UTF-8");
 
-            var path = req.getPathInfo();
-
             String id = req.getParameter("id");
             if (id == null) {
                 printResponse(
@@ -113,7 +111,6 @@ public class GetProjectsByAdminIdServlet extends BaseServlet {
                 ObjectMapper mapper = new ObjectMapper();
                 String jsonResponse = mapper.writeValueAsString(projects);
 
-                logger.info("Servlet: Sending response. Response code: 200 OK.");
                 resp.setStatus(HttpServletResponse.SC_OK);
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
