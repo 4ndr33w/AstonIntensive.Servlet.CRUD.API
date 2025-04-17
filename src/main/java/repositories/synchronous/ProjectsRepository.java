@@ -44,8 +44,6 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
     @Override
     public Project create(Project project) {
         Objects.requireNonNull(project);
-        logger.info("DB schema: {}", schema);
-        logger.info("DB projectsTable: {}", projectsTable);
 
         String queryString = sqlQueryStrings.createProjectString(tableName, project);
         try (JdbcConnection jdbcConnection = new JdbcConnection();
@@ -60,7 +58,6 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
             try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
-                    logger.info("ProjectRepository: Create: Created project: {}", project);
                     project.setId((UUID) generatedKeys.getObject(1));
                     return project;
                 }
@@ -178,10 +175,8 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
             var result = projectUsersRepository.addUserToProject(userId, projectId);
             if(result ) {
-                logger.info("User: {} was added to project: {}", userId, projectId);
                 project.setProjectUsers(updatedUsers);
             }
-            logger.info("ProjectRepository: addUserToProject: Added user: {} to project: {}", userId, projectId);
             return project;
         }
         logger.error("ProjectRepository: addUserToProject: Optional.isEmpty()\n Failed to add user: {} to project: {}", userId, projectId);
@@ -202,11 +197,9 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
             var result = projectUsersRepository.deleteUserFromProject(userId, projectId);
             if(result) {
-                logger.info("User: {} was removed from project: {}", userId, projectId);
                 updatedUsers.remove(userDto);
                 project.setProjectUsers(updatedUsers);
             }
-            logger.info("ProjectRepository: RemoveUserFromProject: Removed user: {} from project: {}", userId, projectId);
             return project;
         }
         logger.error("ProjectRepository: RemoveUserFromProject: Optional.isEmpty()\n Failed to remove user: {} from project: {}", userId, projectId);

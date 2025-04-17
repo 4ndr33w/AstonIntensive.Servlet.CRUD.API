@@ -314,20 +314,6 @@ public class ProjectRepositoryNew implements ProjectRepository {
                 });
     }
 
-
-
-
-
-
-
-
-
-
-    @Override
-    public CompletableFuture<List<Project>> findAllAsync() {
-        return null;
-    }
-
     @Override
     public CompletableFuture<Project> updateAsync(Project project) {
         return CompletableFuture.supplyAsync(() -> {
@@ -366,5 +352,10 @@ public class ProjectRepositoryNew implements ProjectRepository {
                 throw new CompletionException("Unexpected error", e);
             }
         }, dbExecutor);
+    }
+
+    @Override
+    public CompletableFuture<List<Project>> findAllAsync() {
+        return null;
     }
 }

@@ -139,13 +139,6 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
      *         </ul>
      *     </li>
      * </ul>
-     *
-     * <p>Особенности реализации:</p>
-     * <ul>
-     *     <li>Использует выделенный пул потоков ({@code dbExecutor}) для выполнения операции</li>
-     *     <li>Автоматически управляет ресурсами соединения с БД (try-with-resources)</li>
-     * </ul>
-     *
      * @param id идентификатор пользователя ({@code UUID}), не null
      * @return {@code CompletableFuture<Boolean>} результат операции:
      *         <ul>
@@ -209,13 +202,9 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
             List<String> ids = userIds.stream().map(UUID::toString).toList();
             String sql = sqlQueryStrings.findAllByIdsString(usersTableName, ids);
 
-            /*String sql = String.format("SELECT * FROM %s WHERE id IN (", usersTableName) +
-                    userIds.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";*/
-
             try (JdbcConnection connection = new JdbcConnection();
                  PreparedStatement statement = connection.getConnection().prepareStatement(sql)) {
 
-                // Устанавливаем параметры для IN-условия
                 for (int i = 0; i < userIds.size(); i++) {
                     statement.setObject(i + 1, userIds.get(i));
                 }
