@@ -23,7 +23,7 @@ import java.util.UUID;
  * @author 4ndr33w
  * @version 1.0
  */
-public class ProjectMapper {
+public class ProjectMapper<T> {
 
 
     public static ProjectDto toDto(Project project) {

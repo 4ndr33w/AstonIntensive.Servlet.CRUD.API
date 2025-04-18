@@ -107,7 +107,10 @@ public class ProjectRepositoryNew implements ProjectRepository {
             logger.info("Repository: findByAdminIdAsync: \n retrieved list of projects...");
             return projects;
         }, dbExecutor);
+
+        //return  null;
     }
+
 
     @Override
     public CompletableFuture<List<Project>> findByUserIdAsync(UUID userId) {
@@ -145,6 +148,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
                     .join();
 
         }, dbExecutor);
+        //return  null;
     }
     private CompletableFuture<List<Project>> findProjectsByUserIdIfUserNotProjectAdmin(UUID userId) {
         CompletableFuture<List<Project>> memberProjectsFuture = CompletableFuture.supplyAsync(() -> {
