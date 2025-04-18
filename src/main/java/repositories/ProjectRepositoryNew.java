@@ -132,13 +132,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
                         return new ArrayList<>(combined);
                     })
                     .thenCompose(projects -> {
-                        List<CompletableFuture<Project>> enrichedProjects = projects.stream()
-                                .map(project -> loadProjectUsers(project.getId())
-                                        .thenApply(users -> {
-                                            project.setProjectUsers(users);
-                                            return project;
-                                        }))
-                                .toList();
+                        List<CompletableFuture<Project>> enrichedProjects = loadUserIdsToFutureProject(projects);
 
                         return CompletableFuture.allOf(enrichedProjects.toArray(new CompletableFuture[0]))
                                 .thenApply(v -> enrichedProjects.stream()
@@ -148,8 +142,18 @@ public class ProjectRepositoryNew implements ProjectRepository {
                     .join();
 
         }, dbExecutor);
-        //return  null;
     }
+    private List<CompletableFuture<Project>> loadUserIdsToFutureProject(ArrayList<Project> projects) {
+
+        return projects.stream()
+                .map(project -> loadProjectUsers(project.getId())
+                        .thenApply(users -> {
+                            project.setProjectUsers(users);
+                            return project;
+                        }))
+                .toList();
+    }
+
     private CompletableFuture<List<Project>> findProjectsByUserIdIfUserNotProjectAdmin(UUID userId) {
         CompletableFuture<List<Project>> memberProjectsFuture = CompletableFuture.supplyAsync(() -> {
 
