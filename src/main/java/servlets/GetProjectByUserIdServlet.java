@@ -28,6 +28,7 @@ import java.util.UUID;
  * <ul>
  *     <li>{@code ProjectControllerSynchronous}</li>
  *     <li>{@code services.synchronous.ProjectsService}</li>
+ *     <li>{@code repositories.interfaces.synchronous.}</li>
  *     <li>{@code repositories.synchronous.ProjectsRepository}</li>
  *     <li>{@code repositories.synchronous.ProjectUserRepositorySynchronous}</li>
  * </ul>
@@ -101,7 +102,6 @@ public class GetProjectByUserIdServlet extends BaseServlet {
                         resp);
                 return;
             }
-
             List<ProjectDto> projects = projectController.getByUserId(UUID.fromString(id));
 
             if(projects == null || projects.size() == 0) {
@@ -118,6 +118,7 @@ public class GetProjectByUserIdServlet extends BaseServlet {
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
                 out.flush();
+                logger.info("Ответ отправлен клиенту");
             }
         }
         catch (Exception e) {

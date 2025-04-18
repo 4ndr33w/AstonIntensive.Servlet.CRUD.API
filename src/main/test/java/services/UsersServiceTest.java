@@ -6,11 +6,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import testUtils.Utils;
 import utils.StaticConstants;
@@ -304,6 +306,10 @@ public class UsersServiceTest extends Utils{
         User user = testUser1;
         user.setId(userId);
         RuntimeException dbError = new RuntimeException("Database error");
+
+        UserRepository repo = Mockito.mock(UserRepository.class);
+        userService = new UsersService(repo);
+
 
         when(userRepository.updateAsync(user))
                 .thenReturn(CompletableFuture.failedFuture(dbError));

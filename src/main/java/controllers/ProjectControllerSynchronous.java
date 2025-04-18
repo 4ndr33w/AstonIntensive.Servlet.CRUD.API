@@ -54,7 +54,6 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
 
         try {
             var result = projectService.getByUserId(userId);
-            logger.info("ProjectControllerSynchro: getByUserId Получение всех проектов пользователя");
             return result.stream().map(ProjectMapper::toDto).toList();
         } catch (NoSuchElementException e) {
             logger.error(String.format("ProjectControllerSynchro: getByUserId Ошибка получения всех проектов пользователя: %s", e.getMessage()));
@@ -82,7 +81,6 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
         Objects.requireNonNull(adminId);
 
         try {
-            logger.info("ProjectControllerSynchro: getByAdminId Получение всех проектов администратора");
             return projectService.getByAdminId(adminId).stream().map(ProjectMapper::toDto).toList();
         }
         catch (NoSuchElementException e) {

@@ -30,7 +30,6 @@ public class AddRemoveUsersToProjectServlet extends BaseServlet {
     protected Logger logger = LoggerFactory.getLogger(AddRemoveUsersToProjectServlet.class);
 
     public AddRemoveUsersToProjectServlet() {
-        //this.projectController = new ProjectControllerSynchronous();
         this.projectController = new controllers.ProjectsController();
     }
 
@@ -54,15 +53,12 @@ public class AddRemoveUsersToProjectServlet extends BaseServlet {
      */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-
-        Logger logger = LoggerFactory.getLogger(AddRemoveUsersToProjectServlet.class);
         try {
             UUID projectId = UUID.fromString(req.getParameter("projectid"));
             UUID userId = UUID.fromString(req.getParameter("userid"));
 
             ProjectDto result = projectController.addUserToProject(userId, projectId);
 
-            logger.info("User with id {} was added to project with id {}", userId, projectId);
             resp.setContentType("application/json");
             new ObjectMapper().writeValue(resp.getWriter(), result);
         }  catch (Exception e) {
@@ -95,15 +91,12 @@ public class AddRemoveUsersToProjectServlet extends BaseServlet {
      */
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-
-        Logger logger = LoggerFactory.getLogger(AddRemoveUsersToProjectServlet.class);
         try {
             UUID projectId = UUID.fromString(req.getParameter("projectId"));
             UUID userId = UUID.fromString(req.getParameter("userId"));
 
             ProjectDto result = projectController.removeUserFromProject(userId, projectId);
 
-            logger.info("User with id {} was removed from project with id {}", userId, projectId);
             resp.setContentType("application/json");
             new ObjectMapper().writeValue(resp.getWriter(), result);
         } catch (Exception e) {

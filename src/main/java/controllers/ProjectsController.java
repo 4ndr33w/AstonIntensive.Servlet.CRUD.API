@@ -64,7 +64,6 @@ public class ProjectsController implements ProjectControllerInterface {
 
         try {
             var result = projectService.getByUserIdAsync(userId).get();
-            logger.info("ProjectController: getByUserId: {}", userId);
             return result.stream().map(ProjectMapper::toDto).toList();
         }
         catch (NoSuchElementException e) {
@@ -96,7 +95,6 @@ public class ProjectsController implements ProjectControllerInterface {
         Objects.requireNonNull(adminId);
 
         try {
-            logger.info("ProjectController: getByAdminId: {}", adminId);
             return projectService.getByAdminIdAsync(adminId).get().stream().map(ProjectMapper::toDto).toList();
         }
         catch (NoSuchElementException e) {
@@ -130,8 +128,7 @@ public class ProjectsController implements ProjectControllerInterface {
 
         try {
             var result = projectService.getByIdAsync(projectId).get();
-            logger.info("ProjectController: getById: {}", projectId);
-            return ProjectMapper.toDto(result);
+              return ProjectMapper.toDto(result);
         }
         catch (NoSuchElementException e) {
             logger.warn("ProjectController: getById: {}", e.getMessage());
@@ -160,8 +157,7 @@ public class ProjectsController implements ProjectControllerInterface {
         Objects.requireNonNull(project);
 
         try {
-            logger.info("ProjectController: create: {}", project);
-            return ProjectMapper.toDto(projectService.createAsync(project).get());
+              return ProjectMapper.toDto(projectService.createAsync(project).get());
         }
         catch (NoSuchElementException e) {
             logger.warn("ProjectController: create: {}", e.getMessage());
@@ -192,7 +188,6 @@ public class ProjectsController implements ProjectControllerInterface {
         Objects.requireNonNull(projectId);
 
         try {
-            logger.info("ProjectController: deleteById: {}", projectId);
             return projectService.deleteByIdAsync(projectId).get();
         }
         catch (NoSuchElementException e) {
@@ -222,7 +217,6 @@ public class ProjectsController implements ProjectControllerInterface {
         try {
             CompletableFuture<Project> future = projectService.addUserToProjectAsync(userId, projectId);
             Project project = future.get();
-            logger.info("ProjectController: addUserToProject:\n Successfully added {}", project);
             return ProjectMapper.toDto(project);
         }
         catch (Exception e) {
@@ -249,7 +243,6 @@ public class ProjectsController implements ProjectControllerInterface {
         try {
             CompletableFuture<Project> future = projectService.removeUserFromProjectAsync(userId, projectId);
             Project project = future.get();
-            logger.info("ProjectController: removeUserFromProject: {}", project);
             return ProjectMapper.toDto(project);
         }
         catch (Exception e) {
@@ -277,8 +270,7 @@ public class ProjectsController implements ProjectControllerInterface {
         try {
               Project updatedProject = projectService.updateByIdAsync(project).join();
 
-              logger.info("ProjectController: updateProject:\n Successfully updated {}", updatedProject);
-            return ProjectMapper.toDto(updatedProject);
+                return ProjectMapper.toDto(updatedProject);
 
         } catch (CompletionException ex) {
             if (ex.getCause() instanceof NoSuchElementException) {

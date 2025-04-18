@@ -109,8 +109,6 @@ public class ProjectsServlet extends BaseServlet {
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
                 out.flush();
-                logger.info(String.format("Servlet: Request path: %s. Response: %s", path, jsonResponse));
-
             } else {
                 printResponse(
                         HttpServletResponse.SC_NOT_FOUND,
@@ -160,15 +158,11 @@ public class ProjectsServlet extends BaseServlet {
         try {
             Project project = parseProjectFromRequest(req);
 
-            logger.info("Servlet: Парсинг выполнен\n Выполнение метода создания проекта");
             ProjectDto createdProject = projectController.create(project);
-            logger.info(String.format("Servlet: Проект создан. Created project: %s", objectMapper.writeValueAsString(createdProject)));
             resp.setStatus(HttpServletResponse.SC_CREATED);
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
             objectMapper.writeValue(resp.getWriter(), createdProject);
-
-            logger.info(String.format("Servlet: Отображение данных на клиент. Response: %s", objectMapper.writeValueAsString(createdProject)));
 
         } catch (IllegalArgumentException e) {
             printResponse(
@@ -186,8 +180,6 @@ public class ProjectsServlet extends BaseServlet {
                     resp);
         }
     }
-
-
 
     /**
      * HTTP DELETE запрос
@@ -211,9 +203,6 @@ public class ProjectsServlet extends BaseServlet {
      */
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
 
         String id = req.getParameter("id");
 
@@ -245,7 +234,7 @@ public class ProjectsServlet extends BaseServlet {
                         resp);
             }
 
-        } catch (java.io.IOException e) {
+        } catch (Exception e) {
             printResponse(
                     HttpServletResponse.SC_BAD_REQUEST,
                     "/api/v1/projects",
@@ -269,9 +258,7 @@ public class ProjectsServlet extends BaseServlet {
                 Project project = parseProjectFromRequest(req);
                 project.setId(projectId);
 
-                logger.info("Servlet: Парсинг выполнен\n Выполнение метода апдейта проекта");
                 ProjectDto updatedProject = projectController.updateProject(ProjectMapper.toDto(project));
-                logger.info(String.format("Servlet: Проект обновлён. Updated project: %s", objectMapper.writeValueAsString(updatedProject)));
                 resp.setStatus(HttpServletResponse.SC_ACCEPTED);
                 ObjectMapper objectMapper = new ObjectMapper();
                 objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);

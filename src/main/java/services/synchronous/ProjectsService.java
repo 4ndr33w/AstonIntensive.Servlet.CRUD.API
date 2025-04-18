@@ -130,8 +130,6 @@ public class ProjectsService implements ProjectServiceSynchro {
                 .map(ProjectUsersDto::getUserId)
                 .collect(Collectors.toSet());
 
-        logger.info("ProjectService: enrichProjectsWithUsers: User IDs: {}", userIds.size());
-
         return userRepository.findAllByIdsAsync(new ArrayList<>(userIds))
                 .get()
                 .stream()
@@ -142,6 +140,7 @@ public class ProjectsService implements ProjectServiceSynchro {
             List<Project> projects, Map<UUID,
             List<ProjectUsersDto>> usersByProjectId,
             Map<UUID, User> usersMap) {
+
                 projects.stream()
                 .map(project -> {
                     List<ProjectUsersDto> projectUserDtos = usersByProjectId.getOrDefault(project.getId(), Collections.emptyList());
@@ -153,7 +152,6 @@ public class ProjectsService implements ProjectServiceSynchro {
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
                     project.setProjectUsers(userDtos);
-                    logger.info("ProjectService: enrichProjectsWithUsers: Project users: {}", project.getProjectUsers().size());
                     return project;
                 })
                 .toList();
@@ -177,12 +175,10 @@ public class ProjectsService implements ProjectServiceSynchro {
                         .map(UserMapper::toDto)
                         .collect(Collectors.toList());
                 project.setProjectUsers(userDtos);
-                logger.info("ProjectService: enrichProjectWithUsers: Project users: {}", project.getProjectUsers().size());
             } else {
                 logger.info("ProjectService: enrichProjectWithUsers: No users found for project");
                 project.setProjectUsers(Collections.emptyList());
             }
-            logger.info("ProjectService: enrichProjectWithUsers: Project: {}", project);
             return project;
         }
         catch (CompletionException | InterruptedException | ExecutionException e) {

@@ -28,13 +28,11 @@ public class JdbcConnection implements AutoCloseable{
     }
 
     public Connection getConnection() {
-        logger.info("Получен объект Connection класса JdbcConnection");
-        return connection;
+           return connection;
     }
 
     public void setAutoCommit(boolean flag) throws SQLException {
         if (connection != null) {
-            logger.info("AutoCommit: Выставлен флаг {}", flag);
             connection.setAutoCommit(flag);
         }
     }
@@ -57,33 +55,28 @@ public class JdbcConnection implements AutoCloseable{
         closeResultSet();
         this.statement = connection.createStatement();
         this.resultSet = statement.executeQuery(query);
-        logger.info("Получен ResultSet; Выполнен запрос: {}", query);
         return resultSet;
     }
 
     public boolean execute(String query) throws SQLException {
         closeStatement();
         this.statement = connection.createStatement();
-        logger.info("Выполнен запрос: {}", query);
         return statement.execute(query);
     }
 
     public int executeUpdate(String query) throws SQLException {
         closeStatement();
         this.statement = connection.createStatement();
-        logger.info("Выполнен запрос: {}", query);
         return statement.executeUpdate(query);
     }
 
     public PreparedStatement prepareStatement(String sql) throws SQLException {
         closeStatement();
-        logger.info("Выполнен запрос: {}", sql);
-        return connection.prepareStatement(sql);
+           return connection.prepareStatement(sql);
     }
 
     public Statement statement() throws SQLException {
         closeStatement();
-        logger.info("Получен объект Statement");
         return connection.createStatement();
     }
 
@@ -99,7 +92,6 @@ public class JdbcConnection implements AutoCloseable{
     private void closeResultSet() {
         if (resultSet != null) {
             try {
-                //logger.info("Закрыт ResultSet");
                 resultSet.close();
             } catch (SQLException e) {
                 logger.error("Ошибка закрытия ResultSet");
@@ -112,8 +104,7 @@ public class JdbcConnection implements AutoCloseable{
     private void closeStatement() {
         if (statement != null) {
             try {
-                //logger.info("Закрыт Statement");
-                statement.close();
+                   statement.close();
             } catch (SQLException e) {
                 logger.error("Ошибка закрытия Statement");
                 throw new RuntimeException(e);
@@ -125,8 +116,7 @@ public class JdbcConnection implements AutoCloseable{
     private void closeConnection() {
         if (connection != null) {
             try {
-                //logger.info("Закрыт Connection");
-                connection.close();
+                 connection.close();
             } catch (SQLException e) {
                 logger.error("Ошибка закрытия Connection");
                 throw new RuntimeException(e);
