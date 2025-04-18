@@ -241,7 +241,6 @@ public class ProjectRepositoryNew implements ProjectRepository {
     @Override
     public CompletableFuture<Boolean> deleteAsync(UUID id) {
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Repository: deleting project...");
             Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
             String tableName = String.format("%s.%s", schema, projectsTable);
@@ -249,7 +248,6 @@ public class ProjectRepositoryNew implements ProjectRepository {
 
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
                 int affectedRows = jdbcConnection.executeUpdate(queryString);
-                logger.info("Repository: deleted rows: " + affectedRows);
                 return affectedRows > 0;
             }
             catch (Exception e) {
@@ -325,29 +323,16 @@ public class ProjectRepositoryNew implements ProjectRepository {
             try (JdbcConnection jdbcConnection = new JdbcConnection()) {
                 jdbcConnection.setAutoCommit(false);
 
-                try {
-                    int affectedRows = jdbcConnection.executeUpdate(updateQuery);
+                int affectedRows = jdbcConnection.executeUpdate(updateQuery);
 
-                    if (affectedRows == 0) {
-                        logger.error(String.format("Repository: update: error: Project with id %s not found", project.getId()));
-                        throw new NoSuchElementException("Project with id " + project.getId() + " not found");
-                    }
-
-                    logger.info("Repository: update: committed changes");
-                    jdbcConnection.commit();
-
-                    logger.info("Repository: update: return updated project: ");
-                    return project;
-
-                } catch (SQLException e) {
-                    jdbcConnection.rollback();
-                    logger.error(String.format("Repository: update: error: %s", e.getMessage()));
-                    throw new CompletionException("Failed to update project", e);
+                if (affectedRows == 0) {
+                    logger.error(String.format("Repository: update: error: Project with id %s not found", project.getId()));
+                    throw new NoSuchElementException("Project with id " + project.getId() + " not found");
                 }
-            } catch (SQLException e) {
-                logger.error(String.format("Repository: update: error: %s", e.getMessage()));
-                throw new CompletionException("Database connection error", e);
-            } catch (Exception e) {
+                jdbcConnection.commit();
+                return project;
+            }
+            catch (Exception e) {
                 logger.error(String.format("Repository: update: error: %s", e.getMessage()));
                 throw new CompletionException("Unexpected error", e);
             }
