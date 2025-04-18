@@ -14,6 +14,7 @@ import repositories.interfaces.UserRepository;
 import services.interfaces.ProjectService;
 import utils.StaticConstants;
 import utils.exceptions.ProjectNotFoundException;
+import utils.exceptions.ProjectUpdateException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -229,7 +230,7 @@ public class ProjectsService implements ProjectService {
                                 new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, project.getId(), ex.getCause())));
                     }
                     logger.error("Failed to update project with id: {}", project.getId(), ex);
-                    throw new CompletionException("Failed to update project", ex.getCause());
+                    throw new ProjectUpdateException("Failed to update project", ex.getCause());
                 });
     }
 }
