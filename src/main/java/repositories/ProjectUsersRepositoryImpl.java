@@ -222,7 +222,6 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
             try (JdbcConnection connection = new JdbcConnection();
                  PreparedStatement statement = connection.getConnection().prepareStatement(sql)) {
 
-                // Устанавливаем параметры для IN-условия
                 for (int i = 0; i < projectIds.size(); i++) {
                     statement.setObject(i + 1, projectIds.get(i));
                 }

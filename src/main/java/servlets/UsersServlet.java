@@ -51,7 +51,6 @@ public class UsersServlet extends BaseServlet {
 
         String id = req.getParameter("id");
         if (id == null) {
-
             printResponse(
                     HttpServletResponse.SC_BAD_REQUEST,
                     "/api/v1/users",
@@ -59,10 +58,8 @@ public class UsersServlet extends BaseServlet {
                     resp);
             return;
         }
-
         boolean idValidation = utils.validateId(id);
         if(!idValidation) {
-
             printResponse(
                     HttpServletResponse.SC_BAD_REQUEST,
                     "/api/v1/users",
@@ -81,7 +78,6 @@ public class UsersServlet extends BaseServlet {
             PrintWriter out = resp.getWriter();
             out.print(jsonResponse);
             out.flush();
-            logger.info("Пользователь найден и отправлен в ответ");
         }
         catch (Exception e) {
             printResponse(
@@ -91,11 +87,6 @@ public class UsersServlet extends BaseServlet {
                     e,
                     resp);
         }
-        printResponse(
-                HttpServletResponse.SC_BAD_REQUEST,
-                "/api/v1/projects",
-                StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
-                resp);
     }
 
     /**
@@ -128,7 +119,6 @@ public class UsersServlet extends BaseServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
-
         try {
             User user = parseUserFromRequest(req);
 
@@ -139,7 +129,6 @@ public class UsersServlet extends BaseServlet {
             resp.setStatus(HttpServletResponse.SC_CREATED);
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.writeValue(resp.getWriter(), createdUser);
-            logger.info("Пользователь успешно создан");
 
         } catch (IllegalArgumentException e) {
             printResponse(
@@ -196,13 +185,8 @@ public class UsersServlet extends BaseServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
-
         String id = req.getParameter("id");
-
         try {
-
             if (id == null) {
                 printResponse(
                         HttpServletResponse.SC_BAD_REQUEST,
@@ -253,15 +237,12 @@ public class UsersServlet extends BaseServlet {
                 User user = parseUserFromRequest(req);
                 user.setId(userId);
 
-                logger.info("Servlet: Парсинг выполнен\n Выполнение метода апдейта проекта");
-
                 UserDto updatedUser = userController.updateUser(UserMapper.toDto(user));
                 updatedUser.setUserRole(user.getUserRole());
                 updatedUser.setUserName(user.getUserName());
                 updatedUser.setEmail(user.getEmail());
                 updatedUser.setCreatedAt(user.getCreatedAt());
 
-                logger.info(String.format("Servlet: Данные пользователя обновлены. Updated user: %s", objectMapper.writeValueAsString(updatedUser)));
                 resp.setStatus(HttpServletResponse.SC_ACCEPTED);
                 ObjectMapper objectMapper = new ObjectMapper();
                 objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);

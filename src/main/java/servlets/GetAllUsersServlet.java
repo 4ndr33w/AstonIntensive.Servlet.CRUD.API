@@ -58,8 +58,6 @@ public class GetAllUsersServlet extends BaseServlet {
             PrintWriter out = resp.getWriter();
             out.print(jsonResponse);
             out.flush();
-
-            logger.info("GetAllUsersServlet started");
         }
         catch (Exception e) {
             printResponse(

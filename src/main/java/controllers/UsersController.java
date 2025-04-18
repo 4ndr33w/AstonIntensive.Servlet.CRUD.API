@@ -133,7 +133,6 @@ public class UsersController {
         try {
             User updatedUser = userService.updateByIdAsync(user).join();
 
-            logger.info("UserController: updateUser:\n Successfully updated {}", updatedUser);
             return UserMapper.toDto(updatedUser);
 
         } catch (CompletionException ex) {

@@ -85,9 +85,6 @@ public class UsersService implements UserService {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return userRepository.deleteAsync(id)
-                .thenApply(deleted -> {
-                    return deleted;
-                })
                 .exceptionally(ex -> {
                     if (ex.getCause() instanceof SQLException) {
                         throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, ex.getCause());
@@ -112,7 +109,7 @@ public class UsersService implements UserService {
                                     .collect(Collectors.toList()));
                 })
                 .exceptionally(ex -> {
-                    System.err.println("Error fetching users: " + ex.getMessage());
+                    logger.error("Error fetching users: " + ex.getMessage());
                     throw new CompletionException(ex);
                 });
     }
@@ -122,16 +119,10 @@ public class UsersService implements UserService {
                 .thenCompose(projects -> {
                     List<CompletableFuture<ProjectDto>> projectFutures = projects.stream()
                             .map(project -> {
-                                        try {
-                                            return projectsRepository.findByIdAsync(project.getId())
-                                                    .thenApply(this::findProjects);
-                                        }
-                                        catch (Exception e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    }
-                            )
-                            .toList();
+
+                                return projectsRepository.findByIdAsync(project.getId())
+                                    .thenApply(this::findProjects);
+                                    }).toList();
 
                     return CompletableFuture.allOf(projectFutures.toArray(new CompletableFuture[0]))
                             .thenApply(v -> collectProjectsFromFutures(user, projectFutures));
@@ -172,8 +163,7 @@ public class UsersService implements UserService {
         return userRepository.updateAsync(user)
                 .thenCompose(updatedUser -> {
                     if (updatedUser == null) {
-                        throw new CompletionException(
-                                new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE + " id: " + user.getId()));
+                        throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE + " id: " + user.getId());
                     }
                     return enrichUserWithProjects(updatedUser);
 
@@ -181,8 +171,7 @@ public class UsersService implements UserService {
                 .exceptionally(ex -> {
                     if (ex.getCause() instanceof NoSuchElementException) {
                         logger.error(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, user.getId(), ex.getCause()));
-                        throw new CompletionException(
-                                new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, user.getId(), ex.getCause())));
+                        throw new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, user.getId(), ex.getCause()));
                     }
                     logger.error(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, user.getId()));
                     throw new CompletionException(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, user.getId()), ex.getCause());

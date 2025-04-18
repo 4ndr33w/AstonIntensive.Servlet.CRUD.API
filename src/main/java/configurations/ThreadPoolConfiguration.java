@@ -24,14 +24,10 @@ public class ThreadPoolConfiguration {
         dbExecutor = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors(),
                 new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
-
         );
-
-        logger.info("Thread Pool Static Constructor Called");
     }
     public static ExecutorService getDbExecutor() {
         if (dbExecutor != null) {
-            logger.info("Получен пул потоков dbExecutor");
             return dbExecutor;
         } else {
             logger.error("Ошибка инициализации Thread Pool");
