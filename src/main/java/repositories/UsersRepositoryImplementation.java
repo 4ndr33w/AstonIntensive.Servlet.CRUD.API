@@ -105,13 +105,8 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
                     throw new SQLException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
                 }
 
-                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        item.setId((UUID) generatedKeys.getObject(1));
-                        return item;
-                    }
-                    throw new SQLException(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
-                }
+                item.setId( getGeneratedKeyFromRequest(statement) );
+                return item;
             }
             catch (Exception e) {
                 throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);

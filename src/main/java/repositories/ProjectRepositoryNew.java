@@ -12,6 +12,7 @@ import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
 import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
@@ -69,23 +70,15 @@ public class ProjectRepositoryNew implements ProjectRepository {
                 int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
 
                 if (affectedRows == 0) {
-                    logger.error(String.format("Repository:  error: affectedRows = 0\n%s; project: %s", StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE, project));
-                    throw new RuntimeException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
+                    logger.error(String.format("Repository:  error: %s; project: %s", StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE, project));
+                    throw new DatabaseOperationException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
                 }
-
-                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        project.setId((UUID) generatedKeys.getObject(1));
-                        logger.info("Repository:  retrieving UUID for the new project...");
-                        return project;
-                    }
-                    logger.error(String.format("Repository: error: failed to retrieve generated keys\n%s; project: %s", StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE, project));
-                    throw new RuntimeException(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
-                }
+                project.setId((getGeneratedKeyFromRequest(statement)));
+                return project;
             }
             catch (Exception e) {
                 logger.error(String.format("Repository:  error: %s", e.getMessage()));
-                throw new RuntimeException(e);
+                throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
             }
         }, dbExecutor);
     }
@@ -105,7 +98,6 @@ public class ProjectRepositoryNew implements ProjectRepository {
 
                     projects.add(project);
                 }
-                logger.info("Repository: retrieved list of projects...");
 
             } catch (Exception e) {
                 logger.error(String.format("Repository: findByAdminIdAsync: \nerror: %s", e.getMessage()));
