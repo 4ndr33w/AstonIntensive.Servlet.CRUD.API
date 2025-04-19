@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.interfaces.ProjectUserRepository;
 import utils.StaticConstants;
+import utils.mappers.ProjectUserMapper;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.*;
@@ -230,10 +231,7 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
                 List<ProjectUsersDto> result = new ArrayList<>();
 
                 while (resultSet.next()) {
-                    result.add(new ProjectUsersDto(
-                            (UUID) resultSet.getObject("user_id"),
-                            (UUID) resultSet.getObject("project_id")
-                    ));
+                    result.add(ProjectUserMapper.mapResultSetToProjectUser(resultSet));
                 }
 
                 return result;

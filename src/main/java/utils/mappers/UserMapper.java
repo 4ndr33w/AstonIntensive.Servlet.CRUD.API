@@ -46,7 +46,6 @@ public class UserMapper {
             userDto.setProjects(new ArrayList<>());
         }
         return userDto;
-
     }
 
     public static User mapToEntity(UserDto userDto){

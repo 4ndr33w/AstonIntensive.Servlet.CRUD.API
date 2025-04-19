@@ -5,6 +5,7 @@ import utils.StaticConstants;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -22,10 +23,7 @@ import java.util.UUID;
 public class ProjectUserMapper {
 
     public static ProjectUsersDto mapResultSetToProjectUser(ResultSet rs) throws SQLException {
-        if (rs == null) {
-            throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-        }
-
+        Objects.requireNonNull(rs, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         try {
             ProjectUsersDto projectUser = new ProjectUsersDto(
                     UUID.fromString(rs.getString("user_id")),

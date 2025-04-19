@@ -32,7 +32,6 @@ public interface BaseRepository<T> {
     CompletableFuture<T> updateAsync(T item);
     CompletableFuture<Boolean> deleteAsync(UUID id);
 
-
     default UUID getGeneratedKeyFromRequest(Statement statement) throws SQLException {
         var set = statement.getGeneratedKeys();
 

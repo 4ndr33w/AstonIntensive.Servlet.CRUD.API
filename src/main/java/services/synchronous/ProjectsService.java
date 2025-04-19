@@ -35,7 +35,6 @@ public class ProjectsService implements ProjectServiceSynchro {
         this.projectUsersRepository = new ProjectUsersRepositoryImpl();
     }
 
-
     @Override
     public List<Project> getByUserId(UUID userId) {
 
