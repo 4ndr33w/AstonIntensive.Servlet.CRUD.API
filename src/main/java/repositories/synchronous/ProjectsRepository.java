@@ -7,12 +7,15 @@ import models.entities.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
+import utils.exceptions.ProjectNotFoundException;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.concurrent.CompletionException;
 
 import static utils.mappers.ProjectMapper.mapResultSetToProject;
 import static utils.mappers.ProjectMapper.mapResultSetToProjectOptional;
@@ -27,9 +30,19 @@ import static utils.mappers.ProjectMapper.mapResultSetToProjectOptional;
 public class ProjectsRepository implements repositories.interfaces.synchronous.ProjectRepoSynchro {
 
     Logger logger = LoggerFactory.getLogger(ProjectsRepository.class);
-    private static final String schema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
-    private static final String projectsTable = PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
-    private static final String projectUsersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
+
+    String schema = System.getenv("JDBC_DEFAULT_SCHEMA") != null
+            ? System.getenv("JDBC_DEFAULT_SCHEMA")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
+
+    String projectsTable = System.getenv("JDBC_PROJECTS_TABLE") != null
+            ? System.getenv("JDBC_PROJECTS_TABLE")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
+
+    String projectUsersTable = System.getenv("JDBC_PROJECT_USERS_TABLE") != null
+            ? System.getenv("JDBC_PROJECT_USERS_TABLE")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
+
     String tableName = String.format("%s.%s", schema, projectsTable);
     String projectUsersTableName = String.format("%s.%s", schema, projectUsersTable);
 
@@ -123,13 +136,11 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
             }
 
         } catch (Exception e) {
-            logger.error("ProjectRepository: findByAdminId: Failed to find projects. Query string: {}", queryString);
-            String message = String.format("%s; adminId: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, adminId);
-            throw new RuntimeException(message , e);
+            logger.error(String.format("%s; adminId: %s", StaticConstants.NO_PROJECTS_FOUND_BY_ADMIN_ID_EXCEPTION_MESSAGE, adminId));
+            String message = String.format("%s; adminId: %s", StaticConstants.NO_PROJECTS_FOUND_BY_ADMIN_ID_EXCEPTION_MESSAGE, adminId);
+            throw new ProjectNotFoundException(message , e);
         }
-
-        logger.info("ProjectRepository: findByAdminId: Found projects: {}", projects);
-        return Optional.of(projects);
+        return projects.isEmpty() ? Optional.empty() : Optional.of(projects);
     }
 
     @Override
@@ -145,18 +156,81 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
                 projects.add(project);
             }
-
         } catch (Exception e) {
             String message = String.format("%s; userId: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, userId);
-            throw new RuntimeException(message , e);
+            throw new ProjectNotFoundException(message , e);
         }
+        return projects.isEmpty() ? Optional.empty() : Optional.of(projects);
+    }
 
-        return Optional.of(projects);
+    @Override
+    public Optional<List<Project>> findByUserIds(List<UUID> userIds) {
+        Objects.requireNonNull(userIds, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+
+        List<String> ids = userIds.stream().map(UUID::toString).toList();
+
+        var string = sqlQueryStrings.findAllByIdsString(tableName, ids);
+        List<Project> projects = new ArrayList<>();
+
+        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+            var resultSet = jdbcConnection.executeQuery(string);
+            while (resultSet.next()) {
+                Project project = mapResultSetToProject(resultSet);
+                projects.add(project);
+            }
+        }
+        catch (Exception e) {
+            throw new ProjectNotFoundException( StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, e);
+        }
+        return projects.isEmpty() ? Optional.empty() : Optional.of(projects);
+    }
+
+    @Override
+    public Optional<List<Project>> findByProjectIds(List<UUID> projectIds) {
+        Objects.requireNonNull(projectIds, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+
+        List<String> ids = projectIds.stream().map(UUID::toString).toList();
+
+        var string = sqlQueryStrings.findAllByIdsString(tableName, ids);
+        List<Project> projects = new ArrayList<>();
+
+        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+            var resultSet = jdbcConnection.executeQuery(string);
+            while (resultSet.next()) {
+                Project project = mapResultSetToProject(resultSet);
+                projects.add(project);
+            }
+        }
+        catch (Exception e) {
+            throw new ProjectNotFoundException( StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, e);
+        }
+        return projects.isEmpty() ? Optional.empty() : Optional.of(projects);
+    }
+
+    @Override
+    public Optional<List<Project>> findByAdminIds(List<UUID> adminIds) {
+        Objects.requireNonNull(adminIds, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+
+        List<String> ids = adminIds.stream().map(UUID::toString).toList();
+
+        var string = sqlQueryStrings.findAllProjectsByAdminIds(tableName, ids);
+        List<Project> projects = new ArrayList<>();
+
+        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+            var resultSet = jdbcConnection.executeQuery(string);
+            while (resultSet.next()) {
+                Project project = mapResultSetToProject(resultSet);
+                projects.add(project);
+            }
+        }
+        catch (Exception e) {
+            throw new ProjectNotFoundException( StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, e);
+        }
+        return projects.isEmpty() ? Optional.empty() : Optional.of(projects);
     }
 
     @Override
     public Project  addUserToProject(UUID userId, UUID projectId) {
-
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
@@ -168,9 +242,6 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
             UserDto userDto = new UserDto();
             userDto.setId(userId);
 
-            // Позже всё равно смаппится в ProjectDto,
-            // где хранятся только
-            // UUID пользователей
             updatedUsers.add(userDto);
 
             var result = projectUsersRepository.addUserToProject(userId, projectId);
@@ -206,21 +277,35 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         return null;
     }
 
-
-
-
-
-
-
-
     @Override
     public Optional<List<Project>> findAll() {
         return Optional.of(List.of());
     }
 
+
     @Override
-    public Optional<Project> update(Project item) {
-        return null;
+    public Project update(Project project) {
+        Objects.requireNonNull(project, "Project project cannot be null");
+
+        String updateQuery = sqlQueryStrings.updateProjectByIdString(
+                tableName, project.getId().toString(), project);
+
+        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+            jdbcConnection.setAutoCommit(false);
+
+            int affectedRows = jdbcConnection.executeUpdate(updateQuery);
+
+            if (affectedRows == 0) {
+                logger.error(String.format("Repository: update: error: Project with id %s not found", project.getId()));
+                throw new DatabaseOperationException(StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE);
+            }
+            jdbcConnection.commit();
+            return project;
+        }
+        catch (Exception e) {
+            logger.error(String.format("Repository: update: error: %s", e.getMessage()));
+            throw new CompletionException("Unexpected error", e);
+        }
     }
 
 

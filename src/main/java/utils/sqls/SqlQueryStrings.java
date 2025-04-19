@@ -164,9 +164,62 @@ public class SqlQueryStrings {
      */
     public String findAllByIdsString(String tableName, List<String> ids) {
 
-        String sql = String.format("SELECT * FROM %s WHERE id IN (", tableName) +
-                ids.stream().map(id -> "?").collect(Collectors.joining(",")) + ")";
-        return sql;
+        StringBuilder query = new StringBuilder();
+        query.append(String.format("SELECT * FROM %s WHERE id IN ( ", tableName));
+        for (int i = 0; i < ids.size(); i++) {
+            if (i == ids.size() - 1) {
+                query.append(String.format("'%s');", ids.get(i)));
+            } else {
+                query.append(String.format("'%s', ", ids.get(i)));
+            }
+        }
+            String sql = query.toString();
 
+        return sql;
+    }
+
+    public String findAllProjectsByAdminIds(String tableName, List<String> ids) {
+        StringBuilder query = new StringBuilder();
+        query.append(String.format("SELECT * FROM %s WHERE admin_id IN ( ", tableName));
+        for (int i = 0; i < ids.size(); i++) {
+            if (i == ids.size() - 1) {
+                query.append(String.format("'%s');", ids.get(i)));
+            } else {
+                query.append(String.format("'%s', ", ids.get(i)));
+            }
+        }
+        String sql = query.toString();
+
+        return sql;
+    }
+
+    public String findProjectUsersByUserIds(String tableName, List<String> ids) {
+        StringBuilder query = new StringBuilder();
+        query.append(String.format("SELECT * FROM %s WHERE user_id IN ( ", tableName));
+        for (int i = 0; i < ids.size(); i++) {
+            if (i == ids.size() - 1) {
+                query.append(String.format("'%s');", ids.get(i)));
+            } else {
+                query.append(String.format("'%s', ", ids.get(i)));
+            }
+        }
+        String sql = query.toString();
+
+        return sql;
+    }
+
+    public String findProjectUsersByProjectIds(String tableName, List<String> ids) {
+        StringBuilder query = new StringBuilder();
+        query.append(String.format("SELECT * FROM %s WHERE project_id IN ( ", tableName));
+        for (int i = 0; i < ids.size(); i++) {
+            if (i == ids.size() - 1) {
+                query.append(String.format("'%s');", ids.get(i)));
+            } else {
+                query.append(String.format("'%s', ", ids.get(i)));
+            }
+        }
+        String sql = query.toString();
+
+        return sql;
     }
 }

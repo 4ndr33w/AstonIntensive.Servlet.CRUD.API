@@ -1,5 +1,6 @@
 package services;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import configurations.ThreadPoolConfiguration;
 import models.dtos.UserDto;
 import models.entities.Project;
@@ -21,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author 4ndr33w
@@ -32,21 +34,24 @@ public class ProjectsService implements ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectUserRepository projectUserRepository;
-    private static final ExecutorService dbExecutor;
+    private final ExecutorService dbExecutor;
 
     public ProjectsService() {
         this.projectRepository = new ProjectRepositoryNew();
         this.userRepository = new UsersRepositoryImplementation();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
+        dbExecutor = Executors.newFixedThreadPool(
+                Runtime.getRuntime().availableProcessors(),
+                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build());
     }
 
     public ProjectsService(ProjectRepository projectRepository) {
         this.projectRepository = projectRepository;
         this.userRepository = new UsersRepositoryImplementation();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
-    }
-    static {
-        dbExecutor = ThreadPoolConfiguration.getDbExecutor();
+        dbExecutor = Executors.newFixedThreadPool(
+                Runtime.getRuntime().availableProcessors(),
+                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build());
     }
 
     @Override
@@ -117,11 +122,7 @@ public class ProjectsService implements ProjectService {
                                 if(project.getProjectUsers() != null) {
                                     updatedUsers = new ArrayList<>(project.getProjectUsers());
                                 }
-                                //-----------------------------------------
-                                // Так как в данном случае позже в ProjectDto
-                                // у нас List<UserDto> будет урезан до
-                                // List<UUID> userIds, то в данной ситуации
-                                // считаю это допустимым решением
+
                                 UserDto newUserDto = new UserDto();
                                 newUserDto.setId(userId);
                                 //-----------------------------------------

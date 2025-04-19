@@ -2,12 +2,14 @@ package repositories;
 
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
+import configurations.ThreadPoolConfNonStatic;
 import configurations.ThreadPoolConfiguration;
 import models.dtos.ProjectUsersDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.interfaces.ProjectUserRepository;
 import utils.StaticConstants;
+import utils.mappers.ProjectUserMapper;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.*;
@@ -30,17 +32,22 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
 
     Logger logger = LoggerFactory.getLogger(ProjectUsersRepositoryImpl.class);
     private final SqlQueryStrings sqlQueryStrings;
-    private static final ExecutorService dbExecutor;
-    private static final String schema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
-    private static final String projectUsersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
-    String tableName = String.format("%s.%s", schema, projectUsersTable);
+    private final ExecutorService dbExecutor;
 
-    static {
-        dbExecutor = ThreadPoolConfiguration.getDbExecutor();
-    }
+    static String schema = System.getenv("JDBC_DEFAULT_SCHEMA") != null
+            ? System.getenv("JDBC_DEFAULT_SCHEMA")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
+
+    static String projectUsersTable = System.getenv("JDBC_PROJECT_USERS_TABLE") != null
+            ? System.getenv("JDBC_PROJECT_USERS_TABLE")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
+
+    String tableName = String.format("%s.%s", schema, projectUsersTable);
 
     public ProjectUsersRepositoryImpl() {
         this.sqlQueryStrings = new SqlQueryStrings();
+        ThreadPoolConfNonStatic threadPoolConfNonStatic = new ThreadPoolConfNonStatic();
+        dbExecutor = threadPoolConfNonStatic.getDbExecutor();
     }
 
     /**
@@ -230,10 +237,7 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
                 List<ProjectUsersDto> result = new ArrayList<>();
 
                 while (resultSet.next()) {
-                    result.add(new ProjectUsersDto(
-                            (UUID) resultSet.getObject("user_id"),
-                            (UUID) resultSet.getObject("project_id")
-                    ));
+                    result.add(ProjectUserMapper.mapResultSetToProjectUser(resultSet));
                 }
 
                 return result;

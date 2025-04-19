@@ -13,9 +13,18 @@ import utils.Utils;
 import utils.exceptions.UserNotFoundException;
 import utils.mappers.UserMapper;
 
+//import jakarta.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+/*
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+*/
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.UUID;
@@ -35,11 +44,12 @@ import java.util.UUID;
 public class UsersServlet extends BaseServlet {
 
     protected Logger logger = LoggerFactory.getLogger(UsersServlet .class);
-    private final UsersController userController;
+    private final controllers.interfaces.UserControllerInterface userController;
 
     public UsersServlet() {
         super();
-        userController = new UsersController();
+        //userController = new UsersController();
+        userController = new controllers.UserControllerSynchronous();
         utils = new Utils();
     }
 

@@ -2,6 +2,7 @@ package servlets.abstractions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import configurations.PropertiesConfiguration;
 import models.dtos.ErrorDto;
 import models.entities.Project;
 import models.entities.User;
@@ -14,6 +15,13 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+/*
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+*/
+
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -28,6 +36,10 @@ public abstract class BaseServlet extends HttpServlet {
     protected ObjectMapper objectMapper = new ObjectMapper();
     protected Utils utils;
 
+    public BaseServlet() {
+        super();
+    }
+
     protected void printResponse(int statusCode, String path, String message, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("UTF-8");
@@ -38,18 +50,17 @@ public abstract class BaseServlet extends HttpServlet {
                 message);
         resp.setContentType("application/json");
         try {
+            logger.error(error.toString());
             String jsonResponse = objectMapper.writeValueAsString(error);
             resp.setStatus(statusCode);
             PrintWriter out = resp.getWriter();
             out.print(jsonResponse);
             out.flush();
-            logger.error(error.toString());
         }
         catch (IOException e) {
-            logger.error(error.toString());
             logger.error("Ошибка сервера" + e.getMessage());
-            PrintWriter out = resp.getWriter();
             resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            PrintWriter out = resp.getWriter();
             out.print("Ошибка сервера" + e.getMessage());
             out.flush();
         }
@@ -70,6 +81,7 @@ public abstract class BaseServlet extends HttpServlet {
             out.flush();
             logger.error(error.toString());
             logger.error("Ошибка сервера" + ex.getMessage());
+
         }
         catch (IOException e) {
             logger.error(error.toString());

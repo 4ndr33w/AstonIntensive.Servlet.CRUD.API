@@ -20,9 +20,11 @@ public class JdbcConnection implements AutoCloseable{
     private final Connection connection;
     private Statement statement;
     private ResultSet resultSet;
-    Logger logger = LoggerFactory.getLogger(DataSourceProvider.class);
+    Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
 
     public JdbcConnection() throws SQLException {
+        //var provider = new DataSourceProviderNonStatic();
+        //DataSource dataSource = provider.getDataSource();
         DataSource dataSource = DataSourceProvider.getDataSource();
         this.connection = dataSource.getConnection();
     }
@@ -82,7 +84,6 @@ public class JdbcConnection implements AutoCloseable{
 
     @Override
     public void close() throws Exception {
-
 
         closeResultSet();
         closeStatement();

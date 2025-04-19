@@ -2,6 +2,7 @@ package repositories;
 
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
+import configurations.ThreadPoolConfNonStatic;
 import configurations.ThreadPoolConfiguration;
 import models.entities.Project;
 import models.entities.User;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
+import utils.Utils;
 import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
 
@@ -26,20 +28,25 @@ import static utils.mappers.UserMapper.mapResultSetToUser;
  */
 public class UsersRepositoryImplementation implements UserRepository, AutoCloseable{
 
-    private static final String usersSchema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
-    private static final String usersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.users-table");
+    static String usersSchema = System.getenv("JDBC_DEFAULT_SCHEMA") != null
+            ? System.getenv("JDBC_DEFAULT_SCHEMA")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
+
+    static String usersTable = System.getenv("JDBC_USERS_TABLE") != null
+            ? System.getenv("JDBC_USERS_TABLE")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.users-table");
+
+
     private final String usersTableName = String.format("%s.%s", usersSchema, usersTable);
     private final SqlQueryStrings sqlQueryStrings;
-    private static final ExecutorService dbExecutor;
+    private final ExecutorService dbExecutor;
 
     Logger logger = LoggerFactory.getLogger(UsersRepositoryImplementation.class);
 
-    static {
-        dbExecutor = ThreadPoolConfiguration.getDbExecutor();
-    }
-
     public UsersRepositoryImplementation() {
         sqlQueryStrings = new SqlQueryStrings();
+        ThreadPoolConfNonStatic threadPoolConfNonStatic = new ThreadPoolConfNonStatic();
+        dbExecutor = threadPoolConfNonStatic.getDbExecutor();
     }
 
     /**
@@ -73,6 +80,7 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
                 while (rs.next()) {
                     users.add(mapResultSetToUser(rs));
                 }
+
                 return users;
             }
             catch (Exception e) {
@@ -259,28 +267,6 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
                 throw new CompletionException("Unexpected error", e);
             }
         }, dbExecutor);
-    }
-
-    // TODO: реализовать остальные методы интерфейса UserRepository
-
-    @Override
-    public CompletableFuture<User> findByEmailAsync(String email) {
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public CompletableFuture<User> findByUserNameAsync(String userName) {
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail) {
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public CompletableFuture<User> updatePasswordAsync(UUID userId, String newPassword) {
-        return CompletableFuture.completedFuture(null);
     }
 
     @Override

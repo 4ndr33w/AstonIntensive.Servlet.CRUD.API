@@ -46,7 +46,6 @@ public class UserMapper {
             userDto.setProjects(new ArrayList<>());
         }
         return userDto;
-
     }
 
     public static User mapToEntity(UserDto userDto){
@@ -84,22 +83,28 @@ public class UserMapper {
                     rs.getString("first_name"),
                     rs.getString("last_name"),
                     rs.getString("phone"),
-                    UserRoles.values()[Integer.parseInt(rs.getString("userstatus"))],
-                    rs.getBytes("image"),
-                    rs.getTimestamp("created_at") != null ?
+
+                    UserRoles.USER
+                    /*UserRoles.values()[Integer.parseInt(rs.getString("userstatus"))]*/,
+                    null
+                    /*rs.getBytes("image")*/,
+                    new Date()
+                    /*rs.getTimestamp("created_at") != null ?
                             new Date(rs
                                     .getTimestamp("updated_at")
-                                    .getTime()) : new Date(),
+                                    .getTime()) : new Date()*/,
 
-                    rs.getTimestamp("updated_at") != null ?
+                   new Date()
+                   /* rs.getTimestamp("updated_at") != null ?
                             new Date(rs
                                     .getTimestamp("updated_at")
-                                    .getTime()) : new Date(),
+                                    .getTime()) : new Date()*/,
 
-                    rs.getTimestamp("last_login_date") != null ?
+                    new Date()
+                    /*rs.getTimestamp("last_login_date") != null ?
                             new Date(rs
                                     .getTimestamp("last_login_date")
-                                    .getTime()) : new Date()
+                                    .getTime()) : new Date()*/
             );
 
             return user;
