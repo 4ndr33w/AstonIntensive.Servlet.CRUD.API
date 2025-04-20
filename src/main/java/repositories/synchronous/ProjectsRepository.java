@@ -1,5 +1,6 @@
 package repositories.synchronous;
 
+
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import models.dtos.UserDto;
@@ -11,6 +12,8 @@ import utils.exceptions.DatabaseOperationException;
 import utils.exceptions.ProjectNotFoundException;
 import utils.sqls.SqlQueryStrings;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -48,10 +51,16 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
     ProjectUsersRepositorySynchronous projectUsersRepository = new  ProjectUsersRepositorySynchronous();
 
+    private DataSource dataProvider;
+    //private JdbcConnection conn;
+
     private final SqlQueryStrings sqlQueryStrings;
 
     public ProjectsRepository() {
+
         this.sqlQueryStrings = new SqlQueryStrings();
+        //dataProvider = configurations.DataProvider.getDataSource();
+        //dataProvider = configurations.
     }
 
     @Override
@@ -59,8 +68,8 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         Objects.requireNonNull(project);
 
         String queryString = sqlQueryStrings.createProjectString(tableName, project);
-        try (JdbcConnection jdbcConnection = new JdbcConnection();
-             Statement statement = jdbcConnection.statement()) {
+        try (JdbcConnection connection = new JdbcConnection();
+             Statement statement = connection.statement()) {
 
             int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
 
@@ -69,6 +78,9 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
                 throw new RuntimeException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
             }
 
+            project.setId(getGeneratedKeyFromRequest(statement));
+            return project;
+/*
             try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     project.setId((UUID) generatedKeys.getObject(1));
@@ -76,7 +88,7 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
                 }
                 logger.error("ProjectRepository: Create: Failed to create a project. Query string: {}", queryString);
                 throw new RuntimeException(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
-            }
+            }*/
         }
         catch (Exception e) {
             logger.error("ProjectRepository: Create: Failed to create a project. Query string: {}", queryString);
@@ -88,13 +100,15 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
     public Optional<Project> findById(UUID id) {
         String sql = sqlQueryStrings.findByIdString(tableName, id.toString());
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection();
-             ResultSet resultSet = jdbcConnection.executeQuery(sql)) {
+        try (JdbcConnection connection = new JdbcConnection();
+             Statement statement = connection.statement();
+             ResultSet resultSet = statement.executeQuery(sql)) {
 
             if (!resultSet.next()) {
+                connection.close();
                 return null;
             }
-
+            connection.close();
             return mapResultSetToProjectOptional(resultSet);
 
         } catch (SQLException e) {
@@ -112,8 +126,10 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         String tableName = String.format("%s.%s", schema, projectsTable);
         String queryString = sqlQueryStrings.deleteByIdString(tableName, id.toString());
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            int affectedRows = jdbcConnection.executeUpdate(queryString);
+        try (Connection connection = dataProvider.getConnection();
+             Statement statement = connection.createStatement()) {
+            int affectedRows = statement.executeUpdate(queryString);
+            connection.close();
             return affectedRows > 0;
         }
         catch (Exception e) {
@@ -126,14 +142,19 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         String queryString = sqlQueryStrings.findProjectsByAdminIdString(tableName, adminId.toString());
         List<Project> projects = new ArrayList<>();
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection();
-             var resultSet = jdbcConnection.executeQuery(queryString)) {
+       /* try (Connection connection = dataProvider.getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(queryString)) {*/
+        try (JdbcConnection connection = new JdbcConnection();
+             Statement statement = connection.statement();
+             ResultSet resultSet = statement.executeQuery(queryString)) {
 
             while (resultSet.next()) {
                 Project project = mapResultSetToProject(resultSet);
 
                 projects.add(project);
             }
+            connection.close();
 
         } catch (Exception e) {
             logger.error(String.format("%s; adminId: %s", StaticConstants.NO_PROJECTS_FOUND_BY_ADMIN_ID_EXCEPTION_MESSAGE, adminId));
@@ -145,11 +166,12 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
     @Override
     public Optional<List<Project>> findByUserId(UUID userId) {
-        String query = sqlQueryStrings.findAllProjectsByUserId(tableName, projectUsersTableName, userId.toString());
+        String queryString = sqlQueryStrings.findAllProjectsByUserId(tableName, projectUsersTableName, userId.toString());
         List<Project> projects = new ArrayList<>();
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection();
-             var resultSet = jdbcConnection.executeQuery(query)) {
+        try (JdbcConnection connection = new JdbcConnection();
+             Statement statement = connection.statement();
+             ResultSet resultSet = statement.executeQuery(queryString)) {
 
             while (resultSet.next()) {
                 Project project = mapResultSetToProject(resultSet);
@@ -169,11 +191,12 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
         List<String> ids = userIds.stream().map(UUID::toString).toList();
 
-        var string = sqlQueryStrings.findAllByIdsString(tableName, ids);
+        var queryString = sqlQueryStrings.findAllByIdsString(tableName, ids);
         List<Project> projects = new ArrayList<>();
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            var resultSet = jdbcConnection.executeQuery(string);
+        try (JdbcConnection connection = new JdbcConnection();
+             Statement statement = connection.statement();
+             ResultSet resultSet = statement.executeQuery(queryString)) {
             while (resultSet.next()) {
                 Project project = mapResultSetToProject(resultSet);
                 projects.add(project);
@@ -191,11 +214,12 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
         List<String> ids = projectIds.stream().map(UUID::toString).toList();
 
-        var string = sqlQueryStrings.findAllByIdsString(tableName, ids);
+        var queryString = sqlQueryStrings.findAllByIdsString(tableName, ids);
         List<Project> projects = new ArrayList<>();
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            var resultSet = jdbcConnection.executeQuery(string);
+        try (JdbcConnection connection = new JdbcConnection();
+             Statement statement = connection.statement();
+             ResultSet resultSet = statement.executeQuery(queryString)) {
             while (resultSet.next()) {
                 Project project = mapResultSetToProject(resultSet);
                 projects.add(project);
@@ -213,11 +237,12 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
         List<String> ids = adminIds.stream().map(UUID::toString).toList();
 
-        var string = sqlQueryStrings.findAllProjectsByAdminIds(tableName, ids);
+        var queryString = sqlQueryStrings.findAllProjectsByAdminIds(tableName, ids);
         List<Project> projects = new ArrayList<>();
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            var resultSet = jdbcConnection.executeQuery(string);
+        try (JdbcConnection connection = new JdbcConnection();
+             Statement statement = connection.statement();
+             ResultSet resultSet = statement.executeQuery(queryString)) {
             while (resultSet.next()) {
                 Project project = mapResultSetToProject(resultSet);
                 projects.add(project);
@@ -300,6 +325,7 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
                 throw new DatabaseOperationException(StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE);
             }
             jdbcConnection.commit();
+            jdbcConnection.close();
             return project;
         }
         catch (Exception e) {

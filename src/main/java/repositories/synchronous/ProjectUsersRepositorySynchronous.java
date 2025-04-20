@@ -66,6 +66,7 @@ public class ProjectUsersRepositorySynchronous implements ProjectUserRepositoryS
                     throw new SQLDataException("No rows affected");
                 }
                 connection.commit();
+                connection.close();
                 return true;
             } catch (SQLException e) {
                 logger.error("Error adding user to project");
@@ -97,6 +98,7 @@ public class ProjectUsersRepositorySynchronous implements ProjectUserRepositoryS
                     throw new SQLDataException("No rows affected");
                 }
                 connection.commit();
+                connection.close();
                 return true;
             } catch (SQLException e) {
                 logger.error("Error deleting user from project");
@@ -117,13 +119,14 @@ public class ProjectUsersRepositorySynchronous implements ProjectUserRepositoryS
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         String queryString = sqlQueryStrings.findProjectUserByUserIdString(tableName, userId.toString());
-            try (JdbcConnection conn = new JdbcConnection();
-                 ResultSet rs = conn.executeQuery(queryString)) {
+            try (JdbcConnection connection = new JdbcConnection();
+                 ResultSet rs = connection.executeQuery(queryString)) {
 
                 List<ProjectUsersDto> projectUsers = new ArrayList<>();
                 while (rs.next()) {
                     projectUsers.add(mapResultSetToProjectUser(rs));
                 }
+                connection.close();
                 return projectUsers.isEmpty() ? Optional.empty() : Optional.of(projectUsers);
             }
             catch (Exception e) {
@@ -135,13 +138,14 @@ public class ProjectUsersRepositorySynchronous implements ProjectUserRepositoryS
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         String queryString = sqlQueryStrings.findProjectUserByProjectIdString(tableName, projectId.toString());
 
-            try (JdbcConnection conn = new JdbcConnection();
-                 ResultSet rs = conn.executeQuery(queryString)) {
+            try (JdbcConnection connection = new JdbcConnection();
+                 ResultSet rs = connection.executeQuery(queryString)) {
 
                 List<ProjectUsersDto> projectUsers = new ArrayList<>();
                 while (rs.next()) {
                     projectUsers.add(mapResultSetToProjectUser(rs));
                 }
+                connection.close();
                 return projectUsers.isEmpty() ? Optional.empty() : Optional.of(projectUsers);
             }
             catch (Exception e) {
@@ -158,12 +162,13 @@ public class ProjectUsersRepositorySynchronous implements ProjectUserRepositoryS
 
         List<ProjectUsersDto> projectUsers = new ArrayList<>();
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            var resultSet = jdbcConnection.executeQuery(queryString);
+        try (JdbcConnection connection = new JdbcConnection()) {
+            var resultSet = connection.executeQuery(queryString);
             while (resultSet.next()) {
                 ProjectUsersDto projectUsersDto = ProjectUserMapper.mapResultSetToProjectUser(resultSet);
                 projectUsers.add(projectUsersDto);
             }
+
         }
         catch (Exception e) {
             throw new ProjectNotFoundException( StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, e);
@@ -180,12 +185,13 @@ public class ProjectUsersRepositorySynchronous implements ProjectUserRepositoryS
 
         List<ProjectUsersDto> projectUsers = new ArrayList<>();
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            var resultSet = jdbcConnection.executeQuery(queryString);
+        try (JdbcConnection connection = new JdbcConnection()) {
+            var resultSet = connection.executeQuery(queryString);
             while (resultSet.next()) {
                 ProjectUsersDto projectUsersDto = ProjectUserMapper.mapResultSetToProjectUser(resultSet);
                 projectUsers.add(projectUsersDto);
             }
+            connection.close();
         }
         catch (Exception e) {
             throw new ProjectNotFoundException( StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, e);

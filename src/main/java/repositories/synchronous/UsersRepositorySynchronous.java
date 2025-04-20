@@ -52,8 +52,8 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
         List<String> ids = userIds.stream().map(UUID::toString).toList();
         String sql = sqlQueryStrings.findAllByIdsString(usersTableName, ids);
 
-        try (JdbcConnection connection = new JdbcConnection();
-             PreparedStatement statement = connection.getConnection().prepareStatement(sql)) {
+        try (JdbcConnection jdbcConnection = new JdbcConnection();
+             PreparedStatement statement = jdbcConnection.getConnection().prepareStatement(sql)) {
 
             ResultSet resultSet = statement.executeQuery();
             List<User> result = new ArrayList<>();
@@ -61,6 +61,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
             while (resultSet.next()) {
                 result.add(UserMapper.mapResultSetToUser(resultSet));
             }
+            jdbcConnection.close();
             return  result.isEmpty() ? Optional.empty() : Optional.of( result);
 
         } catch (SQLException e) {
@@ -78,6 +79,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
 
         try (JdbcConnection jdbcConnection = new JdbcConnection()) {
             var resultSet  = jdbcConnection.executeQuery(queryString);
+            jdbcConnection.close();
             return resultSet.next() ? Optional.of(mapResultSetToUser(resultSet)) :Optional.empty();
         }
         catch (Exception e) {
@@ -88,13 +90,14 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
     @Override
     public Optional<List<User>> findAll() {
         String queryString = sqlQueryStrings.findAllQueryString(usersTableName);
-        try (JdbcConnection conn = new JdbcConnection();
-             ResultSet rs = conn.executeQuery(queryString )) {
+        try (JdbcConnection jdbcConnection = new JdbcConnection();
+             ResultSet rs = jdbcConnection.executeQuery(queryString )) {
 
             List<User> users = new ArrayList<>();
             while (rs.next()) {
                 users.add(mapResultSetToUser(rs));
             }
+            jdbcConnection.close();
             return users.isEmpty() ? Optional.empty() : Optional.of(users);
         }
         catch (Exception e) {
@@ -116,6 +119,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
             }
 
             item.setId( getGeneratedKeyFromRequest(statement) );
+            jdbcConnection.close();
             return item;
         }
         catch (Exception e) {
@@ -136,6 +140,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
                 logger.error(String.format("Repository: update: error: User with id %s not found", user.getId()));
                 throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
             }
+            jdbcConnection.close();
             return user;
 
         } catch (SQLException e) {
@@ -153,6 +158,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
 
         try (JdbcConnection jdbcConnection = new JdbcConnection()) {
             int affectedRows = jdbcConnection.executeUpdate(queryString);
+            jdbcConnection.close();
             return affectedRows > 0;
         }
         catch (Exception e) {

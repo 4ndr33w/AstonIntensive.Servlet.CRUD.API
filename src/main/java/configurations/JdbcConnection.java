@@ -22,14 +22,24 @@ public class JdbcConnection implements AutoCloseable{
     private ResultSet resultSet;
     Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
 
+    static String dbUrl = System.getenv("JDBC_URL") != null
+            ? System.getenv("JDBC_URL")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.url");
+
+    static String user = System.getenv("JDBC_USERNAME") != null
+            ? System.getenv("JDBC_USERNAME")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.username");
+
+    static String pass = System.getenv("JDBC_PASSWORD") != null
+            ? System.getenv("JDBC_PASSWORD")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.password");
+
     public JdbcConnection() throws SQLException {
-        var provider = new DataSourceProviderNonStatic();
-        DataSource dataSource = provider.getDataSource();
-        //DataSource dataSource = DataSourceProvider.getDataSource();
-        this.connection = dataSource.getConnection();
+        connection = DriverManager.getConnection(dbUrl, user, pass);
+
     }
 
-    public Connection getConnection() {
+    public Connection getConnection() throws SQLException {
            return connection;
     }
 
@@ -53,10 +63,11 @@ public class JdbcConnection implements AutoCloseable{
         }
     }
 
-    public ResultSet executeQuery(String query) throws SQLException {
+    public ResultSet executeQuery(String query) throws Exception {
         closeResultSet();
         this.statement = connection.createStatement();
         this.resultSet = statement.executeQuery(query);
+
         return resultSet;
     }
 
@@ -83,7 +94,7 @@ public class JdbcConnection implements AutoCloseable{
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
 
         closeResultSet();
         closeStatement();
@@ -93,7 +104,7 @@ public class JdbcConnection implements AutoCloseable{
     private void closeResultSet() {
         if (resultSet != null) {
             try {
-                resultSet.close();
+                   resultSet.close();
             } catch (SQLException e) {
                 logger.error("Ошибка закрытия ResultSet");
                 throw new RuntimeException(e);
@@ -105,7 +116,7 @@ public class JdbcConnection implements AutoCloseable{
     private void closeStatement() {
         if (statement != null) {
             try {
-                   statement.close();
+                    statement.close();
             } catch (SQLException e) {
                 logger.error("Ошибка закрытия Statement");
                 throw new RuntimeException(e);

@@ -84,6 +84,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
                     throw new DatabaseOperationException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
                 }
                 project.setId((getGeneratedKeyFromRequest(statement)));
+                jdbcConnection.close();
                 return project;
             }
             catch (Exception e) {
@@ -108,6 +109,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
 
                     projects.add(project);
                 }
+
 
             } catch (Exception e) {
                 logger.error(String.format("Repository: findByAdminIdAsync: \nerror: %s", e.getMessage()));
