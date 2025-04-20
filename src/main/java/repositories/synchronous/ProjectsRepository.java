@@ -51,16 +51,11 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
     ProjectUsersRepositorySynchronous projectUsersRepository = new  ProjectUsersRepositorySynchronous();
 
-    private DataSource dataProvider;
-    //private JdbcConnection conn;
-
     private final SqlQueryStrings sqlQueryStrings;
 
     public ProjectsRepository() {
 
         this.sqlQueryStrings = new SqlQueryStrings();
-        //dataProvider = configurations.DataProvider.getDataSource();
-        //dataProvider = configurations.
     }
 
     @Override
@@ -77,18 +72,9 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
                 logger.error("ProjectRepository: Create: Failed to create a project. Query string: {}", queryString);
                 throw new RuntimeException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
             }
-
             project.setId(getGeneratedKeyFromRequest(statement));
             return project;
-/*
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    project.setId((UUID) generatedKeys.getObject(1));
-                    return project;
-                }
-                logger.error("ProjectRepository: Create: Failed to create a project. Query string: {}", queryString);
-                throw new RuntimeException(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
-            }*/
+
         }
         catch (Exception e) {
             logger.error("ProjectRepository: Create: Failed to create a project. Query string: {}", queryString);
@@ -108,7 +94,7 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
                 connection.close();
                 return null;
             }
-            connection.close();
+
             return mapResultSetToProjectOptional(resultSet);
 
         } catch (SQLException e) {
@@ -126,8 +112,8 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         String tableName = String.format("%s.%s", schema, projectsTable);
         String queryString = sqlQueryStrings.deleteByIdString(tableName, id.toString());
 
-        try (Connection connection = dataProvider.getConnection();
-             Statement statement = connection.createStatement()) {
+        try (JdbcConnection connection = new JdbcConnection();
+             Statement statement = connection.statement()) {
             int affectedRows = statement.executeUpdate(queryString);
             connection.close();
             return affectedRows > 0;
@@ -142,9 +128,6 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         String queryString = sqlQueryStrings.findProjectsByAdminIdString(tableName, adminId.toString());
         List<Project> projects = new ArrayList<>();
 
-       /* try (Connection connection = dataProvider.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(queryString)) {*/
         try (JdbcConnection connection = new JdbcConnection();
              Statement statement = connection.statement();
              ResultSet resultSet = statement.executeQuery(queryString)) {
@@ -154,7 +137,6 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
 
                 projects.add(project);
             }
-            connection.close();
 
         } catch (Exception e) {
             logger.error(String.format("%s; adminId: %s", StaticConstants.NO_PROJECTS_FOUND_BY_ADMIN_ID_EXCEPTION_MESSAGE, adminId));
@@ -307,7 +289,6 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         return Optional.of(List.of());
     }
 
-
     @Override
     public Project update(Project project) {
         Objects.requireNonNull(project, "Project project cannot be null");
@@ -325,7 +306,6 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
                 throw new DatabaseOperationException(StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE);
             }
             jdbcConnection.commit();
-            jdbcConnection.close();
             return project;
         }
         catch (Exception e) {

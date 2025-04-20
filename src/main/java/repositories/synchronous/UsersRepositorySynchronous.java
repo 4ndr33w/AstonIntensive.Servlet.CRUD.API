@@ -61,7 +61,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
             while (resultSet.next()) {
                 result.add(UserMapper.mapResultSetToUser(resultSet));
             }
-            jdbcConnection.close();
+
             return  result.isEmpty() ? Optional.empty() : Optional.of( result);
 
         } catch (SQLException e) {
@@ -79,7 +79,6 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
 
         try (JdbcConnection jdbcConnection = new JdbcConnection()) {
             var resultSet  = jdbcConnection.executeQuery(queryString);
-            jdbcConnection.close();
             return resultSet.next() ? Optional.of(mapResultSetToUser(resultSet)) :Optional.empty();
         }
         catch (Exception e) {
@@ -97,7 +96,6 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
             while (rs.next()) {
                 users.add(mapResultSetToUser(rs));
             }
-            jdbcConnection.close();
             return users.isEmpty() ? Optional.empty() : Optional.of(users);
         }
         catch (Exception e) {
@@ -119,7 +117,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
             }
 
             item.setId( getGeneratedKeyFromRequest(statement) );
-            jdbcConnection.close();
+
             return item;
         }
         catch (Exception e) {
@@ -140,7 +138,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
                 logger.error(String.format("Repository: update: error: User with id %s not found", user.getId()));
                 throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
             }
-            jdbcConnection.close();
+
             return user;
 
         } catch (SQLException e) {
@@ -158,7 +156,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
 
         try (JdbcConnection jdbcConnection = new JdbcConnection()) {
             int affectedRows = jdbcConnection.executeUpdate(queryString);
-            jdbcConnection.close();
+
             return affectedRows > 0;
         }
         catch (Exception e) {

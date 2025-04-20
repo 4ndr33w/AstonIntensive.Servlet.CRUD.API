@@ -126,7 +126,7 @@ public class ProjectUsersRepositorySynchronous implements ProjectUserRepositoryS
                 while (rs.next()) {
                     projectUsers.add(mapResultSetToProjectUser(rs));
                 }
-                connection.close();
+
                 return projectUsers.isEmpty() ? Optional.empty() : Optional.of(projectUsers);
             }
             catch (Exception e) {
@@ -145,8 +145,7 @@ public class ProjectUsersRepositorySynchronous implements ProjectUserRepositoryS
                 while (rs.next()) {
                     projectUsers.add(mapResultSetToProjectUser(rs));
                 }
-                connection.close();
-                return projectUsers.isEmpty() ? Optional.empty() : Optional.of(projectUsers);
+                 return projectUsers.isEmpty() ? Optional.empty() : Optional.of(projectUsers);
             }
             catch (Exception e) {
                 throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
@@ -191,7 +190,7 @@ public class ProjectUsersRepositorySynchronous implements ProjectUserRepositoryS
                 ProjectUsersDto projectUsersDto = ProjectUserMapper.mapResultSetToProjectUser(resultSet);
                 projectUsers.add(projectUsersDto);
             }
-            connection.close();
+
         }
         catch (Exception e) {
             throw new ProjectNotFoundException( StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, e);
