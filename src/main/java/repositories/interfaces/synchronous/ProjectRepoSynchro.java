@@ -19,4 +19,10 @@ public interface ProjectRepoSynchro extends BaseRepositorySynchro<Project> {
     Optional<List<Project>> findByAdminId(UUID adminId);
     Optional<List<Project>> findByUserId(UUID userId);
 
+    Optional<List<Project>> findByUserIds(List<UUID> userIds);
+
+    Optional<List<Project>> findByProjectIds(List<UUID> projectIds);
+
+    Optional<List<Project>> findByAdminIds(List<UUID> adminIds);
+
 }

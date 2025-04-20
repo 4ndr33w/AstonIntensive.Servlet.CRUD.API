@@ -66,6 +66,18 @@ public class Project {
         this.projectUsers = projectUsers;
     }
 
+    public Project(Project project, List<UserDto> projectUsers) {
+        this.id = project.getId();
+        this.name = project.getName();
+        this.description = project.getDescription();
+        this.createdAt = project.getCreatedAt();
+        this.updatedAt = project.getUpdatedAt();
+        this.image = project.getImage();
+        this.adminId = project.getAdminId();
+        this.projectStatus = project.getProjectStatus();
+        this.projectUsers = projectUsers;
+    }
+
     public Project(UUID id,
                    String name,
                    String description,
@@ -83,6 +95,18 @@ public class Project {
         this.adminId = adminId;
         this.projectStatus = projectStatus;
         this.projectUsers = null;
+    }
+
+    public Project(Project project) {
+        this.id = project.getId();
+        this.name = project.getName();
+        this.description = project.getDescription();
+        this.createdAt = project.getCreatedAt();
+        this.updatedAt = project.getUpdatedAt();
+        this.image = project.getImage();
+        this.adminId = project.getAdminId();
+        this.projectStatus = project.getProjectStatus();
+        this.projectUsers = project.getProjectUsers();
     }
 
     public UUID getId() {

@@ -99,7 +99,9 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code ProjectDto}
      */
     public ProjectDto getProject(UUID projectId) {
-        return null;
+        Objects.requireNonNull(projectId);
+
+        return ProjectMapper.toDto(projectService.getById(projectId));
     }
 
     /**
@@ -112,7 +114,9 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code ProjectDto}
      */
     public ProjectDto create(Project project) {
-        return null;
+        Objects.requireNonNull(project);
+
+        return ProjectMapper.toDto(projectService.create(project));
     }
 
     /**
@@ -125,7 +129,9 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code boolean}
      */
     public boolean delete(UUID projectId) {
-         return false;
+         Objects.requireNonNull(projectId);
+
+         return projectService.deleteById(projectId);
     }
 
     /**
@@ -140,7 +146,10 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code ProjectDto}
      */
     public ProjectDto addUserToProject(UUID userId, UUID projectId) {
-         return null;
+
+        Objects.requireNonNull(userId);
+        Objects.requireNonNull(projectId);
+        return ProjectMapper.toDto(projectService.addUserToProject(userId, projectId));
     }
 
     /**
@@ -155,7 +164,10 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code ProjectDto}
      */
     public ProjectDto removeUserFromProject(UUID userId, UUID projectId) {
-          return null;
+        Objects.requireNonNull(userId);
+        Objects.requireNonNull(projectId);
+
+          return ProjectMapper.toDto(projectService.removeUserFromProject(userId, projectId));
     }
 
     /**
@@ -170,6 +182,10 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      */
     @Override
     public ProjectDto updateProject(ProjectDto projectDto) {
-        return null;
+        Objects.requireNonNull(projectDto);
+
+        Project project = ProjectMapper.mapToEntity(projectDto, List.of());
+
+        return ProjectMapper.toDto(projectService.updateById(project));
     }
 }

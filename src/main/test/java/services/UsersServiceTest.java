@@ -43,7 +43,7 @@ public class UsersServiceTest extends Utils{
     //---------------------------------------------------------------
     // CreateTest
     //---------------------------------------------------------------
-    @Test//(timeout = 1000)
+    @Test
     @Description("Успешное создание пользователя")
     public void testCreateAsync_Success() {
         User testUser = Utils.testUser1;
@@ -141,7 +141,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Успешное получение списка всех пользователей")
-    public void getAllAsync_ShouldPreserveUserOrder() {
+    public void getAll_ShouldPreserveUserOrder() {
 
         List<User> users = List.of(
                 testUser1,
@@ -161,13 +161,12 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Ошибка при получении списка пользователей")
-    public void getAllAsync_ShouldThrow_WhenRepositoryFails() {
-        // Arrange
+    public void getAll_ShouldThrow_WhenRepositoryFails() {
+
         RuntimeException expectedException = new RuntimeException("DB error");
         when(userRepository.findAllAsync())
                 .thenReturn(CompletableFuture.failedFuture(expectedException));
 
-        // Act & Assert
         CompletableFuture<List<User>> resultFuture = userService.getAllAsync();
         CompletionException exception = assertThrows(CompletionException.class, resultFuture::join);
 
@@ -178,7 +177,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Получение пустого списка пользователей")
-    public void getAllAsync_ShouldReturnEmptyList_WhenNoUsersExist() {
+    public void getAll_ShouldReturnEmptyList_WhenNoUsersExist() {
 
         when(userRepository.findAllAsync())
                 .thenReturn(CompletableFuture.completedFuture(List.of()));
@@ -200,7 +199,7 @@ public class UsersServiceTest extends Utils{
     @Test
     @Description("Попытка получения пользователя по несуществующему ID")
     public void getByIdAsync_ShouldReturnNull_WhenUserNotFound() {
-        // Arrange
+
         UUID nonExistentId = UUID.randomUUID();
         when(userRepository.findByIdAsync(nonExistentId))
                 .thenReturn(CompletableFuture.completedFuture(null));
@@ -231,7 +230,7 @@ public class UsersServiceTest extends Utils{
     @Test
     @Description("NullPointerException при передаче в качестве параметра null")
     public void getByIdAsync_ShouldThrowIllegalArgumentException_WhenIdIsNull() {
-        // Act & Assert
+
         assertThrows(NullPointerException.class,
                 () -> userService.getByIdAsync(null));
 
@@ -301,7 +300,7 @@ public class UsersServiceTest extends Utils{
     @Test
     @Description("Ошибка при обновлении пользователя")
     public void updateByIdAsync_ShouldThrow_WhenRepositoryFails() {
-        // Arrange
+
         UUID userId = UUID.randomUUID();
         User user = testUser1;
         user.setId(userId);
@@ -314,7 +313,6 @@ public class UsersServiceTest extends Utils{
         when(userRepository.updateAsync(user))
                 .thenReturn(CompletableFuture.failedFuture(dbError));
 
-        // Act & Assert
         CompletableFuture<User> future = userService.updateByIdAsync(user);
         CompletionException exception = assertThrows(CompletionException.class, future::join);
 

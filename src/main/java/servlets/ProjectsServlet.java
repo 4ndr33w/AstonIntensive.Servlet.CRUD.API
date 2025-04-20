@@ -2,6 +2,7 @@ package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import controllers.ProjectControllerSynchronous;
 import controllers.ProjectsController;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
@@ -13,10 +14,18 @@ import utils.StaticConstants;
 import utils.Utils;
 import utils.exceptions.ProjectNotFoundException;
 import utils.mappers.ProjectMapper;
-
+//import jakarta.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+/*
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+*/
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
@@ -41,7 +50,8 @@ public class ProjectsServlet extends BaseServlet {
 
     public ProjectsServlet() {
         super();
-        this.projectController = new ProjectsController();
+        //this.projectController = new ProjectsController();
+        this.projectController = new ProjectControllerSynchronous();
         utils = new Utils();
     }
 

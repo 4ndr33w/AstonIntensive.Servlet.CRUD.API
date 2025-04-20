@@ -8,4 +8,65 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
   <display-name>Archetype Created Web Application</display-name>
+
+
+  <servlet>
+    <servlet-name>GetAllUsersServlet</servlet-name>
+    <servlet-class>servlets.GetAllUsersServlet</servlet-class>
+    <!-- Укажите правильный путь к вашему пакету -->
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>GetAllUsersServlet</servlet-name>
+    <url-pattern>/api/v2/users/all</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>TestServlet</servlet-name>
+    <servlet-class>servlets.TestServlet</servlet-class>
+    <!-- Укажите правильный путь к вашему пакету -->
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>TestServlet</servlet-name>
+    <url-pattern>/test1</url-pattern>
+  </servlet-mapping>
+
+
+
+<!--
+  <servlet-mapping>
+    <servlet-name>UsersServlet</servlet-name>
+    <url-pattern>/api/v1/users</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>ProjectsServlet</servlet-name>
+    <url-pattern>/api/v1/projects</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>GetProjectsByAdminIdServlet</servlet-name>
+    <url-pattern>/api/v1/projects/admin</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>GetProjectByUserIdServlet</servlet-name>
+    <url-pattern>/api/v1/projects/user</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>GetAllUsersServlet</servlet-name>
+    <url-pattern>/api/v1/users/all</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>AddRemoveUsersToProjectServlet</servlet-name>
+    <url-pattern>/api/v1/projects/users</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>TestServlet</servlet-name>
+    <url-pattern>/test</url-pattern>
+  </servlet-mapping>-->
 </web-app>

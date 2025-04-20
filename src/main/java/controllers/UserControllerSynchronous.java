@@ -1,9 +1,7 @@
 package controllers;
 
 import controllers.interfaces.UserControllerInterface;
-import models.dtos.ProjectDto;
 import models.dtos.UserDto;
-import models.entities.Project;
 import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,10 +10,8 @@ import services.interfaces.UserService;
 import utils.StaticConstants;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.ProjectUpdateException;
-import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -24,19 +20,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 /**
- * Класс контроллера,
- * Предоставляет методы для{@code CRUD}-операций с данными пользователей
- *
  * @author 4ndr33w
  * @version 1.0
  */
-public class UsersController implements UserControllerInterface {
+public class UserControllerSynchronous implements UserControllerInterface {
 
-    public UserService userService;
+    public services.interfaces.synchronous.UserServiceSynchro userService;
     Logger logger = LoggerFactory.getLogger(ProjectsController.class);
 
-    public UsersController() {
-        this.userService = new UsersService();
+    public UserControllerSynchronous() {
+
+        this.userService = new services.synchronous.UsersService();
     }
 
     /**
@@ -51,7 +45,7 @@ public class UsersController implements UserControllerInterface {
      */
     public List<UserDto> getAll() {
         try {
-            return userService.getAllAsync().get().stream().map(UserMapper::toDto).toList();
+            return userService.getAll().stream().map(UserMapper::toDto).toList();
         }
         catch (Exception ex) {
             throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
@@ -74,7 +68,7 @@ public class UsersController implements UserControllerInterface {
         Objects.requireNonNull(userId);
 
         try {
-            var result = userService.getByIdAsync(userId).get();
+            var result = userService.getById(userId);
             return UserMapper.toDto(result);
         }
         catch (Exception ex) {
@@ -97,7 +91,7 @@ public class UsersController implements UserControllerInterface {
         Objects.requireNonNull(user);
 
         try {
-            return UserMapper.toDto(userService.createAsync(user).get());
+            return UserMapper.toDto(userService.create(user));
         }
         catch (Exception ex) {
             throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
@@ -119,7 +113,7 @@ public class UsersController implements UserControllerInterface {
     public boolean delete(UUID userId) {
         Objects.requireNonNull(userId);
         try {
-            return userService.deleteByIdAsync(userId).get();
+            return userService.deleteById(userId);
         }
         catch (Exception ex) {
             throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
@@ -132,7 +126,7 @@ public class UsersController implements UserControllerInterface {
         User user = UserMapper.mapToEntity(userDto);
 
         try {
-            User updatedUser = userService.updateByIdAsync(user).join();
+            User updatedUser = userService.updateById(user);
 
             return UserMapper.toDto(updatedUser);
 

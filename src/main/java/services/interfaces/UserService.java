@@ -14,10 +14,5 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface UserService extends BaseService<User> {
 
-    //CompletableFuture<UserDto> createUserAsync(User user) throws Exception;
-    CompletableFuture<User> getUserByEmailAsync(String email);
-    CompletableFuture<User> getUserByUserNameAsync(String username);
-    CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail);
-    CompletableFuture<User> updatePasswordAsync(UUID userId, String password);
     CompletableFuture<List<User>> getAllAsync();
 }

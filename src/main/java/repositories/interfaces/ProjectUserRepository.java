@@ -3,6 +3,7 @@ package repositories.interfaces;
 import models.dtos.ProjectUsersDto;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -21,4 +22,5 @@ public interface ProjectUserRepository {
     CompletableFuture<Boolean> deleteUserFromProject(UUID userId, UUID projectId);
     CompletableFuture<Boolean> addUserToProject(UUID userId, UUID projectId);
     CompletableFuture<List<ProjectUsersDto>> findByProjectIds(List<UUID> projectIds);
+
 }

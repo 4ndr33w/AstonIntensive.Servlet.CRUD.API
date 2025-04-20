@@ -8,11 +8,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
-
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+/*
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+*/
 import java.io.IOException;
 import java.util.UUID;
 
@@ -30,7 +35,8 @@ public class AddRemoveUsersToProjectServlet extends BaseServlet {
     protected Logger logger = LoggerFactory.getLogger(AddRemoveUsersToProjectServlet.class);
 
     public AddRemoveUsersToProjectServlet() {
-        this.projectController = new controllers.ProjectsController();
+        //this.projectController = new controllers.ProjectsController();
+        this.projectController = new controllers.ProjectControllerSynchronous();
     }
 
     /**

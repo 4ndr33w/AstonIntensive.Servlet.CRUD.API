@@ -16,11 +16,5 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface UserRepository extends BaseRepository<User> {
 
-    CompletableFuture<User> findByEmailAsync(String email);
-    CompletableFuture<User> findByUserNameAsync(String userName);
-    CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail);
-    CompletableFuture<User> updatePasswordAsync(UUID userId, String newPassword);
-
     CompletableFuture<List<User>> findAllByIdsAsync(List<UUID> userIds);
-
 }

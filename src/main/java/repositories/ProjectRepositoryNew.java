@@ -2,6 +2,7 @@ package repositories;
 
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
+import configurations.ThreadPoolConfNonStatic;
 import configurations.ThreadPoolConfiguration;
 import models.dtos.ProjectDto;
 import models.dtos.UserDto;
@@ -34,26 +35,35 @@ import static utils.mappers.ProjectMapper.mapResultSetToProject;
  */
 public class ProjectRepositoryNew implements ProjectRepository {
 
-    private static final String schema = PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
-    private static final String projectsTable = PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
-    private static final String projectUsersTable = PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
+    String schema = System.getenv("JDBC_DEFAULT_SCHEMA") != null
+            ? System.getenv("JDBC_DEFAULT_SCHEMA")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.default-schema");
+
+    String projectsTable = System.getenv("JDBC_PROJECTS_TABLE") != null
+            ? System.getenv("JDBC_PROJECTS_TABLE")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.projects-table");
+
+    String projectUsersTable = System.getenv("JDBC_PROJECT_USERS_TABLE") != null
+            ? System.getenv("JDBC_PROJECT_USERS_TABLE")
+            : PropertiesConfiguration.getProperties().getProperty("jdbc.project-users-table");
+
     String tableName = String.format("%s.%s", schema, projectsTable);
 
     Logger logger = LoggerFactory.getLogger(ProjectRepositoryNew.class);
 
     private final SqlQueryStrings sqlQueryStrings;
-    private static final ExecutorService dbExecutor;
+    private final ExecutorService dbExecutor;
     private final ProjectUserRepository projectUserRepository;// = new ProjectUsersRepositoryImpl();
     private final UserRepository userRepository;
 
-    static {
-        dbExecutor = ThreadPoolConfiguration.getDbExecutor();
-    }
 
     public ProjectRepositoryNew() {
         sqlQueryStrings = new SqlQueryStrings();
         projectUserRepository = new ProjectUsersRepositoryImpl();
         userRepository = new UsersRepositoryImplementation();
+
+        ThreadPoolConfNonStatic threadPoolConfNonStatic = new ThreadPoolConfNonStatic();
+        dbExecutor = threadPoolConfNonStatic.getDbExecutor();
     }
 
     @Override
@@ -107,8 +117,6 @@ public class ProjectRepositoryNew implements ProjectRepository {
             logger.info("Repository: findByAdminIdAsync: \n retrieved list of projects...");
             return projects;
         }, dbExecutor);
-
-        //return  null;
     }
 
 

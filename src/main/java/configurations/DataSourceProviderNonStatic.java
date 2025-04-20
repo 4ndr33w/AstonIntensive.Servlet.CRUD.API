@@ -1,23 +1,17 @@
 package configurations;
 
-
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import repositories.synchronous.ProjectUsersRepositorySynchronous;
 
 import javax.sql.DataSource;
 
 /**
- * Класс предоставляет DataSource,
- * пул потоков и конфигурацию для подключения к БД
- *
  * @author 4ndr33w
  * @version 1.0
  */
-public class DataSourceProvider {
-
+public class DataSourceProviderNonStatic {
     static Logger logger = LoggerFactory.getLogger(DataSourceProvider.class);
     /*static String dbUrl = PropertiesConfiguration.getProperties().getProperty("jdbc.url");
     static String user = PropertiesConfiguration.getProperties().getProperty("jdbc.username");
@@ -41,10 +35,10 @@ public class DataSourceProvider {
             : PropertiesConfiguration.getProperties().getProperty("jdbc.password");
 
 
-    private static final HikariDataSource dataSource;
+    private final HikariDataSource dataSource;
 
-    static {
 
+    public DataSourceProviderNonStatic() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(dbUrl);
         config.setUsername(user);
@@ -56,11 +50,7 @@ public class DataSourceProvider {
         dataSource = new HikariDataSource(config);
     }
 
-    public DataSourceProvider() {
-
-    }
-
-    public static DataSource getDataSource() {
+    public DataSource getDataSource() {
         logger.info("Предоставлен источник DataSource");
         logger.info("Database URL:" + dbUrl);
         logger.info("Database username:" + user);

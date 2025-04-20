@@ -12,6 +12,7 @@ import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.UserService;
 import utils.StaticConstants;
+import utils.Utils;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.UserNotFoundException;
 import utils.mappers.ProjectMapper;
@@ -107,7 +108,8 @@ public class UsersService implements UserService {
                             .thenApply(v -> userFutures.stream()
                                     .map(CompletableFuture::join)
                                     .collect(Collectors.toList()));
-                })
+                }
+                )
                 .exceptionally(ex -> {
                     logger.error("Error fetching users: " + ex.getMessage());
                     throw new CompletionException(ex);
@@ -178,25 +180,4 @@ public class UsersService implements UserService {
                 });
     }
 
-    //TODO: Остальные методы пока не реализованы
-
-    @Override
-    public CompletableFuture<User> getUserByEmailAsync(String email) {
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public CompletableFuture<User> getUserByUserNameAsync(String username){
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public CompletableFuture<User> updateEmailAsync(String oldEmail, String newEmail) {
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public CompletableFuture<User> updatePasswordAsync(UUID userId, String password) {
-        return CompletableFuture.completedFuture(null);
-    }
 }
