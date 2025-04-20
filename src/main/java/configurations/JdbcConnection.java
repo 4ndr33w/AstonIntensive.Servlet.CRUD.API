@@ -23,9 +23,9 @@ public class JdbcConnection implements AutoCloseable{
     Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
 
     public JdbcConnection() throws SQLException {
-        //var provider = new DataSourceProviderNonStatic();
-        //DataSource dataSource = provider.getDataSource();
-        DataSource dataSource = DataSourceProvider.getDataSource();
+        var provider = new DataSourceProviderNonStatic();
+        DataSource dataSource = provider.getDataSource();
+        //DataSource dataSource = DataSourceProvider.getDataSource();
         this.connection = dataSource.getConnection();
     }
 

@@ -13,14 +13,6 @@ import javax.sql.DataSource;
  */
 public class DataSourceProviderNonStatic {
     static Logger logger = LoggerFactory.getLogger(DataSourceProvider.class);
-    /*static String dbUrl = PropertiesConfiguration.getProperties().getProperty("jdbc.url");
-    static String user = PropertiesConfiguration.getProperties().getProperty("jdbc.username");
-    static String pass = PropertiesConfiguration.getProperties().getProperty("jdbc.password");*/
-
-    /*static String dbUrl = PropertiesConfiguration.getProperties().getProperty("jdbc.url");
-    static String user = PropertiesConfiguration.getProperties().getProperty("jdbc.username");
-    static String pass = PropertiesConfiguration.getProperties().getProperty("jdbc.password");
-    */
 
     static String dbUrl = System.getenv("JDBC_URL") != null
             ? System.getenv("JDBC_URL")
