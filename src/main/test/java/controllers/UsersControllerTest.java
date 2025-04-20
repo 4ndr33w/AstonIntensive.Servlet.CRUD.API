@@ -14,12 +14,14 @@ import static org.junit.Assert.assertNotNull;
  */
 public class UsersControllerTest {
 
+    controllers.interfaces.UserControllerInterface usersController;
+
     @Test
     public void getUserTest() throws SQLException, ExecutionException, InterruptedException {
-        UsersController usersController = new UsersController();
+        usersController = new controllers.UserControllerSynchronous();
 
-        UUID userId = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa0");
-        var result = usersController.getUser(userId);
+        //UUID userId = UUID.fromString("41096054-cbd7-4308-8411-905ae6f03aa0");
+        var result = usersController.getAll();
 
         var user = result;
 

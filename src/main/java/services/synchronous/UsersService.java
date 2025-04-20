@@ -49,24 +49,31 @@ public class UsersService implements UserServiceSynchro {
 
         Map<UUID, List<ProjectDto>> adminProjectsMap = getAdminProjectsMap (userIds);
         Map<UUID, List<ProjectUsersDto>> userProjectsMap = getUserProjectsMap (userIds );
-        List<UUID> allProjectIds = getProjectIds (userProjectsMap);
-        Map<UUID, ProjectDto> projectsMap = projectsMap (allProjectIds );
+
+        List<UUID> allProjectIds = userProjectsMap.size()  > 0? getProjectIds(userProjectsMap) : new ArrayList<>();
+        Map<UUID, ProjectDto> projectsMap = allProjectIds.size() > 0?  projectsMap (allProjectIds ) : new HashMap<>();
 
         return users.stream()
                 .map(user -> {
                     List<ProjectDto> userProjects = new ArrayList<>();
 
-                    userProjects.addAll(adminProjectsMap.getOrDefault(user.getId(), List.of()));
-
-                    userProjects.addAll(
-                            userProjectsMap.getOrDefault(user.getId(), List.of())
-                                    .stream()
-                                    .map(pu -> projectsMap.get(pu.getProjectId()))
-                                    .filter(Objects::nonNull)
-                                    .toList()
-                    );
-
-                    user.setProjects(userProjects);
+                    if(adminProjectsMap.size() > 0)
+                    {
+                        userProjects.addAll(adminProjectsMap.getOrDefault(user.getId(), List.of()));
+                    }
+                    if (userProjectsMap.size() > 0) {
+                        userProjects.addAll(
+                                userProjectsMap.getOrDefault(user.getId(), List.of())
+                                        .stream()
+                                        .map(pu -> projectsMap.get(pu.getProjectId()))
+                                        .filter(Objects::nonNull)
+                                        .toList()
+                        );
+                    }
+                    if (userProjects.size() > 0) {
+                        user.setProjects(userProjects);
+                    }
+                    else  user.setProjects(List.of());
                     return user;
                 })
                 .toList();
@@ -84,6 +91,7 @@ public class UsersService implements UserServiceSynchro {
                 .stream()
                 .collect(Collectors.groupingBy(ProjectUsersDto::getUserId));
     }
+
     List<UUID> getProjectIds (Map<UUID, List<ProjectUsersDto>> userProjectsMap) {
 
         return userProjectsMap.values()
@@ -93,6 +101,7 @@ public class UsersService implements UserServiceSynchro {
                 .distinct()
                 .toList();
     }
+
     Map<UUID, ProjectDto> projectsMap (List<UUID> projectIds ) {
         return findProjectDtos(projectIds)
                 .stream()
