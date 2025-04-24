@@ -5,9 +5,11 @@ import models.dtos.ProjectUsersDto;
 import models.entities.User;
 import services.interfaces.synchronous.UserServiceSynchro;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
 import utils.exceptions.UserNotFoundException;
 import utils.mappers.ProjectMapper;
 
+import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,7 +34,7 @@ public class UsersService implements UserServiceSynchro {
     }
 
     @Override
-    public List<User> getAll() {
+    public List<User> getAll() throws DatabaseOperationException, UserNotFoundException, SQLException{
 
         var usersOptional = userRepository.findAll();
         if(usersOptional.isPresent()) {
@@ -169,7 +171,12 @@ public class UsersService implements UserServiceSynchro {
     public User create(User entity) {
         Objects.requireNonNull(entity, "User cannot be null");
 
-        return userRepository.create(entity);
+        try {
+            return userRepository.create(entity);
+        }
+        catch (SQLException e) {
+            throw new DatabaseOperationException(StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE);
+        }
     }
 
     @Override
@@ -182,14 +189,14 @@ public class UsersService implements UserServiceSynchro {
     }
 
     @Override
-    public boolean deleteById(UUID id) {
+    public boolean deleteById(UUID id) throws SQLException {
         Objects.requireNonNull(id, "Id cannot be null");
 
         return userRepository.delete(id);
     }
 
     @Override
-    public User updateById(User entity) {
+    public User updateById(User entity) throws SQLException {
         Objects.requireNonNull(entity, "User cannot be null");
 
         return userRepository.update(entity);

@@ -6,6 +6,7 @@ import models.entities.Project;
 import models.entities.User;
 import models.enums.UserRoles;
 import utils.StaticConstants;
+import utils.exceptions.ResultSetMappingException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -69,13 +70,13 @@ public class UserMapper {
         return user;
     }
 
-    public static User mapResultSetToUser(ResultSet rs) throws SQLException {
+    public static User mapResultSetToUser(ResultSet rs) throws SQLException, ResultSetMappingException, NullPointerException {
 
         if(rs == null){
             throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         }
         try {
-            User user = new User(
+            return new User(
                     UUID.fromString(rs.getString("id")),
                     rs.getString("user_name"),
                     rs.getString("password"),
@@ -84,34 +85,26 @@ public class UserMapper {
                     rs.getString("last_name"),
                     rs.getString("phone"),
 
-                    UserRoles.USER
-                    /*UserRoles.values()[Integer.parseInt(rs.getString("userstatus"))]*/,
-                    null
-                    /*rs.getBytes("image")*/,
-                    new Date()
-                    /*rs.getTimestamp("created_at") != null ?
+                    UserRoles.values()[Integer.parseInt(rs.getString("userstatus"))],
+
+                    rs.getBytes("image"),
+                    rs.getTimestamp("created_at") != null ?
                             new Date(rs
                                     .getTimestamp("updated_at")
-                                    .getTime()) : new Date()*/,
+                                    .getTime()) : new Date(),
 
-                   new Date()
-                   /* rs.getTimestamp("updated_at") != null ?
+                   rs.getTimestamp("updated_at") != null ?
                             new Date(rs
                                     .getTimestamp("updated_at")
-                                    .getTime()) : new Date()*/,
-
-                    new Date()
-                    /*rs.getTimestamp("last_login_date") != null ?
+                                    .getTime()) : new Date(),
+                    rs.getTimestamp("last_login_date") != null ?
                             new Date(rs
                                     .getTimestamp("last_login_date")
-                                    .getTime()) : new Date()*/
+                                    .getTime()) : new Date()
             );
-
-            return user;
         }
-        catch (SQLException ex){
-            throw new SQLException(StaticConstants.ERROR_FETCHING_RESULT_SET_METADATA_EXCEPTION_MESSAGE, ex.getMessage());
-
+        catch (Exception ex){
+            throw new ResultSetMappingException(StaticConstants.ERROR_FETCHING_RESULT_SET_METADATA_EXCEPTION_MESSAGE, ex);
         }
     }
 }

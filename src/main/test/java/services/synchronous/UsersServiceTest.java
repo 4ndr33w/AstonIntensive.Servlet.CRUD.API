@@ -3,6 +3,7 @@ package services.synchronous;
 import org.junit.Test;
 import repositories.interfaces.synchronous.UserRepositorySynchro;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,7 +32,7 @@ public class UsersServiceTest {
     }
 
     @Test
-    public void GetUsers1Test() {
+    public void GetUsers1Test() throws SQLException {
 
         usersRepository = new repositories.synchronous.UsersRepositorySynchronous();
 

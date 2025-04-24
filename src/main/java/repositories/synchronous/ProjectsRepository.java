@@ -59,10 +59,18 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
     }
 
     @Override
+    public Class<Project> getEntityClass() {
+        return Project.class;
+    }
+
+    @Override
     public Project create(Project project) {
         Objects.requireNonNull(project);
 
         String queryString = sqlQueryStrings.createProjectString(tableName, project);
+        //int result = executeUpdate(queryString);
+
+
         try (JdbcConnection connection = new JdbcConnection();
              Statement statement = connection.statement()) {
 
@@ -72,7 +80,7 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
                 logger.error("ProjectRepository: Create: Failed to create a project. Query string: {}", queryString);
                 throw new RuntimeException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
             }
-            project.setId(getGeneratedKeyFromRequest(statement));
+            project.setId(getGeneratedKeyFromRequest(statement.getGeneratedKeys()));
             return project;
 
         }
@@ -81,6 +89,8 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
             throw new RuntimeException(e);
         }
     }
+
+
 
     @Override
     public Optional<Project> findById(UUID id) {
@@ -91,7 +101,6 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
              ResultSet resultSet = statement.executeQuery(sql)) {
 
             if (!resultSet.next()) {
-                connection.close();
                 return null;
             }
 
@@ -106,22 +115,25 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
     }
 
     @Override
-    public boolean delete(UUID id) {
+    public boolean delete(UUID id) throws DatabaseOperationException, SQLException {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         String tableName = String.format("%s.%s", schema, projectsTable);
         String queryString = sqlQueryStrings.deleteByIdString(tableName, id.toString());
 
+        var result = executeUpdate(queryString);
+        return result > 0;
+        /*
         try (JdbcConnection connection = new JdbcConnection();
              Statement statement = connection.statement()) {
             int affectedRows = statement.executeUpdate(queryString);
-            connection.close();
             return affectedRows > 0;
         }
         catch (Exception e) {
             throw new RuntimeException(e);
-        }
+        }*/
     }
+
 
     @Override
     public Optional<List<Project>> findByAdminId(UUID adminId) {
@@ -132,18 +144,27 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
              Statement statement = connection.statement();
              ResultSet resultSet = statement.executeQuery(queryString)) {
 
-            while (resultSet.next()) {
-                Project project = mapResultSetToProject(resultSet);
-
-                projects.add(project);
-            }
-
-        } catch (Exception e) {
+            projects = mapResultSetToProjects(resultSet);
+        }
+        catch (Exception e) {
             logger.error(String.format("%s; adminId: %s", StaticConstants.NO_PROJECTS_FOUND_BY_ADMIN_ID_EXCEPTION_MESSAGE, adminId));
             String message = String.format("%s; adminId: %s", StaticConstants.NO_PROJECTS_FOUND_BY_ADMIN_ID_EXCEPTION_MESSAGE, adminId);
             throw new ProjectNotFoundException(message , e);
         }
         return projects.isEmpty() ? Optional.empty() : Optional.of(projects);
+    }
+
+    private List<Project> mapResultSetToProjects(ResultSet resultSet) {
+        List<Project> projects = new ArrayList<>();
+        try {
+            while (resultSet.next()) {
+                Project project = mapResultSetToProject(resultSet);
+                projects.add(project);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return projects;
     }
 
     @Override
@@ -155,12 +176,9 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
              Statement statement = connection.statement();
              ResultSet resultSet = statement.executeQuery(queryString)) {
 
-            while (resultSet.next()) {
-                Project project = mapResultSetToProject(resultSet);
-
-                projects.add(project);
-            }
-        } catch (Exception e) {
+            projects = mapResultSetToProjects(resultSet);
+        }
+        catch (Exception e) {
             String message = String.format("%s; userId: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, userId);
             throw new ProjectNotFoundException(message , e);
         }
@@ -179,10 +197,8 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         try (JdbcConnection connection = new JdbcConnection();
              Statement statement = connection.statement();
              ResultSet resultSet = statement.executeQuery(queryString)) {
-            while (resultSet.next()) {
-                Project project = mapResultSetToProject(resultSet);
-                projects.add(project);
-            }
+
+            projects = mapResultSetToProjects(resultSet);
         }
         catch (Exception e) {
             throw new ProjectNotFoundException( StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, e);
@@ -202,10 +218,8 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         try (JdbcConnection connection = new JdbcConnection();
              Statement statement = connection.statement();
              ResultSet resultSet = statement.executeQuery(queryString)) {
-            while (resultSet.next()) {
-                Project project = mapResultSetToProject(resultSet);
-                projects.add(project);
-            }
+
+            projects = mapResultSetToProjects(resultSet);
         }
         catch (Exception e) {
             throw new ProjectNotFoundException( StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, e);
@@ -225,10 +239,8 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
         try (JdbcConnection connection = new JdbcConnection();
              Statement statement = connection.statement();
              ResultSet resultSet = statement.executeQuery(queryString)) {
-            while (resultSet.next()) {
-                Project project = mapResultSetToProject(resultSet);
-                projects.add(project);
-            }
+
+            projects = mapResultSetToProjects(resultSet);
         }
         catch (Exception e) {
             throw new ProjectNotFoundException( StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, e);
@@ -313,6 +325,5 @@ public class ProjectsRepository implements repositories.interfaces.synchronous.P
             throw new CompletionException("Unexpected error", e);
         }
     }
-
 
 }

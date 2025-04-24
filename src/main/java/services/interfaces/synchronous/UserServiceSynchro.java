@@ -2,6 +2,7 @@ package services.interfaces.synchronous;
 
 import models.entities.User;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -11,5 +12,5 @@ import java.util.List;
 public interface UserServiceSynchro extends BaseServiceSynchro<User> {
 
 
-    List<User> getAll();
+    List<User> getAll() throws SQLException;
 }

@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import repositories.UsersRepositoryImplementation;
 import repositories.interfaces.synchronous.UserRepositorySynchro;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
+import utils.exceptions.ResultSetMappingException;
 import utils.exceptions.UserNotFoundException;
 import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryStrings;
@@ -45,6 +47,11 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
 
     public UsersRepositorySynchronous() {
         sqlQueryStrings = new SqlQueryStrings();
+    }
+
+    @Override
+    public Class<User> getEntityClass() {
+        return User.class;
     }
 
     @Override
@@ -87,80 +94,51 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
     }
 
     @Override
-    public Optional<List<User>> findAll() {
+    public Optional<List<User>> findAll() throws DatabaseOperationException, UserNotFoundException, SQLException{
         String queryString = sqlQueryStrings.findAllQueryString(usersTableName);
-        try (JdbcConnection jdbcConnection = new JdbcConnection();
-             ResultSet rs = jdbcConnection.executeQuery(queryString )) {
 
-            List<User> users = new ArrayList<>();
-            while (rs.next()) {
-                users.add(mapResultSetToUser(rs));
-            }
-            return users.isEmpty() ? Optional.empty() : Optional.of(users);
+        var result = this.retrieveMultipleEntities(queryString);
+        if(result.isEmpty()) {
+            throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
         }
-        catch (Exception e) {
-            throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
-        }
+        return result;
     }
 
     @Override
-    public User create(User item) {
+    public User create(User item) throws SQLException, ResultSetMappingException, NullPointerException, DatabaseOperationException {
         String queryString = sqlQueryStrings.createUserString(usersTableName, item);
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection();
-             Statement statement = jdbcConnection.statement()) {
+        Optional<UUID> newUserId = createEntity(queryString);
 
-            int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
+        if(newUserId.isPresent()) {
 
-            if (affectedRows == 0) {
-                throw new SQLException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
-            }
-
-            item.setId( getGeneratedKeyFromRequest(statement) );
-
+            var userId = newUserId.get();
+            item.setId(userId);
             return item;
         }
-        catch (Exception e) {
-            throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+        else {
+            throw new DatabaseOperationException("Failed to create new user");
         }
     }
 
     @Override
-    public User update(User user) {
-        String updateQuery = sqlQueryStrings.updateUsertByIdString(
+    public User update(User user) throws SQLException {
+        String queryString = sqlQueryStrings.updateUsertByIdString(
                 usersTableName, user.getId().toString(), user);
+        var result = executeUpdate(queryString);
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-
-            int affectedRows = jdbcConnection.executeUpdate(updateQuery);
-
-            if (affectedRows == 0) {
-                logger.error(String.format("Repository: update: error: User with id %s not found", user.getId()));
-                throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
-            }
-
+        if(result > 0) {
             return user;
-
-        } catch (SQLException e) {
-            logger.error(String.format("Repository: update: error: %s", e.getMessage()));
-            throw new RuntimeException("Database connection error", e);
-        } catch (Exception e) {
-            logger.error(String.format("Repository: update: error: %s", e.getMessage()));
-            throw new RuntimeException("Unexpected error", e);
+        }
+        else {
+            throw new DatabaseOperationException(StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE);
         }
     }
 
     @Override
-    public boolean delete(UUID id) {
+    public boolean delete(UUID id) throws SQLException {
         String queryString = sqlQueryStrings.deleteByIdString(usersTableName, id.toString());
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            int affectedRows = jdbcConnection.executeUpdate(queryString);
-
-            return affectedRows > 0;
-        }
-        catch (Exception e) {
-            throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
-        }
+        return executeUpdate(queryString) > 0;
     }
 }

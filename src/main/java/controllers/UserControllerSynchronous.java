@@ -8,10 +8,12 @@ import org.slf4j.LoggerFactory;
 import services.UsersService;
 import services.interfaces.UserService;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.ProjectUpdateException;
 import utils.mappers.UserMapper;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -94,7 +96,7 @@ public class UserControllerSynchronous implements UserControllerInterface {
             return UserMapper.toDto(userService.create(user));
         }
         catch (Exception ex) {
-            throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
+            throw new DatabaseOperationException(StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE);
         }
     }
 
@@ -137,6 +139,8 @@ public class UserControllerSynchronous implements UserControllerInterface {
             }
             logger.error("UserController: updateUser: {}", ex.getMessage());
             throw new ProjectUpdateException("Failed to update user", ex);
+        } catch (SQLException e) {
+            throw new DatabaseOperationException(StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE);
         }
     }
 }

@@ -3,6 +3,7 @@ package controllers.interfaces;
 import models.dtos.ProjectDto;
 import models.entities.Project;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,7 +65,7 @@ public interface ProjectControllerInterface {
      * @param projectId
      * @return {@code boolean}
      */
-    boolean delete(UUID projectId);
+    boolean delete(UUID projectId) throws SQLException;
 
     /**
      * Добавить пользователя в проект по
@@ -92,5 +93,5 @@ public interface ProjectControllerInterface {
      * @param projectDto
      * @return {@code ProjectDto}
      */
-    ProjectDto updateProject(ProjectDto projectDto);
+    ProjectDto updateProject(ProjectDto projectDto) throws SQLException;
 }

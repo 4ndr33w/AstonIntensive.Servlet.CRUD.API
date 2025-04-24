@@ -6,8 +6,10 @@ import models.entities.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
 import utils.mappers.ProjectMapper;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -116,8 +118,14 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
     public ProjectDto create(Project project) {
         Objects.requireNonNull(project);
 
-        return ProjectMapper.toDto(projectService.create(project));
-    }
+        try {
+            return ProjectMapper.toDto(projectService.create(project));
+        }
+        catch(SQLException e) {
+            logger.error(String.format("ProjectControllerSynchro: create Ошибка создания проекта: %s", e.getMessage()));
+            throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+        }
+            }
 
     /**
      * Удалить проект
@@ -128,7 +136,7 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @param projectId
      * @return {@code boolean}
      */
-    public boolean delete(UUID projectId) {
+    public boolean delete(UUID projectId) throws SQLException {
          Objects.requireNonNull(projectId);
 
          return projectService.deleteById(projectId);
@@ -181,11 +189,17 @@ public class ProjectControllerSynchronous implements ProjectControllerInterface 
      * @return {@code null}
      */
     @Override
-    public ProjectDto updateProject(ProjectDto projectDto) {
+    public ProjectDto updateProject(ProjectDto projectDto)  {
         Objects.requireNonNull(projectDto);
 
-        Project project = ProjectMapper.mapToEntity(projectDto, List.of());
+        try {
+            Project project = ProjectMapper.mapToEntity(projectDto, List.of());
 
-        return ProjectMapper.toDto(projectService.updateById(project));
+            return ProjectMapper.toDto(projectService.updateById(project));
+        }
+        catch (SQLException e) {
+            logger.error(String.format("ProjectControllerSynchro: updateProject Ошибка обновления проекта: %s", e.getMessage()));
+            throw new DatabaseOperationException(StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE);
+        }
     }
 }

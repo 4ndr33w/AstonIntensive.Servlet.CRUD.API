@@ -80,7 +80,7 @@ public class ProjectsService implements ProjectServiceSynchro {
     }
 
     @Override
-    public Project create(Project entity) {
+    public Project create(Project entity) throws SQLException {
         Objects.requireNonNull(entity, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.create(entity);
@@ -96,13 +96,13 @@ public class ProjectsService implements ProjectServiceSynchro {
     }
 
     @Override
-    public boolean deleteById(UUID id) {
+    public boolean deleteById(UUID id) throws CompletionException, SQLException {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         return projectRepository.delete(id);
     }
 
     @Override
-    public Project updateById(Project entity) {
+    public Project updateById(Project entity) throws SQLException {
         Objects.requireNonNull(entity, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         return projectRepository.update(entity);
     }
