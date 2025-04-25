@@ -209,7 +209,6 @@ public class UsersServlet extends BaseServlet {
         String id = req.getParameter("id");
         AsyncContext asyncContext = req.startAsync();
 
-
         executor.execute(() -> {
             try {
                 if (id == null) {
@@ -268,65 +267,40 @@ public class UsersServlet extends BaseServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
-
         String id = req.getParameter("id");
 
-        if(utils.validateId(id)) {
-            UUID userId = UUID.fromString(id);
+        AsyncContext asyncContext = req.startAsync();
 
-            try {
-                User user = parseUserFromRequest(req);
-                user.setId(userId);
+        executor.execute(() -> {
+            if(utils.validateId(id)) {
+                UUID userId = UUID.fromString(id);
 
-                UserDto updatedUser = (UserDto) userController.updateUser(UserMapper.toDto(user)).get();
-                /*updatedUser.setUserRole(user.getUserRole());
-                updatedUser.setUserName(user.getUserName());
-                updatedUser.setEmail(user.getEmail());
-                updatedUser.setCreatedAt(user.getCreatedAt());*/
+                try {
+                    User user = parseUserFromRequest( (HttpServletRequest) asyncContext.getRequest() );
+                    user.setId(userId);
+                    UserDto updatedUser = (UserDto) userController.updateUser(UserMapper.toDto(user)).get();
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+                    String jsonResponse = objectMapper.writeValueAsString(updatedUser);
 
-                resp.setStatus(HttpServletResponse.SC_ACCEPTED);
-                ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-                objectMapper.writeValue(resp.getWriter(), updatedUser);
-
-            } catch (IllegalArgumentException e) {
-                printResponse(
-                        HttpServletResponse.SC_BAD_REQUEST,
-                        "/api/v1/users",
-                        StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
-                        e,
-                        resp);
-
-            } catch (UserNotFoundException e) {
-                printResponse(
-                        HttpServletResponse.SC_NOT_FOUND,
-                        "/api/v1/users",
-                        StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE,
-                        e,
-                        resp);
-            } catch (Exception e) {
-                printResponse(
-                        HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                        "/api/v1/users",
-                        StaticConstants.INTERNAL_SERVER_ERROR_MESSAGE,
-                        e,
-                        resp);
+                    asyncSuccesfulResponse(
+                            HttpServletResponse.SC_ACCEPTED,
+                            jsonResponse,
+                            asyncContext);
+                }
+                catch (Exception e) {
+                    handleAsyncError(
+                            asyncContext,
+                            e,
+                            "/api/v1/users");
+                }
+                finally {
+                    if(asyncContext != null) {
+                        asyncContext.complete();
+                    }
+                }
             }
-        }
-    }
-
-    private UserDto updateUser(UserDto userDto) {
-
-        UserDto updatedUser = userDto;
-
-        updatedUser.setUserRole(userDto.getUserRole());
-        updatedUser.setUserName(userDto.getUserName());
-        updatedUser.setEmail(userDto.getEmail());
-        updatedUser.setCreatedAt(userDto.getCreatedAt());
-
-        return updatedUser;
+        });
     }
 
     @Override
