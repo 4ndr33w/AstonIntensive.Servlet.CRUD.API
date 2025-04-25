@@ -193,7 +193,7 @@ public class ProjectsController implements ProjectControllerInterface {
         catch (NoSuchElementException e) {
             logger.warn("ProjectController: deleteById: {}", e.getMessage());
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        } catch (ExecutionException | InterruptedException e) {
+        } catch (ExecutionException | InterruptedException | SQLException e) {
             logger.error("ProjectController: deleteById: {}", e.getMessage());
             throw new RuntimeException(e);
         }

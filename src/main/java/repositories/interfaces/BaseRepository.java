@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.ProjectRepositoryNew;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,10 +28,10 @@ import static utils.mappers.ProjectMapper.mapResultSetToProject;
 public interface BaseRepository<T> {
 
     CompletableFuture<T> findByIdAsync(UUID id);
-    CompletableFuture<List<T>> findAllAsync();
+    CompletableFuture<List<T>> findAllAsync() throws SQLException;
     CompletableFuture<T> createAsync(T item);
     CompletableFuture<T> updateAsync(T item);
-    CompletableFuture<Boolean> deleteAsync(UUID id);
+    CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException;
 
     default UUID getGeneratedKeyFromRequest(Statement statement) throws SQLException {
         var set = statement.getGeneratedKeys();
@@ -41,7 +42,7 @@ public interface BaseRepository<T> {
         else {
             Logger logger = LoggerFactory.getLogger(BaseRepository.class);
             logger.error(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
-            throw new SQLException(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
+            throw new DatabaseOperationException(StaticConstants.FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE);
         }
     }
 }

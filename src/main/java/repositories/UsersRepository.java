@@ -3,15 +3,16 @@ package repositories;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import configurations.ThreadPoolConfNonStatic;
-import configurations.ThreadPoolConfiguration;
-import models.entities.Project;
 import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
-import utils.Utils;
+import utils.exceptions.DatabaseOperationException;
+import utils.exceptions.UserAlreadyExistException;
+import utils.exceptions.UserNotFoundException;
 import utils.mappers.UserMapper;
+import utils.sqls.SqlQueryPreparedStrings;
 import utils.sqls.SqlQueryStrings;
 
 import java.sql.*;
@@ -19,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 import static utils.mappers.UserMapper.mapResultSetToUser;
 
@@ -26,7 +28,7 @@ import static utils.mappers.UserMapper.mapResultSetToUser;
  * @author 4ndr33w
  * @version 1.0
  */
-public class UsersRepositoryImplementation implements UserRepository, AutoCloseable{
+public class UsersRepository implements UserRepository, AutoCloseable{
 
     static String usersSchema = System.getenv("JDBC_DEFAULT_SCHEMA") != null
             ? System.getenv("JDBC_DEFAULT_SCHEMA")
@@ -40,13 +42,15 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
     private final String usersTableName = String.format("%s.%s", usersSchema, usersTable);
     private final SqlQueryStrings sqlQueryStrings;
     private final ExecutorService dbExecutor;
+    private final SqlQueryPreparedStrings sqlQueryPreparedStrings;
 
-    Logger logger = LoggerFactory.getLogger(UsersRepositoryImplementation.class);
+    Logger logger = LoggerFactory.getLogger(UsersRepository.class);
 
-    public UsersRepositoryImplementation() {
+    public UsersRepository() {
         sqlQueryStrings = new SqlQueryStrings();
         ThreadPoolConfNonStatic threadPoolConfNonStatic = new ThreadPoolConfNonStatic();
         dbExecutor = threadPoolConfNonStatic.getDbExecutor();
+        sqlQueryPreparedStrings = new SqlQueryPreparedStrings();
     }
 
     /**
@@ -60,66 +64,117 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
      *             <li>Optional с null - если пользователи не найдены</li>
      *             <li>пустой Optional - при ошибке выполнения</li>
      *         </ul>
-     * @throws RuntimeException если произошла ошибка при выполнении SQL-запроса.
-     *         Исключение-обертка для оригинального исключения БД, которое можно получить через
-     *         {@link Throwable#getCause()}. Может содержать следующие исходные исключения:
-     *         <ul>
-     *             <li>{@link java.sql.SQLException} - ошибка SQL-запроса</li>
-     *             <li>{@link java.sql.SQLTimeoutException} - превышено время выполнения запроса</li>
-     *             <li>{@link java.sql.SQLSyntaxErrorException} - синтаксическая ошибка в запросе</li>
-     *         </ul>
+     * @throws DatabaseOperationException
+     * @throws CompletionException
      */
     @Override
-    public CompletableFuture<List<User>> findAllAsync() {
+    public CompletableFuture<List<User>> findAllAsync() throws DatabaseOperationException {
         return CompletableFuture.supplyAsync(() -> {
-            String queryString = sqlQueryStrings.findAllQueryString(usersTableName);
-            try (JdbcConnection conn = new JdbcConnection();
-                 ResultSet rs = conn.executeQuery(queryString )) {
-
-                List<User> users = new ArrayList<>();
-                while (rs.next()) {
-                    users.add(mapResultSetToUser(rs));
-                }
-
-                return users;
+            try {
+                return findAll();
             }
-            catch (Exception e) {
-                throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+            catch (SQLException e) {
+                throw new DatabaseOperationException(StaticConstants.UNABLE_TO_LOAD_DB_DRIVER);
+            }}, dbExecutor)
+                .exceptionally(ex -> {
+                    if(ex.getCause() instanceof DatabaseOperationException) {
+                        throw new DatabaseOperationException(ex.getCause().getMessage());
+                    }
+                    if(ex.getCause() instanceof SQLException) {
+                        logger.error(String.format("%s; %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, ex.getCause()));
+                        throw new DatabaseOperationException(String.format("%s; %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, ex.getCause()));
+                    }
+
+                    else {
+                        throw new CompletionException(StaticConstants.OPERATION_FAILED_ERROR_MESSAGE, ex.getCause());
+                    }
+                });
+    }
+
+    private List<User> findAll() throws SQLException, UserNotFoundException {
+        String queryString = sqlQueryPreparedStrings.findAllQueryString(usersTableName);
+        try (JdbcConnection connection = new JdbcConnection();
+             PreparedStatement statement = connection.prepareStatement(queryString)) {
+
+            ResultSet resultSet = statement.executeQuery();
+            List<User> users = new ArrayList<>();
+            while (resultSet.next()) {
+                users.add(mapResultSetToUser(resultSet));
             }
-        }, dbExecutor);
+            if (users.isEmpty()) {
+                logger.info(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
+                throw new UserNotFoundException(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
+            }
+            return users;
+        }
+        catch (SQLException e) {
+            throw new SQLException(e.getMessage());
+        }
     }
 
     /**
      * Асинхронное создание пользователя
      *
-     * @param item объект пользователя для создания (не null)
+     * @param user объект пользователя для создания (не null)
      * @return CompletableFuture с созданным пользователем (с заполненным ID)
-     * @throws RuntimeException если произошла ошибка при выполнении операции
+     * @throws DatabaseOperationException если произошла ошибка при выполнении операции
+     * @throws NullPointerException если параметр {@code user} равен {@code null}
      */
     @Override
-    public CompletableFuture<User> createAsync(User item) {
+    public CompletableFuture<User> createAsync(User user) throws UserAlreadyExistException, NullPointerException {
         return CompletableFuture.supplyAsync(() -> {
-            if (item == null) {
+            if (user == null) {
+                logger.error(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
                 throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
             }
-            String queryString = sqlQueryStrings.createUserString(usersTableName, item);
-
-            try (JdbcConnection jdbcConnection = new JdbcConnection();
-                 Statement statement = jdbcConnection.statement()) {
-
-                int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
-
-                if (affectedRows == 0) {
-                    throw new SQLException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
-                }
-
-                item.setId( getGeneratedKeyFromRequest(statement) );
-                return item;
-            }
-            catch (Exception e) {
-                throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
-            }
+            return create(user);
         }, dbExecutor);
+    }
+
+    private User create(User user) throws UserAlreadyExistException {
+        String queryString = sqlQueryPreparedStrings.createUserPreparedQueryString(usersTableName);
+
+        try (JdbcConnection connection = new JdbcConnection();
+             PreparedStatement statement = connection.prepareStatement(queryString)) {
+
+            setPreparedStatementUserData(statement, user);
+
+            int affectedRows = statement.executeUpdate();
+
+            if (affectedRows == 0) {
+                logger.error(StaticConstants.USER_ALREADY_EXISTS_EXCEPTION_MESSAGE);
+                throw new UserAlreadyExistException(StaticConstants.USER_ALREADY_EXISTS_EXCEPTION_MESSAGE);
+            }
+
+            user.setId(getGeneratedKeyFromRequest(statement));
+            return user;
+        }
+        catch (Exception e) {
+
+            if(e.getMessage().contains("duplicate key")) {
+                throw new UserAlreadyExistException(StaticConstants.USER_ALREADY_EXISTS_EXCEPTION_MESSAGE, e);
+            }
+            throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+        }
+    }
+
+    private void setPreparedStatementUserData(PreparedStatement statement, User user) throws SQLException {
+
+        long updatedTime = user.getCreatedAt().getTime();
+        Timestamp updated = new Timestamp(updatedTime );
+
+        long lastLoginTime = user.getCreatedAt().getTime();
+        Timestamp lastLogin = new Timestamp(lastLoginTime );
+
+        statement.setString(1, user.getUserName());
+        statement.setString(2, user.getFirstName());
+        statement.setString(3, user.getLastName());
+        statement.setString(4, user.getEmail());
+        statement.setString(5, user.getPassword());
+        statement.setString(6, user.getPhoneNumber());
+        statement.setTimestamp(7, updated);
+        statement.setBytes(8, user.getUserImage());
+        statement.setTimestamp(9, lastLogin);
     }
 
     /**
@@ -148,12 +203,11 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
      *             <li>{@code true} - удаление выполнено успешно</li>
      *             <li>{@code false} - удаление не выполнено (см. условия выше)</li>
      *         </ul>
-     * @throws RuntimeException если произошла ошибка при выполнении операции. Исключение содержит:
+     * @throws CompletionException если произошла ошибка при выполнении операции. Исключение содержит:
      *         <ul>
-     *             <li>{@link java.sql.SQLException} - ошибка SQL-запроса</li>
-     *             <li>{@link java.sql.SQLTimeoutException} - превышение времени ожидания</li>
-     *             <li>{@link java.sql.SQLSyntaxErrorException} - синтаксическая ошибка запроса</li>
-     *             <li>{@link java.util.concurrent.CompletionException} - ошибка выполнения асинхронной задачи</li>
+     *             <li>{@link SQLException} - ошибка SQL-запроса</li>
+     *             <li>{@link DatabaseOperationException} - превышение времени ожидания</li>
+     *             <li>{@link NullPointerException} - синтаксическая ошибка запроса</li>
      *         </ul>
      * @see #dbExecutor
      * @see JdbcConnection
@@ -161,22 +215,30 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
      *           {@code thenApply()}, {@code exceptionally()} и др.
      */
     @Override
-    public CompletableFuture<Boolean> deleteAsync(UUID id) {
+    public CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException, DatabaseOperationException, NullPointerException  {
         return CompletableFuture.supplyAsync(() -> {
-            if (id == null) {
-                throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-            }
-
-            String queryString = sqlQueryStrings.deleteByIdString(usersTableName, id.toString());
-
-            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-                int affectedRows = jdbcConnection.executeUpdate(queryString);
-                return affectedRows > 0;
-            }
-            catch (Exception e) {
-                throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+            try {
+                return delete(id);
+            } catch (SQLException e) {
+                throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
             }
         }, dbExecutor);
+    }
+
+    private boolean delete(UUID id) throws SQLException, DatabaseOperationException, NullPointerException {
+        if (id == null) {
+            throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+        }
+
+        String queryString = sqlQueryStrings.deleteByIdString(usersTableName, id.toString());
+
+        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+            int affectedRows = jdbcConnection.executeUpdate(queryString);
+            return affectedRows > 0;
+        }
+        catch (Exception e) {
+            throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+        }
     }
 
     @Override
@@ -273,4 +335,6 @@ public class UsersRepositoryImplementation implements UserRepository, AutoClosea
     public void close() {
         dbExecutor.shutdown();
     }
+
+
 }

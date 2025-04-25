@@ -1,5 +1,6 @@
 package controllers;
 
+import controllers.interfaces.BaseUserController;
 import controllers.interfaces.UserControllerInterface;
 import models.dtos.ProjectDto;
 import models.dtos.UserDto;
@@ -10,8 +11,10 @@ import org.slf4j.LoggerFactory;
 import services.UsersService;
 import services.interfaces.UserService;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.ProjectUpdateException;
+import utils.exceptions.UserAlreadyExistException;
 import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 
@@ -30,7 +33,7 @@ import java.util.concurrent.CompletionException;
  * @author 4ndr33w
  * @version 1.0
  */
-public class UsersController implements UserControllerInterface {
+public class UsersController implements BaseUserController<User, UserDto> {
 
     public UserService userService;
     Logger logger = LoggerFactory.getLogger(ProjectsController.class);
@@ -49,14 +52,38 @@ public class UsersController implements UserControllerInterface {
      * @return {@code List<ProjectDto>} или пустой список
      * @throws RuntimeException
      */
-    public List<UserDto> getAll() {
-        try {
+    @Override
+    public CompletableFuture<List<UserDto>> getAll() throws SQLException {
+
+        return userService.getAllAsync()
+                .thenApply(users -> users.stream().map(UserMapper::toDto).toList());
+
+       /* try {
             return userService.getAllAsync().get().stream().map(UserMapper::toDto).toList();
         }
         catch (Exception ex) {
             throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
-        }
+        }*/
     }
+    /*
+    return userRepository.findAllAsync()
+                .thenCompose(users -> {
+
+                    List<CompletableFuture<User>> userFutures = users.stream()
+                            .map(this::enrichUserWithProjects)
+                            .toList();
+
+                    return CompletableFuture.allOf(userFutures.toArray(new CompletableFuture[0]))
+                            .thenApply(v -> userFutures.stream()
+                                    .map(CompletableFuture::join)
+                                    .collect(Collectors.toList()));
+                }
+                )
+                .exceptionally(ex -> {
+                    logger.error("Error fetching users: " + ex.getMessage());
+                    throw new CompletionException(ex);
+                });
+     */
 
     /**
      * Получить пользователя по ID
@@ -70,16 +97,20 @@ public class UsersController implements UserControllerInterface {
      * @throws NullPointerException
      * @throws RuntimeException
      */
-    public UserDto getUser(UUID userId) {
+    @Override
+    public CompletableFuture<UserDto> getUser(UUID userId) {
         Objects.requireNonNull(userId);
 
+        return userService.getByIdAsync(userId)
+                .thenApply(UserMapper::toDto);
+/*
         try {
             var result = userService.getByIdAsync(userId).get();
             return UserMapper.toDto(result);
         }
         catch (Exception ex) {
             throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
-        }
+        }*/
     }
 
     /**
@@ -93,15 +124,18 @@ public class UsersController implements UserControllerInterface {
      * @throws NullPointerException
      * @throws RuntimeException
      */
-    public UserDto create(User user) {
+    @Override
+    public CompletableFuture<UserDto> create(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException {
         Objects.requireNonNull(user);
-
+        return userService.createAsync(user)
+                .thenApply(UserMapper::toDto);
+/*
         try {
             return UserMapper.toDto(userService.createAsync(user).get());
         }
         catch (Exception ex) {
             throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
-        }
+        }*/
     }
 
     /**
@@ -116,21 +150,28 @@ public class UsersController implements UserControllerInterface {
      * @throws NullPointerException
      * @throws RuntimeException
      */
-    public boolean delete(UUID userId) {
+    public CompletableFuture<Boolean> delete(UUID userId) throws SQLException, DatabaseOperationException, NullPointerException, CompletionException {
         Objects.requireNonNull(userId);
+        return userService.deleteByIdAsync(userId);
+                //.thenApply(result -> result);
+        /*
         try {
             return userService.deleteByIdAsync(userId).get();
         }
         catch (Exception ex) {
             throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
-        }
+        }*/
     }
 
-    public UserDto updateUser(UserDto userDto) {
+    @Override
+    public CompletableFuture<UserDto> updateUser(UserDto userDto) {
         Objects.requireNonNull(userDto);
 
         User user = UserMapper.mapToEntity(userDto);
+        return userService.updateByIdAsync(user)
+                .thenApply(UserMapper::toDto);
 
+/*
         try {
             User updatedUser = userService.updateByIdAsync(user).join();
 
@@ -143,6 +184,6 @@ public class UsersController implements UserControllerInterface {
             }
             logger.error("UserController: updateUser: {}", ex.getMessage());
             throw new ProjectUpdateException("Failed to update user", ex);
-        }
+        }*/
     }
 }

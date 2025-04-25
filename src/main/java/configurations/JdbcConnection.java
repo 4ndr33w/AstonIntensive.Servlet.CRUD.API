@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.Objects;
 
 /**
  * Класс для работы с JDBC
@@ -19,6 +20,7 @@ public class JdbcConnection implements AutoCloseable{
 
     private final Connection connection;
     private Statement statement;
+    private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     Logger logger = LoggerFactory.getLogger(JdbcConnection.class);
 
@@ -71,21 +73,31 @@ public class JdbcConnection implements AutoCloseable{
         return resultSet;
     }
 
-    public boolean execute(String query) throws SQLException {
-        closeStatement();
-        this.statement = connection.createStatement();
-        return statement.execute(query);
-    }
-
     public int executeUpdate(String query) throws SQLException {
         closeStatement();
         this.statement = connection.createStatement();
         return statement.executeUpdate(query);
     }
 
+    public int preparedStatementExecuteUpdate(PreparedStatement preparedStatement) throws SQLException, NullPointerException {
+        Objects.requireNonNull(preparedStatement, "PreparedStatement не может быть null");
+
+        closePreparedStatement();
+        this.preparedStatement = preparedStatement;
+
+        return preparedStatement.executeUpdate();
+    }
+
+   /* public PreparedStatement prepareStatement(String sql) throws SQLException {
+        closePreparedStatement();
+        this.preparedStatement = connection.prepareStatement(sql);
+        return this.preparedStatement;
+    }*/
+
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        closeStatement();
-           return connection.prepareStatement(sql);
+        closePreparedStatement();
+        this.preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        return this.preparedStatement;
     }
 
     public Statement statement() throws SQLException {
@@ -123,6 +135,17 @@ public class JdbcConnection implements AutoCloseable{
             }
         }
         statement = null;
+    }
+
+    private void closePreparedStatement() {
+        if (this.preparedStatement != null) {
+            try {
+                this.preparedStatement.close();
+            } catch (SQLException e) {
+                logger.error("Ошибка закрытия PreparedStatement");
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private void closeConnection() {

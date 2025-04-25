@@ -13,7 +13,7 @@ public interface BaseService<T> {
 
     CompletableFuture<T> createAsync(T entity);
     CompletableFuture<T> getByIdAsync(UUID id);
-    CompletableFuture<Boolean> deleteByIdAsync(UUID id);
+    CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException;
     CompletableFuture<T> updateByIdAsync(T entity);
 
 }

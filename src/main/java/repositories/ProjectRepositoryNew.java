@@ -3,7 +3,6 @@ package repositories;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import configurations.ThreadPoolConfNonStatic;
-import configurations.ThreadPoolConfiguration;
 import models.dtos.ProjectDto;
 import models.dtos.UserDto;
 import models.entities.Project;
@@ -60,7 +59,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     public ProjectRepositoryNew() {
         sqlQueryStrings = new SqlQueryStrings();
         projectUserRepository = new ProjectUsersRepositoryImpl();
-        userRepository = new UsersRepositoryImplementation();
+        userRepository = new UsersRepository();
 
         ThreadPoolConfNonStatic threadPoolConfNonStatic = new ThreadPoolConfNonStatic();
         dbExecutor = threadPoolConfNonStatic.getDbExecutor();

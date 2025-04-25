@@ -1,19 +1,18 @@
 package services;
 
-import configurations.PropertiesConfiguration;
-import configurations.ThreadPoolConfiguration;
 import models.dtos.ProjectDto;
 import models.entities.Project;
 import models.entities.User;
 import org.slf4j.Logger;
 import repositories.ProjectRepositoryNew;
-import repositories.UsersRepositoryImplementation;
+import repositories.UsersRepository;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.UserService;
 import utils.StaticConstants;
-import utils.Utils;
+import utils.exceptions.DatabaseOperationException;
 import utils.exceptions.ProjectNotFoundException;
+import utils.exceptions.UserAlreadyExistException;
 import utils.exceptions.UserNotFoundException;
 import utils.mappers.ProjectMapper;
 
@@ -39,7 +38,7 @@ public class UsersService implements UserService {
     private final Logger logger;
 
     public UsersService() {
-        this.userRepository = new UsersRepositoryImplementation();
+        this.userRepository = new UsersRepository();
         this.projectsRepository = new ProjectRepositoryNew();
         logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
     }
@@ -67,8 +66,13 @@ public class UsersService implements UserService {
                 });
     }
 
+    /**
+     * Метод для создания нового пользователя
+     * @param user
+     * @return
+     */
     @Override
-    public CompletableFuture<User> createAsync(User user) {
+    public CompletableFuture<User> createAsync(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException {
         Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return userRepository.createAsync(user)
@@ -82,7 +86,7 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) {
+    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException, DatabaseOperationException, NullPointerException, CompletionException {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return userRepository.deleteAsync(id)
@@ -95,7 +99,7 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<List<User>> getAllAsync() {
+    public CompletableFuture<List<User>> getAllAsync() throws SQLException {
 
         return userRepository.findAllAsync()
                 .thenCompose(users -> {

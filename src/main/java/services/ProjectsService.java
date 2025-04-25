@@ -1,14 +1,13 @@
 package services;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import configurations.ThreadPoolConfiguration;
 import models.dtos.UserDto;
 import models.entities.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.ProjectRepositoryNew;
 import repositories.ProjectUsersRepositoryImpl;
-import repositories.UsersRepositoryImplementation;
+import repositories.UsersRepository;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
@@ -38,7 +37,7 @@ public class ProjectsService implements ProjectService {
 
     public ProjectsService() {
         this.projectRepository = new ProjectRepositoryNew();
-        this.userRepository = new UsersRepositoryImplementation();
+        this.userRepository = new UsersRepository();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
         dbExecutor = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors(),
@@ -47,7 +46,7 @@ public class ProjectsService implements ProjectService {
 
     public ProjectsService(ProjectRepository projectRepository) {
         this.projectRepository = projectRepository;
-        this.userRepository = new UsersRepositoryImplementation();
+        this.userRepository = new UsersRepository();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
         dbExecutor = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors(),
@@ -203,7 +202,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) {
+    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.deleteAsync(id)

@@ -1,7 +1,6 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import controllers.ProjectControllerSynchronous;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import org.slf4j.Logger;
@@ -10,9 +9,9 @@ import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
 
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 
 /*
@@ -62,6 +61,21 @@ public class AddRemoveUsersToProjectServlet extends BaseServlet {
      */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+
+        session = req.getSession();
+
+        executor.execute(() -> {
+            try {
+
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private void servletDoPostHandler(HttpServletRequest req, HttpServletResponse resp, HttpSession session) throws IOException {
+
         try {
             UUID projectId = UUID.fromString(req.getParameter("projectid"));
             UUID userId = UUID.fromString(req.getParameter("userid"));

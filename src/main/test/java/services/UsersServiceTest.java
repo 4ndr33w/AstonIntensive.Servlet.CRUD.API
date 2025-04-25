@@ -19,6 +19,7 @@ import utils.StaticConstants;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.UserNotFoundException;
 
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
@@ -90,7 +91,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Успешное удаление пользователя")
-    public void deleteByIdAsync_ShouldReturnTrue_WhenUserDeleted() {
+    public void deleteByIdAsync_ShouldReturnTrue_WhenUserDeleted() throws SQLException {
         UUID id = UUID.randomUUID();
 
         when(userRepository.deleteAsync(id)).thenReturn(CompletableFuture.completedFuture(true));
@@ -100,7 +101,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Пользователя удалить не удалось")
-    public void deleteByIdAsync_ShouldReturnFalse_WhenUserNotExists() {
+    public void deleteByIdAsync_ShouldReturnFalse_WhenUserNotExists() throws SQLException {
 
         UUID id = UUID.randomUUID();
         when(userRepository.deleteAsync(id))
@@ -120,7 +121,7 @@ public class UsersServiceTest extends Utils{
 
     @Test(expected = ExecutionException.class)
     @Description("Удаление пользователя возвращает ошибку ExecutionException")
-    public void deleteByIdAsync_ShouldThrowExecutionException_WhenDatabaseError() throws ExecutionException, InterruptedException {
+    public void deleteByIdAsync_ShouldThrowExecutionException_WhenDatabaseError() throws ExecutionException, InterruptedException, SQLException {
         UUID id = UUID.randomUUID();
 
         lenient().when(userRepository.deleteAsync(eq(id)))
@@ -141,7 +142,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Успешное получение списка всех пользователей")
-    public void getAll_ShouldPreserveUserOrder() {
+    public void getAll_ShouldPreserveUserOrder() throws SQLException {
 
         List<User> users = List.of(
                 testUser1,
@@ -161,7 +162,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Ошибка при получении списка пользователей")
-    public void getAll_ShouldThrow_WhenRepositoryFails() {
+    public void getAll_ShouldThrow_WhenRepositoryFails() throws SQLException {
 
         RuntimeException expectedException = new RuntimeException("DB error");
         when(userRepository.findAllAsync())
@@ -177,7 +178,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Получение пустого списка пользователей")
-    public void getAll_ShouldReturnEmptyList_WhenNoUsersExist() {
+    public void getAll_ShouldReturnEmptyList_WhenNoUsersExist() throws SQLException {
 
         when(userRepository.findAllAsync())
                 .thenReturn(CompletableFuture.completedFuture(List.of()));

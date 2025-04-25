@@ -279,7 +279,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description("Успешное удаление проекта")
-    public void deleteByIdAsync_ShouldReturnTrue_WhenProjectDeleted() {
+    public void deleteByIdAsync_ShouldReturnTrue_WhenProjectDeleted() throws SQLException {
         UUID id = UUID.randomUUID();
 
         when(projectRepository.deleteAsync(id)).thenReturn(CompletableFuture.completedFuture(true));
@@ -289,7 +289,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description("Проект удалить не удалось")
-    public void deleteByIdAsync_ShouldReturnFalse_WhenProjectNotExists() {
+    public void deleteByIdAsync_ShouldReturnFalse_WhenProjectNotExists() throws SQLException {
 
         UUID id = UUID.randomUUID();
         when(projectRepository.deleteAsync(id))
@@ -309,7 +309,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test(expected = ExecutionException.class)
     @Description("Удаление проекта возвращает ошибку ExecutionException")
-    public void deleteByIdAsync_ShouldThrowExecutionException_WhenDatabaseError() throws ExecutionException, InterruptedException {
+    public void deleteByIdAsync_ShouldThrowExecutionException_WhenDatabaseError() throws ExecutionException, InterruptedException, SQLException {
         UUID id = UUID.randomUUID();
 
         lenient().when(projectRepository.deleteAsync(eq(id)))

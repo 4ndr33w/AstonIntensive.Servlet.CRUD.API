@@ -14,5 +14,5 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface UserService extends BaseService<User> {
 
-    CompletableFuture<List<User>> getAllAsync();
+    CompletableFuture<List<User>> getAllAsync() throws SQLException;
 }

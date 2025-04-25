@@ -49,6 +49,7 @@ public class StaticConstants {
     public static final String USERS_NOT_FOUND_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("USERS_NOT_FOUND_EXCEPTION_MESSAGE");
     public static final String FAILED_TO_CREATE_NEW_USER_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("FAILED_TO_CREATE_NEW_USER_EXCEPTION_MESSAGE");
     public static final String FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE");
+    public static final String USER_ALREADY_EXISTS_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("USER_ALREADY_EXISTS_EXCEPTION_MESSAGE");
 
     // Database
     public static final String DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE");
@@ -56,5 +57,6 @@ public class StaticConstants {
     public static final String ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE");
     public static final String DATABASE_ACCESS_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("DATABASE_ACCESS_EXCEPTION_MESSAGE");
     public static final String FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE");
+    public static final String UNABLE_TO_LOAD_DB_DRIVER = PropertiesConfiguration.getConstants().getProperty("UNABLE_TO_LOAD_DB_DRIVER");
 
 }

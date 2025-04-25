@@ -11,13 +11,16 @@ import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import servlets.abstractions.BaseServlet;
+import servlets.sessionProcessing.SessionProcessingTask;
 import utils.StaticConstants;
 
+import javax.servlet.AsyncContext;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /*
 import jakarta.servlet.annotation.WebServlet;
@@ -30,7 +33,9 @@ import jakarta.servlet.ServletException;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Servlet для получения списка всех пользователей
@@ -38,16 +43,17 @@ import java.util.List;
  * @author 4ndr33w
  * @version 1.0
  */
-@WebServlet("/api/v1/users/all")
+@WebServlet(urlPatterns = "/api/v1/users/all", asyncSupported = true)
 public class GetAllUsersServlet extends BaseServlet {
 
     Logger logger = LoggerFactory.getLogger(GetAllUsersServlet.class);
-    private final controllers.interfaces.UserControllerInterface userController;
+    //private final controllers.interfaces.UserControllerInterface userController;
+    private final controllers.interfaces.BaseUserController userController;
 
     public GetAllUsersServlet() {
         super();
-        //userController = new UsersController();
-        userController = new controllers.UserControllerSynchronous();
+        userController = new UsersController();
+        //userController = new controllers.UserControllerSynchronous();
     }
 
     @Override
@@ -65,28 +71,38 @@ public class GetAllUsersServlet extends BaseServlet {
      * @return 400 Bad Request
      *     * @throws RuntimeException
      */
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
-        try {
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
+        AsyncContext asyncContext = req.startAsync();
+        executor.execute(() -> {
+            try {
+                var usersFuture = userController.getAll();
+                var users = usersFuture.get();
+                String jsonResponse = new ObjectMapper().writeValueAsString(users);
 
-            List<UserDto> users = userController.getAll();
+                asyncSuccesfulResponse(
+                        HttpServletResponse.SC_OK,
+                        jsonResponse,
+                        asyncContext);
+/*
 
-            ObjectMapper mapper = new ObjectMapper();
-            String jsonResponse = mapper.writeValueAsString(users);
+                asyncContext.getResponse().setContentType("application/json");
+                asyncContext.getResponse().setCharacterEncoding("UTF-8");
+                ((HttpServletResponse) asyncContext.getResponse()).setStatus(HttpServletResponse.SC_OK);
+                asyncContext.getResponse().getWriter().write(jsonResponse);*/
+            }
+            catch (Exception e) {
+                handleAsyncError(asyncContext, e,"/api/v1/users/all");
+            }
+            finally {
+                asyncContext.complete();
+            }
+        });
+    }
 
-            PrintWriter out = resp.getWriter();
-            out.print(jsonResponse);
-            out.flush();
-        }
-        catch (Exception e) {
-            printResponse(
-                    HttpServletResponse.SC_BAD_REQUEST,
-                     "/api/v1/users/all",
-                    StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
-                    e,
-                    resp);
-        }
+    @Override
+    public void destroy() {
+        executor.shutdownNow();
     }
 }

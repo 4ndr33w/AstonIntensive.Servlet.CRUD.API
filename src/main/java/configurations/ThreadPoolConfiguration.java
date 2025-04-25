@@ -19,22 +19,13 @@ public class ThreadPoolConfiguration {
 
     static Logger logger = LoggerFactory.getLogger( ThreadPoolConfiguration.class);
     private static final ExecutorService dbExecutor;
-    static String dbUrl = System.getenv("JDBC_URL") != null
-            ? System.getenv("JDBC_URL")
-            : PropertiesConfiguration.getProperties().getProperty("jdbc.url");
-
-    static String user = System.getenv("JDBC_USERNAME") != null
-            ? System.getenv("JDBC_USERNAME")
-            : PropertiesConfiguration.getProperties().getProperty("jdbc.username");
 
     static {
-
-        logger.error(dbUrl);
-        logger.error(user);
-        logger.info(dbUrl);
-        logger.info(user);
-        dbExecutor = Executors.newFixedThreadPool(
+        /*dbExecutor = Executors.newFixedThreadPool(
                 Runtime.getRuntime().availableProcessors(),
+                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
+        );*/
+        dbExecutor = Executors.newFixedThreadPool(20,
                 new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build()
         );
     }

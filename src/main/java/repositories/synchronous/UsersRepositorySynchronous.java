@@ -2,11 +2,10 @@ package repositories.synchronous;
 
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
-import configurations.ThreadPoolConfNonStatic;
 import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import repositories.UsersRepositoryImplementation;
+import repositories.UsersRepository;
 import repositories.interfaces.synchronous.UserRepositorySynchro;
 import utils.StaticConstants;
 import utils.exceptions.DatabaseOperationException;
@@ -18,10 +17,8 @@ import utils.sqls.SqlQueryStrings;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
 
 import static utils.mappers.UserMapper.mapResultSetToUser;
 
@@ -43,7 +40,7 @@ public class UsersRepositorySynchronous implements UserRepositorySynchro {
     private final String usersTableName = String.format("%s.%s", usersSchema, usersTable);
     private SqlQueryStrings sqlQueryStrings;
 
-    Logger logger = LoggerFactory.getLogger(UsersRepositoryImplementation.class);
+    Logger logger = LoggerFactory.getLogger(UsersRepository.class);
 
     public UsersRepositorySynchronous() {
         sqlQueryStrings = new SqlQueryStrings();
