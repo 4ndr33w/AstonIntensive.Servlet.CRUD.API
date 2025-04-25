@@ -8,10 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
-import utils.exceptions.DatabaseOperationException;
-import utils.exceptions.MultipleUsersNotFoundException;
-import utils.exceptions.UserAlreadyExistException;
-import utils.exceptions.UserNotFoundException;
+import utils.exceptions.*;
 import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryPreparedStrings;
 import utils.sqls.SqlQueryStrings;
@@ -67,9 +64,10 @@ public class UsersRepository implements UserRepository, AutoCloseable{
      * @throws DatabaseOperationException
      * @throws CompletionException
      * @throws MultipleUsersNotFoundException
+     * @throws SQLException
      */
     @Override
-    public CompletableFuture<List<User>> findAllAsync() throws DatabaseOperationException, CompletionException, MultipleUsersNotFoundException {
+    public CompletableFuture<List<User>> findAllAsync() throws SQLException, DatabaseOperationException, CompletionException, MultipleUsersNotFoundException {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return findAll();
@@ -130,7 +128,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
                 throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
             }
             return create(user);
-        }/*, dbExecutor*/);
+        });
     }
 
     private User create(User user) throws UserAlreadyExistException {
@@ -224,7 +222,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             } catch (SQLException e) {
                 throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
             }
-        }/*, dbExecutor*/);
+        });
     }
 
     private boolean delete(UUID id) throws SQLException, DatabaseOperationException, NullPointerException, UserNotFoundException {
@@ -252,31 +250,29 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     }
 
     @Override
-    public CompletableFuture<User> findByIdAsync(UUID id) {
+    public CompletableFuture<User> findByIdAsync(UUID id) throws NullPointerException, UserNotFoundException, DatabaseOperationException, ResultSetMappingException, SQLException {
         return CompletableFuture.supplyAsync(() -> {
             Objects.requireNonNull(id);
-
-            String queryString = sqlQueryStrings.findByIdString(usersTableName, id.toString());
-
-            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-                var resultSet  = jdbcConnection.executeQuery(queryString);
-                return resultSet.next() ? mapResultSetToUser(resultSet) : null;
-            }
-            catch (Exception e) {
-                throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
-            }
-        }/*, dbExecutor*/);
+            return findById(id);
+        });
     }
 
-    private User findById(UUID id) {
-        String queryString = sqlQueryStrings.findByIdString(usersTableName, id.toString());
+    private User findById(UUID id) throws UserNotFoundException, DatabaseOperationException {
+        String queryString = sqlQueryPreparedStrings.findByIdString(usersTableName);
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            var resultSet  = jdbcConnection.executeQuery(queryString);
-            return resultSet.next() ? mapResultSetToUser(resultSet) : null;
+        try (JdbcConnection jdbcConnection = new JdbcConnection();
+        PreparedStatement statement = jdbcConnection.prepareStatement(queryString)) {
+            statement.setObject(1, id, Types.OTHER);
+            var resultSet  = statement.executeQuery();
+            if(resultSet.next()) {
+                return mapResultSetToUser(resultSet);
+            }
+            else {
+                throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
+            }
         }
         catch (Exception e) {
-            throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+            throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
         }
     }
 
@@ -309,7 +305,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }/*, dbExecutor*/);
+        });
     }
 
     @Override
@@ -357,6 +353,4 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     public void close() {
         dbExecutor.shutdown();
     }
-
-
 }

@@ -11,9 +11,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface BaseService<T> {
 
-    CompletableFuture<T> createAsync(T entity);
-    CompletableFuture<T> getByIdAsync(UUID id);
+    CompletableFuture<T> createAsync(T entity) throws SQLException;
+    CompletableFuture<T> getByIdAsync(UUID id) throws SQLException;
     CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException;
-    CompletableFuture<T> updateByIdAsync(T entity);
+    CompletableFuture<T> updateByIdAsync(T entity) throws SQLException;
 
 }

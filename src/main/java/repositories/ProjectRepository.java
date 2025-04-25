@@ -8,7 +8,6 @@ import models.dtos.UserDto;
 import models.entities.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
@@ -32,7 +31,7 @@ import static utils.mappers.ProjectMapper.mapResultSetToProject;
  * @author 4ndr33w
  * @version 1.0
  */
-public class ProjectRepositoryNew implements ProjectRepository {
+public class ProjectRepository implements repositories.interfaces.ProjectRepository {
 
     String schema = System.getenv("JDBC_DEFAULT_SCHEMA") != null
             ? System.getenv("JDBC_DEFAULT_SCHEMA")
@@ -48,7 +47,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
 
     String tableName = String.format("%s.%s", schema, projectsTable);
 
-    Logger logger = LoggerFactory.getLogger(ProjectRepositoryNew.class);
+    Logger logger = LoggerFactory.getLogger(ProjectRepository.class);
 
     private final SqlQueryStrings sqlQueryStrings;
     private final ExecutorService dbExecutor;
@@ -56,7 +55,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     private final UserRepository userRepository;
 
 
-    public ProjectRepositoryNew() {
+    public ProjectRepository() {
         sqlQueryStrings = new SqlQueryStrings();
         projectUserRepository = new ProjectUsersRepositoryImpl();
         userRepository = new UsersRepository();
@@ -66,7 +65,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project project) {
+    public CompletableFuture<Project> createAsync(Project project) throws SQLException {
         Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return CompletableFuture.supplyAsync(() -> {
@@ -129,7 +128,8 @@ public class ProjectRepositoryNew implements ProjectRepository {
             if (userId == null) {
                 return Collections.emptyList();
             }
-            CompletableFuture<List<Project>> adminProjectsFuture = findByAdminIdAsync(userId);
+            CompletableFuture<List<Project>> adminProjectsFuture = null;
+            adminProjectsFuture = findByAdminIdAsync(userId);
 
             CompletableFuture<List<Project>> memberProjectsFuture = findProjectsByUserIdIfUserNotProjectAdmin(userId);
 
@@ -188,7 +188,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Project> findByIdAsync(UUID id) {
+    public CompletableFuture<Project> findByIdAsync(UUID id) throws SQLException {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return CompletableFuture.supplyAsync(() -> {
@@ -248,7 +248,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteAsync(UUID id) {
+    public CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException {
         return CompletableFuture.supplyAsync(() -> {
             Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
@@ -267,7 +267,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) {
+    public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException {
 
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
@@ -294,7 +294,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, UUID projectId) {
+    public CompletableFuture<ProjectDto> RemoveUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
@@ -322,7 +322,7 @@ public class ProjectRepositoryNew implements ProjectRepository {
     }
 
     @Override
-    public CompletableFuture<Project> updateAsync(Project project) {
+    public CompletableFuture<Project> updateAsync(Project project) throws SQLException {
         return CompletableFuture.supplyAsync(() -> {
             Objects.requireNonNull(project, "Project project cannot be null");
 

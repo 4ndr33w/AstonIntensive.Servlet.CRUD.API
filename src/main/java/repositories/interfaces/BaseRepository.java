@@ -1,21 +1,15 @@
 package repositories.interfaces;
 
-import models.entities.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import repositories.ProjectRepositoryNew;
 import utils.StaticConstants;
 import utils.exceptions.DatabaseOperationException;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import static utils.mappers.ProjectMapper.mapResultSetToProject;
 
 /**
  * Generic интерфейс для CRUD операций
@@ -27,10 +21,10 @@ import static utils.mappers.ProjectMapper.mapResultSetToProject;
  */
 public interface BaseRepository<T> {
 
-    CompletableFuture<T> findByIdAsync(UUID id);
+    CompletableFuture<T> findByIdAsync(UUID id) throws SQLException;
     CompletableFuture<List<T>> findAllAsync() throws SQLException;
-    CompletableFuture<T> createAsync(T item);
-    CompletableFuture<T> updateAsync(T item);
+    CompletableFuture<T> createAsync(T item) throws SQLException;
+    CompletableFuture<T> updateAsync(T item) throws SQLException;
     CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException;
 
     default UUID getGeneratedKeyFromRequest(Statement statement) throws SQLException {

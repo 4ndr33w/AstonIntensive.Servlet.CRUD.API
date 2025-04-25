@@ -46,7 +46,7 @@ public class UsersServiceTest extends Utils{
     //---------------------------------------------------------------
     @Test
     @Description("Успешное создание пользователя")
-    public void testCreateAsync_Success() {
+    public void testCreateAsync_Success() throws SQLException {
         User testUser = Utils.testUser1;
 
         var anyResult = userRepository.createAsync(testUser);
@@ -199,7 +199,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Попытка получения пользователя по несуществующему ID")
-    public void getByIdAsync_ShouldReturnNull_WhenUserNotFound() {
+    public void getByIdAsync_ShouldReturnNull_WhenUserNotFound() throws SQLException {
 
         UUID nonExistentId = UUID.randomUUID();
         when(userRepository.findByIdAsync(nonExistentId))
@@ -214,7 +214,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Ошибка при получении пользователя по ID")
-    public void getByIdAsync_ShouldThrowError() {
+    public void getByIdAsync_ShouldThrowError() throws SQLException {
         UUID userId = UUID.randomUUID();
         RuntimeException error = new RuntimeException("Test error");
 
@@ -240,7 +240,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Успешное получение пользователя по ID")
-    public void getByIdAsync_SuccessGetUser() {
+    public void getByIdAsync_SuccessGetUser() throws SQLException {
 
         User user = testUser1;
         UUID id = UUID.randomUUID();
@@ -264,7 +264,7 @@ public class UsersServiceTest extends Utils{
     //---------------------------------------------------------------
     @Test
     @Description("Успешное обновление пользователя")
-    public void updateByIdAsync_ShouldReturnUpdatedUser_WhenUserExists() {
+    public void updateByIdAsync_ShouldReturnUpdatedUser_WhenUserExists() throws SQLException {
         User updatedUser = testUser1;
 
         when(userRepository.updateAsync(updatedUser))
@@ -279,7 +279,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Попытка обновления пользователя, которого не существует")
-    public void updateByIdAsync_ShouldThrow_WhenUserNotFound() {
+    public void updateByIdAsync_ShouldThrow_WhenUserNotFound() throws SQLException {
 
         UUID userId = UUID.randomUUID();
         User user = testUser1;
@@ -300,7 +300,7 @@ public class UsersServiceTest extends Utils{
 
     @Test
     @Description("Ошибка при обновлении пользователя")
-    public void updateByIdAsync_ShouldThrow_WhenRepositoryFails() {
+    public void updateByIdAsync_ShouldThrow_WhenRepositoryFails() throws SQLException {
 
         UUID userId = UUID.randomUUID();
         User user = testUser1;

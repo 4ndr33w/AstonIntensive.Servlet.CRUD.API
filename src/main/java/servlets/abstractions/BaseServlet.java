@@ -204,6 +204,7 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
             }
             String message = "error";
             int statusCode = 0;
+
             if (e instanceof SQLException) {
 
                 if (e.getMessage().contains(("duplicate key")) || e.getCause().getMessage().contains(("duplicate key"))) {
@@ -214,6 +215,10 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
                     message = cause.getCause().getMessage();
                     statusCode = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
                 }
+            }
+            if (e instanceof ResultSetMappingException) {
+                message = cause.getCause().getMessage();
+                statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
             }
             if (e instanceof UserAlreadyExistException) {
                 message = StaticConstants.USER_ALREADY_EXISTS_EXCEPTION_MESSAGE;
@@ -230,16 +235,16 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
             if (e instanceof DatabaseOperationException) {
 
                 if (e.getCause() instanceof SQLException) {
-                    this.handleAsyncError(asyncContext, (Exception) cause, path);
+                    this.handleAsyncError(asyncContext, (Exception) e.getCause(), path);
                 }
                 message = StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
             }
-            if(e instanceof UserNotFoundException) {
+            if (e instanceof UserNotFoundException) {
                 message = StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
-            if(e instanceof CompletionException) {
+            if (e instanceof CompletionException) {
                 if(cause.getCause() != null) {
                     cause = cause.getCause();
                     this.handleAsyncError(asyncContext, (Exception) cause, path);
@@ -247,14 +252,22 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
                 message = StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
-            if(e instanceof MultipleUsersNotFoundException) {
+            if (e instanceof MultipleUsersNotFoundException) {
                 message = StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
+            if (e instanceof DataParsingException) {
+                message = StaticConstants.ERROR_FETCHING_RESULT_SET_METADATA_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_BAD_REQUEST;
+            }
+            if (e instanceof IllegalArgumentException) {
+                message = StaticConstants.ILLEGAL_ARGUMENT_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_BAD_REQUEST;
+            }
 
             asyncErrorResponse(statusCode, path, message, asyncContext, e);
-
-        } finally {
+        }
+        finally {
             if (asyncContext != null) {
                 asyncContext.complete();
             }

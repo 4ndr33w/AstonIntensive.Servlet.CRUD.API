@@ -12,8 +12,8 @@ import java.util.concurrent.CompletableFuture;
 public interface BaseUserController<E, D> {
 
     CompletableFuture<List<D>> getAll() throws SQLException;
-    CompletableFuture<D> getUser(UUID userId);
-    CompletableFuture<D> create(E user);
+    CompletableFuture<D> getUser(UUID userId) throws SQLException;
+    CompletableFuture<D> create(E user) throws SQLException;
     CompletableFuture<Boolean> delete(UUID userId) throws SQLException;
-    CompletableFuture<D> updateUser(D userD);
+    CompletableFuture<D> updateUser(D userD) throws SQLException;
 }

@@ -234,7 +234,7 @@ public class ProjectServiceTest extends Utils {
     //---------------------------------------------------------------
     @Test
     @Description("Успешное создание проекта")
-    public void testCreateAsync_Success() {
+    public void testCreateAsync_Success() throws SQLException {
         Project project = Utils.testProject1;
 
         var anyResult = projectRepository.createAsync(project);
@@ -328,7 +328,7 @@ public class ProjectServiceTest extends Utils {
     //---------------------------------------------------------------
     @Test
     @Description("Успешное обновление проекта")
-    public void updateByIdAsync_ShouldReturnUpdatedProject_WhenUserExists() {
+    public void updateByIdAsync_ShouldReturnUpdatedProject_WhenUserExists() throws SQLException {
         Project project = testProject1;
 
         when(projectRepository.updateAsync(project))
@@ -343,7 +343,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description("Попытка обновления проекта, которого не существует")
-    public void updateByIdAsync_ShouldThrow_WhenUserNotFound() {
+    public void updateByIdAsync_ShouldThrow_WhenUserNotFound() throws SQLException {
 
         UUID projectId = UUID.randomUUID();
         Project project = testProject1;
@@ -364,7 +364,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description("Ошибка при обновлении проекта")
-    public void updateByIdAsync_ShouldThrow_WhenRepositoryFails() {
+    public void updateByIdAsync_ShouldThrow_WhenRepositoryFails() throws SQLException {
 
         UUID projectId = UUID.randomUUID();
         Project project = testProject1;

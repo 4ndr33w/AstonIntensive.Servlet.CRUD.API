@@ -5,10 +5,9 @@ import models.dtos.UserDto;
 import models.entities.Project;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import repositories.ProjectRepositoryNew;
+import repositories.ProjectRepository;
 import repositories.ProjectUsersRepositoryImpl;
 import repositories.UsersRepository;
-import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.ProjectService;
@@ -30,13 +29,13 @@ import java.util.concurrent.Executors;
 public class ProjectsService implements ProjectService {
 
     Logger logger = LoggerFactory.getLogger(ProjectsService.class);
-    private final ProjectRepository projectRepository;
+    private final repositories.interfaces.ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectUserRepository projectUserRepository;
     private final ExecutorService dbExecutor;
 
     public ProjectsService() {
-        this.projectRepository = new ProjectRepositoryNew();
+        this.projectRepository = new ProjectRepository();
         this.userRepository = new UsersRepository();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
         dbExecutor = Executors.newFixedThreadPool(
@@ -44,7 +43,7 @@ public class ProjectsService implements ProjectService {
                 new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build());
     }
 
-    public ProjectsService(ProjectRepository projectRepository) {
+    public ProjectsService(repositories.interfaces.ProjectRepository projectRepository) {
         this.projectRepository = projectRepository;
         this.userRepository = new UsersRepository();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
@@ -90,7 +89,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) {
+    public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
@@ -134,7 +133,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) {
+    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
@@ -176,7 +175,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project project) {
+    public CompletableFuture<Project> createAsync(Project project) throws SQLException {
         Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         CompletableFuture<Project> projectFuture = projectRepository.createAsync(project);
@@ -188,7 +187,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> getByIdAsync(UUID id) {
+    public CompletableFuture<Project> getByIdAsync(UUID id) throws SQLException {
         return projectRepository.findByIdAsync(id)
                 .thenCompose(project -> {
                     if (project == null) {
@@ -212,7 +211,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> updateByIdAsync(Project project) {
+    public CompletableFuture<Project> updateByIdAsync(Project project) throws SQLException {
         Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.updateAsync(project)

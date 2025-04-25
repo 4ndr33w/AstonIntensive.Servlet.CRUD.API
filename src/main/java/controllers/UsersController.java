@@ -69,7 +69,7 @@ public class UsersController implements BaseUserController<User, UserDto> {
      * @throws RuntimeException
      */
     @Override
-    public CompletableFuture<UserDto> getUser(UUID userId) {
+    public CompletableFuture<UserDto> getUser(UUID userId) throws NullPointerException, UserNotFoundException, DatabaseOperationException, ResultSetMappingException, SQLException {
         Objects.requireNonNull(userId);
 
         return userService.getByIdAsync(userId)
@@ -88,7 +88,7 @@ public class UsersController implements BaseUserController<User, UserDto> {
      * @throws RuntimeException
      */
     @Override
-    public CompletableFuture<UserDto> create(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException {
+    public CompletableFuture<UserDto> create(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException, SQLException {
         Objects.requireNonNull(user);
         return userService.createAsync(user)
                 .thenApply(UserMapper::toDto);
@@ -119,7 +119,7 @@ public class UsersController implements BaseUserController<User, UserDto> {
     }
 
     @Override
-    public CompletableFuture<UserDto> updateUser(UserDto userDto) {
+    public CompletableFuture<UserDto> updateUser(UserDto userDto) throws SQLException {
         Objects.requireNonNull(userDto);
 
         User user = UserMapper.mapToEntity(userDto);

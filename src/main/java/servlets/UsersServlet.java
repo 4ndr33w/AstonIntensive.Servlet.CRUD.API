@@ -102,7 +102,6 @@ public class UsersServlet extends BaseServlet {
                 }
             }
         });
-        //destroy();
     }
 
     /**

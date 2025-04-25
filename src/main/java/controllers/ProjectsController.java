@@ -136,6 +136,8 @@ public class ProjectsController implements ProjectControllerInterface {
         } catch (ExecutionException | InterruptedException e) {
             logger.error("ProjectController: getById: {}", e.getMessage());
             throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -164,6 +166,8 @@ public class ProjectsController implements ProjectControllerInterface {
             throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
         } catch (ExecutionException | InterruptedException e) {
             logger.error("ProjectController: create: {}", e.getMessage());
+            throw new RuntimeException(e);
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
@@ -279,6 +283,8 @@ public class ProjectsController implements ProjectControllerInterface {
             }
             logger.error("ProjectController: updateProject: {}", ex.getMessage());
             throw new ProjectUpdateException("Failed to update project", ex);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

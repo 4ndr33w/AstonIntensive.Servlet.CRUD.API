@@ -4,9 +4,8 @@ import models.dtos.ProjectDto;
 import models.entities.Project;
 import models.entities.User;
 import org.slf4j.Logger;
-import repositories.ProjectRepositoryNew;
+import repositories.ProjectRepository;
 import repositories.UsersRepository;
-import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.UserService;
 import utils.StaticConstants;
@@ -31,23 +30,23 @@ import java.util.stream.Collectors;
 public class UsersService implements UserService {
 
     private final UserRepository userRepository;
-    private final ProjectRepository projectsRepository;
+    private final repositories.interfaces.ProjectRepository projectsRepository;
     private final Logger logger;
 
     public UsersService() {
         this.userRepository = new UsersRepository();
-        this.projectsRepository = new ProjectRepositoryNew();
+        this.projectsRepository = new ProjectRepository();
         logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
     }
 
     public UsersService(UserRepository userRepository) {
         this.userRepository = userRepository;
         logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
-        this.projectsRepository = new ProjectRepositoryNew();
+        this.projectsRepository = new ProjectRepository();
     }
 
     @Override
-    public CompletableFuture<User> getByIdAsync(UUID id) {
+    public CompletableFuture<User> getByIdAsync(UUID id) throws NullPointerException, UserNotFoundException, DatabaseOperationException, ResultSetMappingException, SQLException  {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         return userRepository.findByIdAsync(id)
                 .thenCompose(user -> {
@@ -69,7 +68,7 @@ public class UsersService implements UserService {
      * @return
      */
     @Override
-    public CompletableFuture<User> createAsync(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException {
+    public CompletableFuture<User> createAsync(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException, SQLException {
         Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return userRepository.createAsync(user)
@@ -123,9 +122,13 @@ public class UsersService implements UserService {
                     List<CompletableFuture<ProjectDto>> projectFutures = projects.stream()
                             .map(project -> {
 
-                                return projectsRepository.findByIdAsync(project.getId())
-                                    .thenApply(this::findProjects);
-                                    }).toList();
+                                try {
+                                    return projectsRepository.findByIdAsync(project.getId())
+                                        .thenApply(this::findProjects);
+                                } catch (SQLException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }).toList();
 
                     return CompletableFuture.allOf(projectFutures.toArray(new CompletableFuture[0]))
                             .thenApply(v -> collectProjectsFromFutures(user, projectFutures));
@@ -160,7 +163,7 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<User> updateByIdAsync(User user) {
+    public CompletableFuture<User> updateByIdAsync(User user) throws SQLException {
         Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return userRepository.updateAsync(user)

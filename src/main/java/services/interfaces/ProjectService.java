@@ -16,6 +16,6 @@ public interface ProjectService extends BaseService<Project>{
     CompletableFuture<List<Project>> getByUserIdAsync(UUID userId);
     CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId);
 
-    CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId);
-    CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId);
+    CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException;
+    CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException;
 }
