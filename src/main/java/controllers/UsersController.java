@@ -11,10 +11,7 @@ import org.slf4j.LoggerFactory;
 import services.UsersService;
 import services.interfaces.UserService;
 import utils.StaticConstants;
-import utils.exceptions.DatabaseOperationException;
-import utils.exceptions.ProjectNotFoundException;
-import utils.exceptions.ProjectUpdateException;
-import utils.exceptions.UserAlreadyExistException;
+import utils.exceptions.*;
 import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 
@@ -53,37 +50,11 @@ public class UsersController implements BaseUserController<User, UserDto> {
      * @throws RuntimeException
      */
     @Override
-    public CompletableFuture<List<UserDto>> getAll() throws SQLException {
+    public CompletableFuture<List<UserDto>> getAll() throws SQLException, DatabaseOperationException, CompletionException, MultipleUsersNotFoundException {
 
         return userService.getAllAsync()
                 .thenApply(users -> users.stream().map(UserMapper::toDto).toList());
-
-       /* try {
-            return userService.getAllAsync().get().stream().map(UserMapper::toDto).toList();
-        }
-        catch (Exception ex) {
-            throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
-        }*/
     }
-    /*
-    return userRepository.findAllAsync()
-                .thenCompose(users -> {
-
-                    List<CompletableFuture<User>> userFutures = users.stream()
-                            .map(this::enrichUserWithProjects)
-                            .toList();
-
-                    return CompletableFuture.allOf(userFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(v -> userFutures.stream()
-                                    .map(CompletableFuture::join)
-                                    .collect(Collectors.toList()));
-                }
-                )
-                .exceptionally(ex -> {
-                    logger.error("Error fetching users: " + ex.getMessage());
-                    throw new CompletionException(ex);
-                });
-     */
 
     /**
      * Получить пользователя по ID
@@ -103,14 +74,6 @@ public class UsersController implements BaseUserController<User, UserDto> {
 
         return userService.getByIdAsync(userId)
                 .thenApply(UserMapper::toDto);
-/*
-        try {
-            var result = userService.getByIdAsync(userId).get();
-            return UserMapper.toDto(result);
-        }
-        catch (Exception ex) {
-            throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
-        }*/
     }
 
     /**
@@ -150,17 +113,9 @@ public class UsersController implements BaseUserController<User, UserDto> {
      * @throws NullPointerException
      * @throws RuntimeException
      */
-    public CompletableFuture<Boolean> delete(UUID userId) throws SQLException, DatabaseOperationException, NullPointerException, CompletionException {
+    public CompletableFuture<Boolean> delete(UUID userId)throws SQLException, DatabaseOperationException, NullPointerException, UserNotFoundException, CompletionException {
         Objects.requireNonNull(userId);
         return userService.deleteByIdAsync(userId);
-                //.thenApply(result -> result);
-        /*
-        try {
-            return userService.deleteByIdAsync(userId).get();
-        }
-        catch (Exception ex) {
-            throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
-        }*/
     }
 
     @Override

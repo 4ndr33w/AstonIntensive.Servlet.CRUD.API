@@ -10,10 +10,7 @@ import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.UserService;
 import utils.StaticConstants;
-import utils.exceptions.DatabaseOperationException;
-import utils.exceptions.ProjectNotFoundException;
-import utils.exceptions.UserAlreadyExistException;
-import utils.exceptions.UserNotFoundException;
+import utils.exceptions.*;
 import utils.mappers.ProjectMapper;
 
 import java.sql.SQLException;
@@ -86,7 +83,7 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException, DatabaseOperationException, NullPointerException, CompletionException {
+    public CompletableFuture<Boolean> deleteByIdAsync(UUID id)throws SQLException, DatabaseOperationException, NullPointerException, UserNotFoundException, CompletionException {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return userRepository.deleteAsync(id)
@@ -99,7 +96,7 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<List<User>> getAllAsync() throws SQLException {
+    public CompletableFuture<List<User>> getAllAsync() throws SQLException, DatabaseOperationException, CompletionException, MultipleUsersNotFoundException {
 
         return userRepository.findAllAsync()
                 .thenCompose(users -> {

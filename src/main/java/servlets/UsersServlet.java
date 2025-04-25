@@ -2,6 +2,7 @@ package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import configurations.ThreadPoolConfiguration;
 import controllers.UsersController;
 import models.dtos.UserDto;
 import models.entities.User;
@@ -207,9 +208,10 @@ public class UsersServlet extends BaseServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
 
         String id = req.getParameter("id");
+        AsyncContext asyncContext = req.startAsync();
+
 
         executor.execute(() -> {
-            AsyncContext asyncContext = req.startAsync();
             try {
                 if (id == null) {
                     asyncErrorResponse(
@@ -219,20 +221,37 @@ public class UsersServlet extends BaseServlet {
                             asyncContext);
                 }
 
-                UUID userId = UUID.fromString(id);
+                else {
+                    boolean idValidation = utils.validateId(id);
 
-                var isDeleted = (Boolean) userController.delete(userId).get();
+                    if(idValidation) {
+                        UUID userId = UUID.fromString(id);
 
-                if (isDeleted) {
-                    asyncSuccesfulResponse(
-                            HttpServletResponse.SC_OK,
-                            StaticConstants.REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE,
-                            asyncContext);
+                        var isDeleted = (Boolean) userController.delete(userId).get();
+
+                        if (isDeleted) {
+                            asyncSuccesfulResponse(
+                                    HttpServletResponse.SC_OK,
+                                    StaticConstants.REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE,
+                                    asyncContext);
+                        }
+                        else {
+                            asyncSuccesfulResponse(
+                                    HttpServletResponse.SC_NOT_FOUND,
+                                    StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE,
+                                    asyncContext);
+                        }
+
+                    }
+
+                    else  {
+                        asyncErrorResponse(
+                                HttpServletResponse.SC_BAD_REQUEST,
+                                "/api/v1/users",
+                                StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE,
+                                asyncContext);
+                    }
                 }
-                asyncSuccesfulResponse(
-                        HttpServletResponse.SC_NOT_FOUND,
-                        StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE,
-                        asyncContext);
             }
             catch (Exception e) {
                 handleAsyncError(

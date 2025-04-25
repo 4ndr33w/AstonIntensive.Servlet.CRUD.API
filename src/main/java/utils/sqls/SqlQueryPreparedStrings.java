@@ -22,4 +22,8 @@ public class SqlQueryPreparedStrings {
 
         return queryString;
     }
+
+    public String deleteByIdString(String tableName){
+        return String.format("DELETE FROM %s WHERE id = ?::uuid;", tableName);
+    }
 }

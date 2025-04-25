@@ -3,7 +3,6 @@ package configurations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Objects;
 
@@ -94,9 +93,15 @@ public class JdbcConnection implements AutoCloseable{
         return this.preparedStatement;
     }*/
 
-    public PreparedStatement prepareStatement(String sql) throws SQLException {
+    public PreparedStatement prepareStatementReturningGeneratedKey(String sql) throws SQLException {
         closePreparedStatement();
         this.preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        return this.preparedStatement;
+    }
+
+    public PreparedStatement prepareStatement(String sql) throws SQLException {
+        closePreparedStatement();
+        this.preparedStatement = connection.prepareStatement(sql);
         return this.preparedStatement;
     }
 

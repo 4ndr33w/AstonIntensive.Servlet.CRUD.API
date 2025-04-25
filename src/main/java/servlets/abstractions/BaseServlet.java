@@ -10,10 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.Utils;
-import utils.exceptions.DataParsingException;
-import utils.exceptions.DatabaseOperationException;
-import utils.exceptions.UserAlreadyExistException;
-import utils.exceptions.UserNotFoundException;
+import utils.exceptions.*;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.annotation.WebServlet;
@@ -35,12 +32,13 @@ import java.sql.SQLException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 
+
 /**
  * @author 4ndr33w
  * @version 1.0
  */
 @WebServlet
-public abstract class BaseServlet extends HttpServlet {
+public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
 
     protected Logger logger = LoggerFactory.getLogger(BaseServlet.class);
     protected ObjectMapper objectMapper = new ObjectMapper();
@@ -194,23 +192,16 @@ public abstract class BaseServlet extends HttpServlet {
     }
 
     protected void handleAsyncError(AsyncContext asyncContext, Exception e, String path) {
-// throws SQLException, DatabaseOperationException, NullPointerException, CompletionException
         try {
 
             var cause = e.getCause();
 
-            /*while (cause != null) {
-                e = (Exception)cause;
-                cause = e.getCause();
-            }*/
             int counter = 0;
             while(e.getCause() != null) {
                 e = (Exception)e.getCause();
                 counter++;
                 if (counter > 10) break;
             }
-           /* if(e.getCause() != null)
-                e = (Exception)e.getCause();*/
             String message = "error";
             int statusCode = 0;
             if (e instanceof SQLException) {
@@ -256,6 +247,10 @@ public abstract class BaseServlet extends HttpServlet {
                 message = StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
+            if(e instanceof MultipleUsersNotFoundException) {
+                message = StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_NOT_FOUND;
+            }
 
             asyncErrorResponse(statusCode, path, message, asyncContext, e);
 
@@ -264,5 +259,10 @@ public abstract class BaseServlet extends HttpServlet {
                 asyncContext.complete();
             }
         }
+    }
+
+    @Override
+    public void close() {
+        executor.shutdown();
     }
 }

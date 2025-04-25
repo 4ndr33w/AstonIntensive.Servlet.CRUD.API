@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
 import utils.exceptions.DatabaseOperationException;
+import utils.exceptions.MultipleUsersNotFoundException;
 import utils.exceptions.UserAlreadyExistException;
 import utils.exceptions.UserNotFoundException;
 import utils.mappers.UserMapper;
@@ -20,7 +21,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
 
 import static utils.mappers.UserMapper.mapResultSetToUser;
 
@@ -66,14 +66,16 @@ public class UsersRepository implements UserRepository, AutoCloseable{
      *         </ul>
      * @throws DatabaseOperationException
      * @throws CompletionException
+     * @throws MultipleUsersNotFoundException
      */
     @Override
-    public CompletableFuture<List<User>> findAllAsync() throws DatabaseOperationException {
+    public CompletableFuture<List<User>> findAllAsync() throws DatabaseOperationException, CompletionException, MultipleUsersNotFoundException {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return findAll();
             }
             catch (SQLException e) {
+                logger.error(String.format("%s; %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e.getCause()));
                 throw new DatabaseOperationException(StaticConstants.UNABLE_TO_LOAD_DB_DRIVER);
             }}, dbExecutor)
                 .exceptionally(ex -> {
@@ -91,10 +93,10 @@ public class UsersRepository implements UserRepository, AutoCloseable{
                 });
     }
 
-    private List<User> findAll() throws SQLException, UserNotFoundException {
+    private List<User> findAll() throws SQLException, MultipleUsersNotFoundException {
         String queryString = sqlQueryPreparedStrings.findAllQueryString(usersTableName);
         try (JdbcConnection connection = new JdbcConnection();
-             PreparedStatement statement = connection.prepareStatement(queryString)) {
+             PreparedStatement statement = connection.prepareStatementReturningGeneratedKey(queryString)) {
 
             ResultSet resultSet = statement.executeQuery();
             List<User> users = new ArrayList<>();
@@ -103,7 +105,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             }
             if (users.isEmpty()) {
                 logger.info(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
-                throw new UserNotFoundException(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
+                throw new MultipleUsersNotFoundException(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
             }
             return users;
         }
@@ -128,14 +130,14 @@ public class UsersRepository implements UserRepository, AutoCloseable{
                 throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
             }
             return create(user);
-        }, dbExecutor);
+        }/*, dbExecutor*/);
     }
 
     private User create(User user) throws UserAlreadyExistException {
         String queryString = sqlQueryPreparedStrings.createUserPreparedQueryString(usersTableName);
 
         try (JdbcConnection connection = new JdbcConnection();
-             PreparedStatement statement = connection.prepareStatement(queryString)) {
+             PreparedStatement statement = connection.prepareStatementReturningGeneratedKey(queryString)) {
 
             setPreparedStatementUserData(statement, user);
 
@@ -215,30 +217,38 @@ public class UsersRepository implements UserRepository, AutoCloseable{
      *           {@code thenApply()}, {@code exceptionally()} и др.
      */
     @Override
-    public CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException, DatabaseOperationException, NullPointerException  {
+    public CompletableFuture<Boolean> deleteAsync(UUID id)throws SQLException, DatabaseOperationException, NullPointerException, UserNotFoundException {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return delete(id);
             } catch (SQLException e) {
                 throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
             }
-        }, dbExecutor);
+        }/*, dbExecutor*/);
     }
 
-    private boolean delete(UUID id) throws SQLException, DatabaseOperationException, NullPointerException {
+    private boolean delete(UUID id) throws SQLException, DatabaseOperationException, NullPointerException, UserNotFoundException {
         if (id == null) {
             throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         }
 
-        String queryString = sqlQueryStrings.deleteByIdString(usersTableName, id.toString());
+        String queryString = sqlQueryPreparedStrings.deleteByIdString(usersTableName);
 
-        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-            int affectedRows = jdbcConnection.executeUpdate(queryString);
-            return affectedRows > 0;
+        try (JdbcConnection jdbcConnection = new JdbcConnection();
+        PreparedStatement statement = jdbcConnection.prepareStatement(queryString)) {
+            statement.setObject(1, id, Types.OTHER);
+            int affectedRows = statement.executeUpdate();
+            if(affectedRows == 1) {
+                return true;
+            }
+            if(affectedRows == 0) {
+                throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
+            }
         }
         catch (Exception e) {
             throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
         }
+        return false;
     }
 
     @Override
@@ -255,7 +265,19 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             catch (Exception e) {
                 throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
             }
-        }, dbExecutor);
+        }/*, dbExecutor*/);
+    }
+
+    private User findById(UUID id) {
+        String queryString = sqlQueryStrings.findByIdString(usersTableName, id.toString());
+
+        try (JdbcConnection jdbcConnection = new JdbcConnection()) {
+            var resultSet  = jdbcConnection.executeQuery(queryString);
+            return resultSet.next() ? mapResultSetToUser(resultSet) : null;
+        }
+        catch (Exception e) {
+            throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+        }
     }
 
     @Override
@@ -287,7 +309,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }, dbExecutor);
+        }/*, dbExecutor*/);
     }
 
     @Override
@@ -328,7 +350,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
                 logger.error(String.format("Repository: update: error: %s", e.getMessage()));
                 throw new CompletionException("Unexpected error", e);
             }
-        }, dbExecutor);
+        }/*, dbExecutor*/);
     }
 
     @Override
