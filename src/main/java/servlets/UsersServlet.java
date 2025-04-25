@@ -240,7 +240,6 @@ public class UsersServlet extends BaseServlet {
                                     StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE,
                                     asyncContext);
                         }
-
                     }
 
                     else  {
@@ -282,10 +281,10 @@ public class UsersServlet extends BaseServlet {
                 user.setId(userId);
 
                 UserDto updatedUser = (UserDto) userController.updateUser(UserMapper.toDto(user)).get();
-                updatedUser.setUserRole(user.getUserRole());
+                /*updatedUser.setUserRole(user.getUserRole());
                 updatedUser.setUserName(user.getUserName());
                 updatedUser.setEmail(user.getEmail());
-                updatedUser.setCreatedAt(user.getCreatedAt());
+                updatedUser.setCreatedAt(user.getCreatedAt());*/
 
                 resp.setStatus(HttpServletResponse.SC_ACCEPTED);
                 ObjectMapper objectMapper = new ObjectMapper();
@@ -316,6 +315,18 @@ public class UsersServlet extends BaseServlet {
                         resp);
             }
         }
+    }
+
+    private UserDto updateUser(UserDto userDto) {
+
+        UserDto updatedUser = userDto;
+
+        updatedUser.setUserRole(userDto.getUserRole());
+        updatedUser.setUserName(userDto.getUserName());
+        updatedUser.setEmail(userDto.getEmail());
+        updatedUser.setCreatedAt(userDto.getCreatedAt());
+
+        return updatedUser;
     }
 
     @Override

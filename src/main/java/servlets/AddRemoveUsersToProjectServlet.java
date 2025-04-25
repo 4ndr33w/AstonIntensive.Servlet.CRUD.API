@@ -74,26 +74,6 @@ public class AddRemoveUsersToProjectServlet extends BaseServlet {
         });
     }
 
-    private void servletDoPostHandler(HttpServletRequest req, HttpServletResponse resp, HttpSession session) throws IOException {
-
-        try {
-            UUID projectId = UUID.fromString(req.getParameter("projectid"));
-            UUID userId = UUID.fromString(req.getParameter("userid"));
-
-            ProjectDto result = projectController.addUserToProject(userId, projectId);
-
-            resp.setContentType("application/json");
-            new ObjectMapper().writeValue(resp.getWriter(), result);
-        }  catch (Exception e) {
-            printResponse(
-                    HttpServletResponse.SC_BAD_REQUEST,
-                    "/api/v1/projects/users",
-                    StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
-                    e,
-                    resp);
-        }
-    }
-
     /**
      * HTTP DELETE запрос
      * метод удаляет пользователя в проект

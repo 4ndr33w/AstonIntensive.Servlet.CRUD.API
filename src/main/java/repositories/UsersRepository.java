@@ -137,7 +137,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
         try (JdbcConnection connection = new JdbcConnection();
              PreparedStatement statement = connection.prepareStatementReturningGeneratedKey(queryString)) {
 
-            setPreparedStatementUserData(statement, user);
+            setPreparedStatementToCreateUser(statement, user);
 
             int affectedRows = statement.executeUpdate();
 
@@ -158,7 +158,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
         }
     }
 
-    private void setPreparedStatementUserData(PreparedStatement statement, User user) throws SQLException {
+    private void setPreparedStatementToCreateUser(PreparedStatement statement, User user) throws SQLException {
 
         long updatedTime = user.getCreatedAt().getTime();
         Timestamp updated = new Timestamp(updatedTime );
@@ -309,44 +309,59 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     }
 
     @Override
-    public CompletableFuture<User> updateAsync(User user) {
+    public CompletableFuture<User> updateAsync(User user) throws NullPointerException, UserNotFoundException, DatabaseOperationException, SQLException, CompletionException {
         Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return CompletableFuture.supplyAsync(() -> {
+            try {
+                return update(user);
+            } catch (SQLException e) {
+                throw new CompletionException(e);
+            }
+        });
+    }
 
-            String updateQuery = sqlQueryStrings.updateUsertByIdString(
-                    usersTableName, user.getId().toString(), user);
+    private User update(User user) throws SQLException, UserNotFoundException{
+        String updateQuery = sqlQueryPreparedStrings.updateUsertByIdString(usersTableName);
 
-            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-                jdbcConnection.setAutoCommit(false);
+        try (JdbcConnection jdbcConnection = new JdbcConnection();
+             PreparedStatement statement = jdbcConnection.prepareStatement(updateQuery)) {
 
-                try {
-                    int affectedRows = jdbcConnection.executeUpdate(updateQuery);
+            setPreparedStatementToUpdateUser(statement, user);
+            try {
+                int affectedRows = statement.executeUpdate();
 
-                    if (affectedRows == 0) {
-                        logger.error(String.format("Repository: update: error: User with id %s not found", user.getId()));
-                        throw new NoSuchElementException("User with id " + user.getId() + " not found");
-                    }
-
-                    logger.info("Repository: update: committed changes");
-                    jdbcConnection.commit();
-
-                    logger.info("Repository: update: return updated project: ");
-                    return user;
-
-                } catch (SQLException e) {
-                    jdbcConnection.rollback();
-                    logger.error(String.format("Repository: update: error: %s", e.getMessage()));
-                    throw new CompletionException("Failed to update project", e);
+                if (affectedRows == 0) {
+                    logger.error(String.format("Repository: update: error:  %s; id:", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, user.getId()));
+                    throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
                 }
+                return findById(user.getId());
+
             } catch (SQLException e) {
                 logger.error(String.format("Repository: update: error: %s", e.getMessage()));
-                throw new CompletionException("Database connection error", e);
-            } catch (Exception e) {
-                logger.error(String.format("Repository: update: error: %s", e.getMessage()));
-                throw new CompletionException("Unexpected error", e);
+                throw new SQLException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
             }
-        }/*, dbExecutor*/);
+        }
+        catch (Exception e) {
+            logger.error(String.format("Repository: update: error: %s", e.getMessage()));
+            throw new SQLException("Unexpected error", e);
+        }
+    }
+    private void setPreparedStatementToUpdateUser(PreparedStatement statement, User user) throws SQLException {
+
+        long updatedTime = user.getCreatedAt().getTime();
+        Timestamp updated = new Timestamp(updatedTime );
+
+        long lastLoginTime = user.getCreatedAt().getTime();
+        Timestamp lastLogin = new Timestamp(lastLoginTime );
+
+        statement.setString(1, user.getFirstName());
+        statement.setString(2, user.getLastName());
+        statement.setString(3, user.getPhoneNumber());
+        statement.setTimestamp(4, updated);
+        statement.setBytes(5, user.getUserImage());
+        statement.setTimestamp(6, lastLogin);
+        statement.setObject(7, user.getId(), Types.OTHER);
     }
 
     @Override

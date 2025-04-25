@@ -60,9 +60,9 @@ public class SqlQueryStrings {
     public String updateUsertByIdString(String tableName, String id, User user) {
         StringBuilder query = new StringBuilder();
         query.append(String.format("UPDATE %s SET ", tableName));
-        query.append(String.format("first_name = '%s', ", user.getFirstName()));
-        query.append(String.format("last_name = '%s', ", user.getLastName()));
-        query.append(String.format("phone = '%s', ", user.getPhoneNumber()));
+        query.append(String.format("first_name = ?, ", user.getFirstName()));
+        query.append(String.format("last_name = ?, ", user.getLastName()));
+        query.append(String.format("phone = ?, ", user.getPhoneNumber()));
         query.append(String.format("updated_at = '%s', ", new Date()));
         query.append(String.format("image = '%s', ", Arrays.toString(user.getUserImage())));
         query.append(String.format("last_login_date = '%s' ", new Date()));

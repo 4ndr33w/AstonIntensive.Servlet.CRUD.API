@@ -30,4 +30,18 @@ public class SqlQueryPreparedStrings {
     public String findByIdString(String tableName){
         return String.format("SELECT * FROM %s WHERE id = ?::uuid", tableName);
     }
+
+    public String updateUsertByIdString(String tableName) {
+        StringBuilder query = new StringBuilder();
+        query.append(String.format("UPDATE %s SET ", tableName));
+        query.append("first_name = ?, ");
+        query.append("last_name = ?, ");
+        query.append("phone = ?, ");
+        query.append("updated_at = ?, ");
+        query.append("image = ?, ");
+        query.append("last_login_date = ? ");
+        query.append("WHERE id = ?::uuid;");
+
+        return query.toString();
+    }
 }
