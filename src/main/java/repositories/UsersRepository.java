@@ -63,7 +63,7 @@ public class UsersRepository implements UserRepository{
      * @throws SQLException
      */
     @Override
-    public CompletableFuture<List<User>> findAllAsync() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException {
+    public CompletableFuture<List<User>> findAllAsync() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException, ResultSetMappingException {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return findAll();
@@ -86,7 +86,8 @@ public class UsersRepository implements UserRepository{
                     }
                 });
     }
-    private List<User> findAll() throws SQLException, NoUsersFoundException {
+
+    private List<User> findAll() throws SQLException, NoUsersFoundException, ResultSetMappingException {
         String queryString = sqlQueryPreparedStrings.findAllQueryString(usersTableName);
         try (JdbcConnection connection = new JdbcConnection();
              PreparedStatement statement = connection.prepareStatementReturningGeneratedKey(queryString)) {

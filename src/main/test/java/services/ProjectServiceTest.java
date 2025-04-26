@@ -1,6 +1,7 @@
 package services;
 
 import jdk.jfr.Description;
+import models.dtos.ProjectDto;
 import models.entities.Project;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -17,6 +18,8 @@ import repositories.interfaces.UserRepository;
 import testUtils.Utils;
 import utils.StaticConstants;
 import utils.exceptions.ProjectNotFoundException;
+import utils.mappers.ProjectMapper;
+
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -66,8 +69,8 @@ public class ProjectServiceTest extends Utils {
         when(repo.findByUserIdAsync(userId))
                 .thenReturn(CompletableFuture.completedFuture(mockProjects));
 
-        CompletableFuture<List<Project>> resultFuture = projectService.getByUserIdAsync(userId);
-        List<Project> result = resultFuture.join();
+        CompletableFuture<List<ProjectDto>> resultFuture = projectService.getByUserIdAsync(userId);
+        List<ProjectDto> result = resultFuture.join();
 
         assertEquals(2, result.size());
         verify(repo).findByUserIdAsync(userId);
@@ -81,8 +84,8 @@ public class ProjectServiceTest extends Utils {
         when(projectRepository.findByUserIdAsync(userId))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        CompletableFuture<List<Project>> resultFuture = projectService.getByUserIdAsync(userId);
-        List<Project> result = resultFuture.join();
+        CompletableFuture<List<ProjectDto>> resultFuture = projectService.getByUserIdAsync(userId);
+        List<ProjectDto> result = resultFuture.join();
 
         assertTrue(result.isEmpty());
     }
@@ -97,8 +100,8 @@ public class ProjectServiceTest extends Utils {
         when(projectRepository.findByUserIdAsync(userId))
                 .thenReturn(CompletableFuture.failedFuture(dbError));
 
-        CompletableFuture<List<Project>> resultFuture = projectService.getByUserIdAsync(userId);
-        List<Project> result = resultFuture.join();
+        CompletableFuture<List<ProjectDto>> resultFuture = projectService.getByUserIdAsync(userId);
+        List<ProjectDto> result = resultFuture.join();
 
         assertTrue(result.isEmpty());
     }
@@ -107,7 +110,7 @@ public class ProjectServiceTest extends Utils {
     @Description(" Возвращаем пустой список, при передаче null в качестве аргумента в репозиторий")
     public void getByUserIdAsync_ShouldThrow_WhenUserIdIsNull() throws SQLException {
 
-        CompletableFuture<List<Project>> future = projectService.getByUserIdAsync(null);
+        CompletableFuture<List<ProjectDto>> future = projectService.getByUserIdAsync(null);
 
         ExecutionException exception = assertThrows(ExecutionException.class, future::get);
         assertTrue(exception.getCause() instanceof IllegalArgumentException);
@@ -124,8 +127,8 @@ public class ProjectServiceTest extends Utils {
         when(projectRepository.findByUserIdAsync(userId))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        CompletableFuture<List<Project>> resultFuture = projectService.getByUserIdAsync(userId);
-        List<Project> result = resultFuture.join();
+        CompletableFuture<List<ProjectDto>> resultFuture = projectService.getByUserIdAsync(userId);
+        List<ProjectDto> result = resultFuture.join();
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -157,8 +160,8 @@ public class ProjectServiceTest extends Utils {
         when(repo.findByAdminIdAsync(adminId))
                 .thenReturn(CompletableFuture.completedFuture(mockProjects));
 
-        CompletableFuture<List<Project>> resultFuture = projectService.getByAdminIdAsync(adminId);
-        List<Project> result = resultFuture.join();
+        CompletableFuture<List<ProjectDto>> resultFuture = projectService.getByAdminIdAsync(adminId);
+        List<ProjectDto> result = resultFuture.join();
 
         assertEquals(2, result.size());
         verify(repo).findByAdminIdAsync(adminId);
@@ -172,8 +175,8 @@ public class ProjectServiceTest extends Utils {
         when(projectRepository.findByAdminIdAsync(adminId))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        CompletableFuture<List<Project>> resultFuture = projectService.getByAdminIdAsync(adminId);
-        List<Project> result = resultFuture.join();
+        CompletableFuture<List<ProjectDto>> resultFuture = projectService.getByAdminIdAsync(adminId);
+        List<ProjectDto> result = resultFuture.join();
 
         assertTrue(result.isEmpty());
     }
@@ -192,8 +195,8 @@ public class ProjectServiceTest extends Utils {
         when(projectRepository.findByAdminIdAsync(adminId))
                 .thenReturn(CompletableFuture.failedFuture(dbError));
 
-        CompletableFuture<List<Project>> resultFuture = projectService.getByAdminIdAsync(adminId);
-        List<Project> result = resultFuture.join();
+        CompletableFuture<List<ProjectDto>> resultFuture = projectService.getByAdminIdAsync(adminId);
+        List<ProjectDto> result = resultFuture.join();
 
         assertTrue(result.isEmpty());
     }
@@ -202,7 +205,7 @@ public class ProjectServiceTest extends Utils {
     @Description(" Возвращаем пустой список, при передаче null в качестве аргумента в репозиторий")
     public void getByAdminIdAsync_ShouldThrow_WhenUserIdIsNull() throws SQLException {
 
-        CompletableFuture<List<Project>> future = projectService.getByAdminIdAsync(null);
+        CompletableFuture<List<ProjectDto>> future = projectService.getByAdminIdAsync(null);
 
         ExecutionException exception = assertThrows(ExecutionException.class, future::get);
         assertTrue(exception.getCause() instanceof NullPointerException);
@@ -219,8 +222,8 @@ public class ProjectServiceTest extends Utils {
         when(projectRepository.findByAdminIdAsync(adminId))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        CompletableFuture<List<Project>> resultFuture = projectService.getByAdminIdAsync(adminId);
-        List<Project> result = resultFuture.join();
+        CompletableFuture<List<ProjectDto>> resultFuture = projectService.getByAdminIdAsync(adminId);
+        List<ProjectDto> result = resultFuture.join();
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -241,10 +244,10 @@ public class ProjectServiceTest extends Utils {
         when(anyResult)
                 .thenReturn(CompletableFuture.completedFuture(project));
 
-        CompletableFuture<Project> resultFuture =  projectService.createAsync(project);
+        CompletableFuture<ProjectDto> resultFuture =  projectService.createAsync(project);
 
         assertNotNull(resultFuture);
-        Project result = resultFuture.join();
+        ProjectDto result = resultFuture.join();
         assertEquals(project.getDescription(), result.getDescription());
         assertEquals(project.getName(), result.getName());
         verify(projectRepository).createAsync(project);
@@ -330,12 +333,13 @@ public class ProjectServiceTest extends Utils {
     @Description("Успешное обновление проекта")
     public void updateByIdAsync_ShouldReturnUpdatedProject_WhenUserExists() throws SQLException {
         Project project = testProject1;
+        ProjectDto projectDto = ProjectMapper.toDto( testProject1);
 
         when(projectRepository.updateAsync(project))
                 .thenReturn(CompletableFuture.completedFuture(project));
 
-        CompletableFuture<Project> resultFuture = projectService.updateByIdAsync(project);
-        Project result = resultFuture.join();
+        CompletableFuture<ProjectDto> resultFuture = projectService.updateByIdAsync(projectDto);
+        ProjectDto result = resultFuture.join();
         assertNotNull(result);
         assertEquals(testProject1.getName(), result.getName());
         verify(projectRepository).updateAsync(project);
@@ -347,12 +351,13 @@ public class ProjectServiceTest extends Utils {
 
         UUID projectId = UUID.randomUUID();
         Project project = testProject1;
+        ProjectDto projectDto = ProjectMapper.toDto( testProject1);
         project.setId(projectId);
 
         when(projectRepository.updateAsync(project))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        CompletableFuture<Project> future = projectService.updateByIdAsync(project);
+        CompletableFuture<ProjectDto> future = projectService.updateByIdAsync(projectDto);
         CompletionException exception = assertThrows(CompletionException.class, future::join);
 
         assertTrue(exception.getCause() instanceof ProjectNotFoundException);
@@ -368,13 +373,14 @@ public class ProjectServiceTest extends Utils {
 
         UUID projectId = UUID.randomUUID();
         Project project = testProject1;
+        ProjectDto projectDto = ProjectMapper.toDto( testProject1);
         project.setId(projectId);
         RuntimeException dbError = new RuntimeException("Database error");
 
         when(projectRepository.updateAsync(project))
                 .thenReturn(CompletableFuture.failedFuture(dbError));
 
-        CompletableFuture<Project> future = projectService.updateByIdAsync(project);
+        CompletableFuture<ProjectDto> future = projectService.updateByIdAsync(projectDto);
         CompletionException exception = assertThrows(CompletionException.class, future::join);
 
         assertEquals("Failed to update project", exception.getMessage());

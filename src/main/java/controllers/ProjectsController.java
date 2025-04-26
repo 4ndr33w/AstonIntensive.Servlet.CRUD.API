@@ -64,8 +64,8 @@ public class ProjectsController implements BaseProjectController<Project, Projec
     public CompletableFuture<List<ProjectDto>> getByUserId(UUID userId) throws SQLException, RuntimeException, ProjectNotFoundException, NullPointerException {
         Objects.requireNonNull(userId);
 
-        return projectService.getByUserIdAsync(userId)
-                .thenApply(projects -> projects.stream().map(ProjectMapper::toDto).toList());
+        return projectService.getByUserIdAsync(userId);
+                //.thenApply(projects -> projects.stream().map(ProjectMapper::toDto).toList());
     }
 
     /**
@@ -87,8 +87,8 @@ public class ProjectsController implements BaseProjectController<Project, Projec
     public CompletableFuture<List<ProjectDto>> getByAdminId(UUID adminId) throws SQLException, RuntimeException, ProjectNotFoundException, NullPointerException  {
         Objects.requireNonNull(adminId);
 
-        return projectService.getByAdminIdAsync(adminId)
-                .thenApply(projects -> projects.stream().map(ProjectMapper::toDto).toList());
+        return projectService.getByAdminIdAsync(adminId);
+                //.thenApply(projects -> projects.stream().map(ProjectMapper::toDto).toList());
     }
 
     /**
@@ -110,8 +110,8 @@ public class ProjectsController implements BaseProjectController<Project, Projec
     public CompletableFuture<ProjectDto> getByProjectId(UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException{
         Objects.requireNonNull(projectId);
 
-        return projectService.getByIdAsync(projectId)
-                .thenApply(ProjectMapper::toDto);
+        return projectService.getByIdAsync(projectId);
+                //.thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -131,8 +131,8 @@ public class ProjectsController implements BaseProjectController<Project, Projec
     public CompletableFuture<ProjectDto> create(Project project) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(project);
 
-        return projectService.createAsync(project)
-                .thenApply(ProjectMapper::toDto);
+        return projectService.createAsync(project);
+                //.thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -174,8 +174,8 @@ public class ProjectsController implements BaseProjectController<Project, Projec
         Objects.requireNonNull(userId);
         Objects.requireNonNull(projectId);
 
-        return projectService.addUserToProjectAsync(userId, projectId)
-                .thenApply(ProjectMapper::toDto);
+        return projectService.addUserToProjectAsync(userId, projectId);
+                //.thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -194,8 +194,8 @@ public class ProjectsController implements BaseProjectController<Project, Projec
         Objects.requireNonNull(userId);
         Objects.requireNonNull(projectId);
 
-        return projectService.removeUserFromProjectAsync(userId, projectId)
-                .thenApply(ProjectMapper::toDto);
+        return projectService.removeUserFromProjectAsync(userId, projectId);
+                //.thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -212,7 +212,7 @@ public class ProjectsController implements BaseProjectController<Project, Projec
     public CompletableFuture<ProjectDto> update(ProjectDto projectDto) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(projectDto);
 
-        return projectService.updateByIdAsync(ProjectMapper.mapToEntity(projectDto, List.of()))
-                .thenApply(ProjectMapper::toDto);
+        return projectService.updateByIdAsync(projectDto);
+                //.thenApply(ProjectMapper::toDto);
     }
 }

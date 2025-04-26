@@ -79,7 +79,7 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
     }
 
     protected void asyncErrorResponse(int statusCode, String path, String message, AsyncContext asyncContext) throws IOException {
-        //try {
+        try {
             ErrorDto error = new ErrorDto(
                     statusCode,
                     path,
@@ -92,13 +92,14 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
             ((HttpServletResponse) asyncContext.getResponse()).setStatus(statusCode);
             asyncContext.getResponse().getWriter().write(jsonResponse);
             logger.info(error.toString());
-        /*}
-        catch (Exception e) {
-            handleAsyncError(asyncContext, e,"/api/v1/users/all");
         }
-        finally {
+        catch (Exception e) {
+            logger.error("Ошибка сервера: " + e.getCause().getMessage());
+            handleAsyncError(asyncContext, e,path);
+        }
+        if(asyncContext != null) {
             asyncContext.complete();
-        }*/
+        }
     }
 
     protected void asyncErrorResponse(int statusCode, String path, String message, AsyncContext asyncContext, Exception e) {
@@ -119,10 +120,12 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
         }
         catch (Exception ex) {
             logger.error("Ошибка сервера: " + ex.getCause().getMessage());
-            //handleAsyncError(asyncContext, e,"/api/v1/users/all");
+            handleAsyncError(asyncContext, e,path);
         }
         finally {
-            asyncContext.complete();
+            if(asyncContext != null) {
+                asyncContext.complete();
+            }
         }
     }
 
@@ -193,7 +196,7 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
                 counter++;
                 if (counter > 10) break;
             }
-            String message = "error";
+            String message = cause.getMessage();
             int statusCode = 0;
 
             if (e instanceof SQLException) {
@@ -203,12 +206,10 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
                     statusCode = HttpServletResponse.SC_BAD_REQUEST;
                 }
                 else {
-                    message = cause.getCause().getMessage();
                     statusCode = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
                 }
             }
             if (e instanceof ResultSetMappingException) {
-                message = cause.getCause().getMessage();
                 statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
             }
             if (e instanceof UserAlreadyExistException) {
@@ -216,7 +217,6 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
                 statusCode = HttpServletResponse.SC_BAD_REQUEST;
             }
             if (e instanceof InterruptedException) {
-                message = e.getMessage();
                 statusCode = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
             }
             if (e instanceof NullPointerException) {

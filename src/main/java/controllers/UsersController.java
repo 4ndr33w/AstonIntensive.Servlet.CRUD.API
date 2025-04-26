@@ -44,10 +44,10 @@ public class UsersController implements BaseUserController<User, UserDto> {
      * @throws RuntimeException
      */
     @Override
-    public CompletableFuture<List<UserDto>> getAll() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException {
+    public CompletableFuture<List<UserDto>> getAll() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException, ResultSetMappingException {
 
-        return userService.getAllAsync()
-                .thenApply(users -> users.stream().map(UserMapper::toDto).toList());
+        return userService.getAllAsync();
+                //.thenApply(users -> users.stream().map(UserMapper::toDto).toList());
     }
 
     /**
@@ -66,8 +66,8 @@ public class UsersController implements BaseUserController<User, UserDto> {
     public CompletableFuture<UserDto> getUser(UUID userId) throws NullPointerException, UserNotFoundException, DatabaseOperationException, ResultSetMappingException, SQLException {
         Objects.requireNonNull(userId);
 
-        return userService.getByIdAsync(userId)
-                .thenApply(UserMapper::toDto);
+        return userService.getByIdAsync(userId);
+                //.thenApply(UserMapper::toDto);
     }
 
     /**
@@ -84,8 +84,8 @@ public class UsersController implements BaseUserController<User, UserDto> {
     @Override
     public CompletableFuture<UserDto> create(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException, SQLException {
         Objects.requireNonNull(user);
-        return userService.createAsync(user)
-                .thenApply(UserMapper::toDto);
+        return userService.createAsync(user);
+                //.thenApply(UserMapper::toDto);
 /*
         try {
             return UserMapper.toDto(userService.createAsync(user).get());
@@ -116,9 +116,9 @@ public class UsersController implements BaseUserController<User, UserDto> {
     public CompletableFuture<UserDto> updateUser(UserDto userDto) throws SQLException {
         Objects.requireNonNull(userDto);
 
-        User user = UserMapper.mapToEntity(userDto);
-        return userService.updateByIdAsync(user)
-                .thenApply(UserMapper::toDto);
+        //User user = UserMapper.mapToEntity(userDto);
+        return userService.updateByIdAsync(userDto);
+                //.thenApply(UserMapper::toDto);
 
 /*
         try {

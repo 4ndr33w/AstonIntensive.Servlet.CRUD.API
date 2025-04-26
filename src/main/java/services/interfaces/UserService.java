@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
  * @author 4ndr33w
  * @version 1.0
  */
-public interface UserService extends BaseService<User> {
+public interface UserService extends BaseService<UserDto, User> {
 
-    CompletableFuture<List<User>> getAllAsync() throws SQLException;
+    CompletableFuture<List<UserDto>> getAllAsync() throws SQLException;
 }

@@ -1,6 +1,7 @@
 package services;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import models.dtos.ProjectDto;
 import models.dtos.UserDto;
 import models.entities.Project;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import utils.exceptions.DatabaseOperationException;
 import utils.exceptions.NoProjectsFoundException;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.ProjectUpdateException;
+import utils.mappers.ProjectMapper;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -48,7 +50,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<List<Project>> getByUserIdAsync(UUID userId) throws SQLException, NoProjectsFoundException, NullPointerException{
+    public CompletableFuture<List<ProjectDto>> getByUserIdAsync(UUID userId) throws SQLException, NoProjectsFoundException, NullPointerException{
         if (userId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("User ID cannot be null"));
@@ -58,7 +60,7 @@ public class ProjectsService implements ProjectService {
                     if (projects == null) {
                         throw new NoProjectsFoundException(StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE);
                     }
-                    return projects;
+                    return projects.stream().map(ProjectMapper::toDto).toList();
                 });/*
                 .exceptionally(ex -> {
                     logger.error(String.format("Failed to load user projects for user ID: %s", userId));
@@ -67,7 +69,7 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) throws SQLException, NoProjectsFoundException, NullPointerException {
+    public CompletableFuture<List<ProjectDto>> getByAdminIdAsync(UUID adminId) throws SQLException, NoProjectsFoundException, NullPointerException {
         Objects.requireNonNull(adminId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.findByAdminIdAsync(adminId)
@@ -75,12 +77,12 @@ public class ProjectsService implements ProjectService {
                     if (projects == null) {
                           throw new NoProjectsFoundException(StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE);
                     }
-                    return projects;
+                    return projects.stream().map(ProjectMapper::toDto).toList();
                 });
     }
 
     @Override
-    public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException, IllegalArgumentException {
+    public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException, IllegalArgumentException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
@@ -111,13 +113,13 @@ public class ProjectsService implements ProjectService {
                                     updatedUsers.add(newUserDto);
                                     project.setProjectUsers(updatedUsers.stream().toList());
 
-                                return project;
+                                return ProjectMapper.toDto(project);
                             });
                 });
     }
 
     @Override
-    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException, IllegalArgumentException {
+    public CompletableFuture<ProjectDto> removeUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException, IllegalArgumentException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
@@ -140,7 +142,7 @@ public class ProjectsService implements ProjectService {
 
                                 if (project.getProjectUsers() == null) {
                                     project.setProjectUsers(new ArrayList<>());
-                                    return project;
+                                    return ProjectMapper.toDto(project);
                                 }
                                 else {
                                     updatedUsers = new ArrayList<>(project.getProjectUsers());
@@ -148,31 +150,32 @@ public class ProjectsService implements ProjectService {
                                     updatedUsers.remove(user.get());
 
                                     project.setProjectUsers(updatedUsers);
-                                    return project;
+                                    return ProjectMapper.toDto(project);
                                 }
                             });
                 });
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project project) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
+    public CompletableFuture<ProjectDto> createAsync(Project project) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        return projectRepository.createAsync(project);
+        return projectRepository.createAsync(project)
+                .thenApply(ProjectMapper::toDto);
     }
 
     @Override
-    public CompletableFuture<Project> getByIdAsync(UUID id) throws SQLException, RuntimeException, ProjectNotFoundException {
+    public CompletableFuture<ProjectDto> getByIdAsync(UUID id) throws SQLException, RuntimeException, ProjectNotFoundException {
         return projectRepository.findByIdAsync(id)
                 .thenCompose(project -> {
                     if (project == null) {
                         throw new ProjectNotFoundException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
                 }
-                    return CompletableFuture.completedFuture(project);
-                    })
-                .exceptionally(ex -> {
+                    return CompletableFuture.completedFuture(ProjectMapper.toDto(project));
+                    });
+                /*.exceptionally(ex -> {
                     throw new RuntimeException("Service error");
-                });
+                });*/
     }
 
     @Override
@@ -183,15 +186,15 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> updateByIdAsync(Project project) throws SQLException, NullPointerException {
-        Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+    public CompletableFuture<ProjectDto> updateByIdAsync(ProjectDto projectDto) throws SQLException, NullPointerException {
+        Objects.requireNonNull(projectDto, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        return projectRepository.updateAsync(project)
+        return projectRepository.updateAsync(ProjectMapper.mapToEntity(projectDto, List.of()))
                 .thenApply(updatedProject -> {
                     if (updatedProject == null) {
                         throw new ProjectNotFoundException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
                     }
-                    return updatedProject;
+                    return ProjectMapper.toDto(updatedProject);
                 });
     }
 }

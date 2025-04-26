@@ -1,6 +1,7 @@
 package services;
 
 import models.dtos.ProjectDto;
+import models.dtos.UserDto;
 import models.entities.Project;
 import models.entities.User;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import services.interfaces.UserService;
 import utils.StaticConstants;
 import utils.exceptions.*;
 import utils.mappers.ProjectMapper;
+import utils.mappers.UserMapper;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -46,20 +48,21 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<User> getByIdAsync(UUID id) throws NullPointerException, UserNotFoundException, DatabaseOperationException, ResultSetMappingException, SQLException  {
+    public CompletableFuture<UserDto> getByIdAsync(UUID id) throws NullPointerException, UserNotFoundException, DatabaseOperationException, ResultSetMappingException, SQLException  {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         return userRepository.findByIdAsync(id)
                 .thenCompose(user -> {
                     if (user == null) {
-                        return CompletableFuture.completedFuture(null);
+                        throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
+                        //return CompletableFuture.completedFuture(null);
                     }
-                    return enrichUserWithProjects(user);
-                })
-                .exceptionally(ex -> {
+                    return enrichUserWithProjects(UserMapper.toDto(user));
+                });
+                /*.exceptionally(ex -> {
                     String message = String.format("$s,  id: %s\ncause: %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, id, ex.getCause().getMessage());
                     logger.error(message);
                     throw new UserNotFoundException(message, ex);
-                });
+                });*/
     }
 
     /**
@@ -68,57 +71,53 @@ public class UsersService implements UserService {
      * @return
      */
     @Override
-    public CompletableFuture<User> createAsync(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException, SQLException {
+    public CompletableFuture<UserDto> createAsync(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException, SQLException {
         Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        return userRepository.createAsync(user)
-                .exceptionally(ex -> {
+        return userRepository.createAsync(user).thenApply(UserMapper::toDto);
+                /*.exceptionally(ex -> {
                     String message = String.format("%s, userId: %s",
                             StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE,
                             user.getId());
                     logger.error(message, ex);
                     throw new CompletionException(message, ex);
-                });
+                });*/
     }
 
     @Override
     public CompletableFuture<Boolean> deleteByIdAsync(UUID id)throws SQLException, DatabaseOperationException, NullPointerException, UserNotFoundException, CompletionException {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        return userRepository.deleteAsync(id)
-                .exceptionally(ex -> {
+        return userRepository.deleteAsync(id);
+                /*.exceptionally(ex -> {
                     if (ex.getCause() instanceof SQLException) {
                         throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, ex.getCause());
                     }
                     throw new CompletionException(ex);
-                });
+                });*/
     }
 
     @Override
-    public CompletableFuture<List<User>> getAllAsync() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException {
+    public CompletableFuture<List<UserDto>> getAllAsync() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException, ResultSetMappingException {
 
         return userRepository.findAllAsync()
                 .thenCompose(users -> {
                     if(users.isEmpty()) throw new NoUsersFoundException(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
 
-                    List<CompletableFuture<User>> userFutures = users.stream()
+                    List<CompletableFuture<UserDto>> userFutures = users.stream()
+                            .map(UserMapper::toDto)
                             .map(this::enrichUserWithProjects)
                             .toList();
 
                     return CompletableFuture.allOf(userFutures.toArray(new CompletableFuture[0]))
                             .thenApply(v -> userFutures.stream()
                                     .map(CompletableFuture::join)
-                                    .collect(Collectors.toList()));
+                                    .toList());
                 });
-                /*.exceptionally(ex -> {
-                    logger.error("Error fetching users: " + ex.getMessage());
-                    throw new CompletionException(ex);
-                }*/
-                //);
     }
 
-    private CompletableFuture<User> enrichUserWithProjects(User user) {
-        return projectsRepository.findByUserIdAsync(user.getId())
+    private CompletableFuture<UserDto> enrichUserWithProjects(UserDto userDto) {
+        return projectsRepository.findByUserIdAsync(userDto.getId())
                 .thenCompose(projects -> {
                     List<CompletableFuture<ProjectDto>> projectFutures = projects.stream()
                             .map(project -> {
@@ -132,7 +131,7 @@ public class UsersService implements UserService {
                             }).toList();
 
                     return CompletableFuture.allOf(projectFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(v -> collectProjectsFromFutures(user, projectFutures));
+                            .thenApply(v -> collectProjectsFromFutures(userDto, projectFutures));
                 });
     }
 
@@ -154,35 +153,35 @@ public class UsersService implements UserService {
         return projectDto;
     }
 
-    private User collectProjectsFromFutures(User user, List<CompletableFuture<ProjectDto>> projectFutures) {
-        user.setProjects(
+    private UserDto collectProjectsFromFutures(UserDto userDto, List<CompletableFuture<ProjectDto>> projectFutures) {
+        userDto.setProjects(
                 projectFutures.stream()
                         .map(CompletableFuture::join)
                         .collect(Collectors.toList())
         );
-        return user;
+        return userDto;
     }
 
     @Override
-    public CompletableFuture<User> updateByIdAsync(User user) throws SQLException {
-        Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+    public CompletableFuture<UserDto> updateByIdAsync(UserDto userDto) throws SQLException {
+        Objects.requireNonNull(userDto, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        return userRepository.updateAsync(user)
+        return userRepository.updateAsync(UserMapper.mapToEntity(userDto))
                 .thenCompose(updatedUser -> {
                     if (updatedUser == null) {
-                        throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE + " id: " + user.getId());
+                        throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE + " id: " + userDto.getId());
                     }
-                    return enrichUserWithProjects(updatedUser);
+                    return enrichUserWithProjects(UserMapper.toDto(updatedUser));
 
-                })
-                .exceptionally(ex -> {
-                    if (ex.getCause() instanceof NoSuchElementException) {
-                        logger.error(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, user.getId(), ex.getCause()));
-                        throw new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, user.getId(), ex.getCause()));
-                    }
-                    logger.error(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, user.getId()));
-                    throw new CompletionException(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, user.getId()), ex.getCause());
                 });
+                /*.exceptionally(ex -> {
+                    if (ex.getCause() instanceof NoSuchElementException) {
+                        logger.error(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, dto.getId(), ex.getCause()));
+                        throw new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, dto.getId(), ex.getCause()));
+                    }
+                    logger.error(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, dto.getId()));
+                    throw new CompletionException(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, dto.getId()), ex.getCause());
+                });*/
     }
 
 }

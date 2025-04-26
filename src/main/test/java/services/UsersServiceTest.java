@@ -1,6 +1,7 @@
 package services;
 
 import jdk.jfr.Description;
+import models.dtos.UserDto;
 import models.entities.User;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,6 +19,7 @@ import testUtils.Utils;
 import utils.StaticConstants;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.UserNotFoundException;
+import utils.mappers.UserMapper;
 
 import java.sql.SQLDataException;
 import java.sql.SQLException;
@@ -48,15 +50,16 @@ public class UsersServiceTest extends Utils{
     @Description("Успешное создание пользователя")
     public void testCreateAsync_Success() throws SQLException {
         User testUser = Utils.testUser1;
+        UserDto userDto = UserMapper.toDto(testUser);
 
         var anyResult = userRepository.createAsync(testUser);
         when(anyResult)
                 .thenReturn(CompletableFuture.completedFuture(testUser));
 
-        CompletableFuture<User> resultFuture =  userService.createAsync(testUser);
+        CompletableFuture<UserDto> resultFuture =  userService.createAsync(testUser);
 
         assertNotNull(resultFuture);
-        User result = resultFuture.join();
+        UserDto result = resultFuture.join();
         assertEquals(testUser.getEmail(), result.getEmail());
         assertEquals(testUser.getUserName(), result.getUserName());
         verify(userRepository).createAsync(testUser);
@@ -150,9 +153,11 @@ public class UsersServiceTest extends Utils{
                 testUser3
         );
 
+        List<UserDto> userDtos = users.stream().map(UserMapper::toDto).toList();
+
         when(userRepository.findAllAsync()).thenReturn(CompletableFuture.completedFuture(users));
 
-        List<User> result = userService.getAllAsync().join();
+        List<UserDto> result = userService.getAllAsync().join();
 
         assertEquals(testUser1.getUserName(), result.get(0).getUserName());
         assertEquals(testUser2.getUserName(), result.get(1).getUserName());
@@ -168,7 +173,7 @@ public class UsersServiceTest extends Utils{
         when(userRepository.findAllAsync())
                 .thenReturn(CompletableFuture.failedFuture(expectedException));
 
-        CompletableFuture<List<User>> resultFuture = userService.getAllAsync();
+        CompletableFuture<List<UserDto>> resultFuture = userService.getAllAsync();
         CompletionException exception = assertThrows(CompletionException.class, resultFuture::join);
 
         assertTrue(resultFuture.isCompletedExceptionally());
@@ -183,8 +188,8 @@ public class UsersServiceTest extends Utils{
         when(userRepository.findAllAsync())
                 .thenReturn(CompletableFuture.completedFuture(List.of()));
 
-        CompletableFuture<List<User>> resultFuture = userService.getAllAsync();
-        List<User> result = resultFuture.join();
+        CompletableFuture<List<UserDto>> resultFuture = userService.getAllAsync();
+        List<UserDto> result = resultFuture.join();
 
         assertTrue(result.isEmpty());
         verify(userRepository).findAllAsync();
@@ -205,8 +210,8 @@ public class UsersServiceTest extends Utils{
         when(userRepository.findByIdAsync(nonExistentId))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        CompletableFuture<User> resultFuture = userService.getByIdAsync(nonExistentId);
-        User result = resultFuture.join();
+        CompletableFuture<UserDto> resultFuture = userService.getByIdAsync(nonExistentId);
+        UserDto result = resultFuture.join();
 
         assertNull(result);
         verify(userRepository).findByIdAsync(nonExistentId);
@@ -270,8 +275,8 @@ public class UsersServiceTest extends Utils{
         when(userRepository.updateAsync(updatedUser))
                 .thenReturn(CompletableFuture.completedFuture(updatedUser));
 
-        CompletableFuture<User> resultFuture = userService.updateByIdAsync(updatedUser);
-        User result = resultFuture.join();
+        CompletableFuture<UserDto> resultFuture = userService.updateByIdAsync(UserMapper.toDto(updatedUser));
+        UserDto result = resultFuture.join();
        assertNotNull(result);
         assertEquals(testUser1.getUserName(), result.getUserName());
         verify(userRepository).updateAsync(updatedUser);
@@ -288,7 +293,7 @@ public class UsersServiceTest extends Utils{
         when(userRepository.updateAsync(user))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
-        CompletableFuture<User> future = userService.updateByIdAsync(user);
+        CompletableFuture<UserDto> future = userService.updateByIdAsync(UserMapper.toDto(user));
         CompletionException exception = assertThrows(CompletionException.class, future::join);
 
         assertTrue(exception.getCause() instanceof UserNotFoundException);
@@ -314,7 +319,7 @@ public class UsersServiceTest extends Utils{
         when(userRepository.updateAsync(user))
                 .thenReturn(CompletableFuture.failedFuture(dbError));
 
-        CompletableFuture<User> future = userService.updateByIdAsync(user);
+        CompletableFuture<UserDto> future = userService.updateByIdAsync(UserMapper.toDto(user));
         CompletionException exception = assertThrows(CompletionException.class, future::join);
 
         assertEquals("Failed to update user", exception.getMessage());
