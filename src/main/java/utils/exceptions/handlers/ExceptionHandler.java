@@ -1,12 +1,10 @@
 package utils.exceptions.handlers;
 
 import models.dtos.ErrorDto;
-import utils.StaticConstants;
 import utils.exceptions.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -36,8 +34,8 @@ public class ExceptionHandler {
             error.setTimestamp(new Date());
         }
 
-        if(exception instanceof MultipleUsersNotFoundException ||
-                exception instanceof MultipleProjectsNotFoundException ||
+        if(exception instanceof NoUsersFoundException ||
+                exception instanceof NoProjectsFoundException ||
                 exception instanceof ProjectNotFoundException ||
                 exception instanceof UserNotFoundException) {
 

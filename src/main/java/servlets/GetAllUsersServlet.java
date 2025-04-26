@@ -85,12 +85,6 @@ public class GetAllUsersServlet extends BaseServlet {
                         HttpServletResponse.SC_OK,
                         jsonResponse,
                         asyncContext);
-/*
-
-                asyncContext.getResponse().setContentType("application/json");
-                asyncContext.getResponse().setCharacterEncoding("UTF-8");
-                ((HttpServletResponse) asyncContext.getResponse()).setStatus(HttpServletResponse.SC_OK);
-                asyncContext.getResponse().getWriter().write(jsonResponse);*/
             }
             catch (Exception e) {
                 handleAsyncError(asyncContext, e,"/api/v1/users/all");

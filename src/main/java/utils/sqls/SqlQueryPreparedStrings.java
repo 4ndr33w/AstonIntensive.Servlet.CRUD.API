@@ -1,5 +1,9 @@
 package utils.sqls;
 
+import models.entities.Project;
+
+import java.util.Arrays;
+
 /**
  * @author 4ndr33w
  * @version 1.0
@@ -43,5 +47,20 @@ public class SqlQueryPreparedStrings {
         query.append("WHERE id = ?::uuid;");
 
         return query.toString();
+    }
+
+    public String createProjectString(String tableName) {
+
+        StringBuilder query = new StringBuilder();
+        query.append(String.format("INSERT INTO %s", tableName));
+        query.append(" (name, description, created_at, updated_at, image, admin_id, project_status) ");
+        query.append(" VALUES (?, ?, ?, ?, ?, ?::uuid, ?);");
+
+        return query.toString();
+    }
+
+    public String findProjectsByAdminIdString(String tableName){
+
+        return String.format("SELECT * FROM %s WHERE admin_id = ?::uuid;", tableName);
     }
 }

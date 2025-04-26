@@ -1,5 +1,6 @@
 package controllers;
 
+import controllers.interfaces.BaseProjectController;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import models.entities.Project;
@@ -9,6 +10,7 @@ import services.ProjectsService;
 import services.interfaces.ProjectService;
 import servlets.ProjectsServlet;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.ProjectUpdateException;
 import utils.mappers.ProjectMapper;
@@ -32,7 +34,7 @@ import java.util.concurrent.ExecutionException;
  * @author 4ndr33w
  * @version 1.0
  */
-public class ProjectsController implements ProjectControllerInterface {
+public class ProjectsController implements BaseProjectController<Project, ProjectDto> {
 
     Logger logger = LoggerFactory.getLogger(ProjectsController.class);
 
@@ -59,20 +61,11 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws NoSuchElementException
      */
     @Override
-    public List<ProjectDto> getByUserId(UUID userId) {
+    public CompletableFuture<List<ProjectDto>> getByUserId(UUID userId) throws SQLException, RuntimeException, ProjectNotFoundException, NullPointerException {
         Objects.requireNonNull(userId);
 
-        try {
-            var result = projectService.getByUserIdAsync(userId).get();
-            return result.stream().map(ProjectMapper::toDto).toList();
-        }
-        catch (NoSuchElementException e) {
-            logger.warn("ProjectController: getByUserId: {}", e.getMessage());
-            throw new NoSuchElementException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
-        } catch (ExecutionException | InterruptedException e) {
-            logger.error("ProjectController: getByUserId: {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
+        return projectService.getByUserIdAsync(userId)
+                .thenApply(projects -> projects.stream().map(ProjectMapper::toDto).toList());
     }
 
     /**
@@ -91,20 +84,11 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws RuntimeException
      */
     @Override
-    public List<ProjectDto> getByAdminId(UUID adminId) {
+    public CompletableFuture<List<ProjectDto>> getByAdminId(UUID adminId) throws SQLException, RuntimeException, ProjectNotFoundException, NullPointerException  {
         Objects.requireNonNull(adminId);
 
-        try {
-            return projectService.getByAdminIdAsync(adminId).get().stream().map(ProjectMapper::toDto).toList();
-        }
-        catch (NoSuchElementException e) {
-            logger.warn("ProjectController: getByAdminId: {}", e.getMessage());
-            throw new NoSuchElementException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
-        } catch (ExecutionException | InterruptedException e) {
-            logger.error("ProjectController: getByAdminId: {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
-
+        return projectService.getByAdminIdAsync(adminId)
+                .thenApply(projects -> projects.stream().map(ProjectMapper::toDto).toList());
     }
 
     /**
@@ -123,22 +107,11 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws RuntimeException
      */
     @Override
-    public ProjectDto getProject(UUID projectId) {
+    public CompletableFuture<ProjectDto> getByProjectId(UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException{
         Objects.requireNonNull(projectId);
 
-        try {
-            var result = projectService.getByIdAsync(projectId).get();
-              return ProjectMapper.toDto(result);
-        }
-        catch (NoSuchElementException e) {
-            logger.warn("ProjectController: getById: {}", e.getMessage());
-            throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        } catch (ExecutionException | InterruptedException e) {
-            logger.error("ProjectController: getById: {}", e.getMessage());
-            throw new RuntimeException(e);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return projectService.getByIdAsync(projectId)
+                .thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -155,21 +128,11 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws RuntimeException
      */
     @Override
-    public ProjectDto create(Project project) {
+    public CompletableFuture<ProjectDto> create(Project project) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(project);
 
-        try {
-              return ProjectMapper.toDto(projectService.createAsync(project).get());
-        }
-        catch (NoSuchElementException e) {
-            logger.warn("ProjectController: create: {}", e.getMessage());
-            throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        } catch (ExecutionException | InterruptedException e) {
-            logger.error("ProjectController: create: {}", e.getMessage());
-            throw new RuntimeException(e);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return projectService.createAsync(project)
+                .thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -188,19 +151,11 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws RuntimeException
      */
     @Override
-    public boolean delete(UUID projectId) {
+    public CompletableFuture<Boolean> delete(UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(projectId);
 
-        try {
-            return projectService.deleteByIdAsync(projectId).get();
-        }
-        catch (NoSuchElementException e) {
-            logger.warn("ProjectController: deleteById: {}", e.getMessage());
-            throw new NoSuchElementException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
-        } catch (ExecutionException | InterruptedException | SQLException e) {
-            logger.error("ProjectController: deleteById: {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
+        return projectService.deleteByIdAsync(projectId)
+                .thenApply(result -> result);
     }
 
     /**
@@ -215,18 +170,12 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws NullPointerException
      */
     @Override
-    public ProjectDto addUserToProject(UUID userId, UUID projectId) {
+    public CompletableFuture<ProjectDto> addUserToProject(UUID userId, UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(userId);
         Objects.requireNonNull(projectId);
-        try {
-            CompletableFuture<Project> future = projectService.addUserToProjectAsync(userId, projectId);
-            Project project = future.get();
-            return ProjectMapper.toDto(project);
-        }
-        catch (Exception e) {
-            logger.error("ProjectController: addUserToProject:\n Exception(230) {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
+
+        return projectService.addUserToProjectAsync(userId, projectId)
+                .thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -241,18 +190,12 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws NullPointerException
      */
     @Override
-    public ProjectDto removeUserFromProject(UUID userId, UUID projectId) {
+    public CompletableFuture<ProjectDto> removeUserFromProject(UUID userId, UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(userId);
         Objects.requireNonNull(projectId);
-        try {
-            CompletableFuture<Project> future = projectService.removeUserFromProjectAsync(userId, projectId);
-            Project project = future.get();
-            return ProjectMapper.toDto(project);
-        }
-        catch (Exception e) {
-            logger.error("ProjectController: removeUserFromProject: {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
+
+        return projectService.removeUserFromProjectAsync(userId, projectId)
+                .thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -266,25 +209,10 @@ public class ProjectsController implements ProjectControllerInterface {
      * @throws ProjectUpdateException
      */
     @Override
-    public ProjectDto updateProject(ProjectDto projectDto) {
+    public CompletableFuture<ProjectDto> update(ProjectDto projectDto) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(projectDto);
 
-        Project project = ProjectMapper.mapToEntity(projectDto, List.of());
-
-        try {
-              Project updatedProject = projectService.updateByIdAsync(project).join();
-
-                return ProjectMapper.toDto(updatedProject);
-
-        } catch (CompletionException ex) {
-            if (ex.getCause() instanceof NoSuchElementException) {
-                logger.warn("ProjectController: updateProject:\n {}", ex.getMessage());
-                throw new ProjectNotFoundException("Project not found with id: " + projectDto.getId());
-            }
-            logger.error("ProjectController: updateProject: {}", ex.getMessage());
-            throw new ProjectUpdateException("Failed to update project", ex);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return projectService.updateByIdAsync(ProjectMapper.mapToEntity(projectDto, List.of()))
+                .thenApply(ProjectMapper::toDto);
     }
 }

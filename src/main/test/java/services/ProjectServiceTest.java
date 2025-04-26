@@ -48,7 +48,7 @@ public class ProjectServiceTest extends Utils {
     //---------------------------------------------------------------
     @Test
     @Description("Успешко возвращаем список проектов по id пользователя")
-    public void getByUserIdAsync_ShouldReturnProjects_WhenUserHasProjects() {
+    public void getByUserIdAsync_ShouldReturnProjects_WhenUserHasProjects() throws SQLException {
 
         UUID userId = UUID.randomUUID();
         List<Project> mockProjects = List.of(
@@ -75,7 +75,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description("Успешко возвращаем пустой список, если пользователь не имеет проектов")
-    public void getByUserIdAsync_ShouldReturnEmptyList_WhenUserHasNoProjects() {
+    public void getByUserIdAsync_ShouldReturnEmptyList_WhenUserHasNoProjects() throws SQLException {
 
         UUID userId = UUID.randomUUID();
         when(projectRepository.findByUserIdAsync(userId))
@@ -89,7 +89,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description("Возвращаем пустой список, если репозиторий выбросил ошибку")
-    public void getByUserIdAsync_ShouldReturnEmptyList_WhenRepositoryFails() {
+    public void getByUserIdAsync_ShouldReturnEmptyList_WhenRepositoryFails() throws SQLException {
 
         UUID userId = UUID.randomUUID();
         RuntimeException dbError = new RuntimeException("Database error");
@@ -105,7 +105,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description(" Возвращаем пустой список, при передаче null в качестве аргумента в репозиторий")
-    public void getByUserIdAsync_ShouldThrow_WhenUserIdIsNull() {
+    public void getByUserIdAsync_ShouldThrow_WhenUserIdIsNull() throws SQLException {
 
         CompletableFuture<List<Project>> future = projectService.getByUserIdAsync(null);
 
@@ -118,7 +118,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description("Возвращаем пустой список при получении null от репозитория")
-    public void getByUserIdAsync_ShouldHandleNullResponse() {
+    public void getByUserIdAsync_ShouldHandleNullResponse() throws SQLException {
 
         UUID userId = UUID.randomUUID();
         when(projectRepository.findByUserIdAsync(userId))
@@ -139,7 +139,7 @@ public class ProjectServiceTest extends Utils {
     //---------------------------------------------------------------
     @Test
     @Description("Успешко возвращаем список проектов по id администратора")
-    public void getByAdminIdAsync_ShouldReturnProjects_WhenUserHasProjects() {
+    public void getByAdminIdAsync_ShouldReturnProjects_WhenUserHasProjects() throws SQLException {
 
         UUID adminId = UUID.randomUUID();
         List<Project> mockProjects = List.of(
@@ -166,7 +166,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description("Успешко возвращаем пустой список, если пользователь не является администратором проектов")
-    public void getByAdminIdAsync_ShouldReturnEmptyList_WhenUserHasNoProjects() {
+    public void getByAdminIdAsync_ShouldReturnEmptyList_WhenUserHasNoProjects() throws SQLException {
 
         UUID adminId = UUID.randomUUID();
         when(projectRepository.findByAdminIdAsync(adminId))
@@ -181,7 +181,7 @@ public class ProjectServiceTest extends Utils {
     @Ignore("после корректировки кода изменились выпадающие исключения. Надо будет доработать эту часть")
     @Test
     @Description("Возвращаем пустой список, если репозиторий выбросил ошибку")
-    public void getByAdminIdAsync_ShouldReturnEmptyList_WhenRepositoryFails() {
+    public void getByAdminIdAsync_ShouldReturnEmptyList_WhenRepositoryFails() throws SQLException {
 
         UUID adminId = UUID.randomUUID();
         RuntimeException dbError = new RuntimeException("Database error");
@@ -200,7 +200,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test(expected = NullPointerException.class)
     @Description(" Возвращаем пустой список, при передаче null в качестве аргумента в репозиторий")
-    public void getByAdminIdAsync_ShouldThrow_WhenUserIdIsNull() {
+    public void getByAdminIdAsync_ShouldThrow_WhenUserIdIsNull() throws SQLException {
 
         CompletableFuture<List<Project>> future = projectService.getByAdminIdAsync(null);
 
@@ -213,7 +213,7 @@ public class ProjectServiceTest extends Utils {
 
     @Test
     @Description("Возвращаем пустой список при получении null от репозитория")
-    public void getByAdminIdAsync_ShouldHandleNullResponse() {
+    public void getByAdminIdAsync_ShouldHandleNullResponse() throws SQLException {
 
         UUID adminId = UUID.randomUUID();
         when(projectRepository.findByAdminIdAsync(adminId))

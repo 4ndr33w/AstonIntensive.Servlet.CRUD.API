@@ -2,7 +2,6 @@ package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import configurations.ThreadPoolConfiguration;
 import controllers.UsersController;
 import models.dtos.UserDto;
 import models.entities.User;
@@ -11,27 +10,17 @@ import org.slf4j.LoggerFactory;
 import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
 import utils.Utils;
+import utils.exceptions.InvalidIdExceptionMessage;
 import utils.exceptions.UserNotFoundException;
 import utils.mappers.UserMapper;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-/*
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-*/
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Сервлет, обрабатывающий запросы по пути "/api/v1/users"
@@ -75,12 +64,8 @@ public class UsersServlet extends BaseServlet {
                 }
                 boolean idValidation = utils.validateId(id);
 
-                if(!idValidation) {
-                    asyncErrorResponse(
-                            HttpServletResponse.SC_BAD_REQUEST,
-                            "/api/v1/users",
-                            StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE,
-                            asyncContext);
+                if (!idValidation) {
+                    throw new InvalidIdExceptionMessage(StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE);
                 }
                 UUID userId = UUID.fromString(id);
                 var userDto = (UserDto) userController.getUser(userId).get();
@@ -95,7 +80,6 @@ public class UsersServlet extends BaseServlet {
             catch (Exception e) {
                 handleAsyncError(asyncContext, e,"/api/v1/users");
             }
-
             finally {
                 if (asyncContext != null) {
                     asyncContext.complete();
@@ -221,31 +205,17 @@ public class UsersServlet extends BaseServlet {
 
                 else {
                     boolean idValidation = utils.validateId(id);
-
-                    if(idValidation) {
-                        UUID userId = UUID.fromString(id);
-
-                        var isDeleted = (Boolean) userController.delete(userId).get();
-
-                        if (isDeleted) {
-                            asyncSuccesfulResponse(
-                                    HttpServletResponse.SC_OK,
-                                    StaticConstants.REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE,
-                                    asyncContext);
-                        }
-                        else {
-                            asyncSuccesfulResponse(
-                                    HttpServletResponse.SC_NOT_FOUND,
-                                    StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE,
-                                    asyncContext);
-                        }
+                    if (!idValidation) {
+                        throw new InvalidIdExceptionMessage(StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE);
                     }
+                    UUID userId = UUID.fromString(id);
 
-                    else  {
-                        asyncErrorResponse(
-                                HttpServletResponse.SC_BAD_REQUEST,
-                                "/api/v1/users",
-                                StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE,
+                    var isDeleted = (Boolean) userController.delete(userId).get();
+
+                    if (isDeleted) {
+                        asyncSuccesfulResponse(
+                                HttpServletResponse.SC_OK,
+                                StaticConstants.REQUEST_COMPLETER_SUCCESSFULLY_MESSAGE,
                                 asyncContext);
                     }
                 }

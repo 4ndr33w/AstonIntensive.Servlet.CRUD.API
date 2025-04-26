@@ -2,7 +2,6 @@ package repositories;
 
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
-import configurations.ThreadPoolConfNonStatic;
 import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +16,6 @@ import java.sql.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
 
 import static utils.mappers.UserMapper.mapResultSetToUser;
 
@@ -25,7 +23,7 @@ import static utils.mappers.UserMapper.mapResultSetToUser;
  * @author 4ndr33w
  * @version 1.0
  */
-public class UsersRepository implements UserRepository, AutoCloseable{
+public class UsersRepository implements UserRepository{
 
     static String usersSchema = System.getenv("JDBC_DEFAULT_SCHEMA") != null
             ? System.getenv("JDBC_DEFAULT_SCHEMA")
@@ -35,18 +33,16 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             ? System.getenv("JDBC_USERS_TABLE")
             : PropertiesConfiguration.getProperties().getProperty("jdbc.users-table");
 
-
     private final String usersTableName = String.format("%s.%s", usersSchema, usersTable);
     private final SqlQueryStrings sqlQueryStrings;
-    private final ExecutorService dbExecutor;
+
     private final SqlQueryPreparedStrings sqlQueryPreparedStrings;
 
     Logger logger = LoggerFactory.getLogger(UsersRepository.class);
 
     public UsersRepository() {
         sqlQueryStrings = new SqlQueryStrings();
-        ThreadPoolConfNonStatic threadPoolConfNonStatic = new ThreadPoolConfNonStatic();
-        dbExecutor = threadPoolConfNonStatic.getDbExecutor();
+
         sqlQueryPreparedStrings = new SqlQueryPreparedStrings();
     }
 
@@ -63,11 +59,11 @@ public class UsersRepository implements UserRepository, AutoCloseable{
      *         </ul>
      * @throws DatabaseOperationException
      * @throws CompletionException
-     * @throws MultipleUsersNotFoundException
+     * @throws NoUsersFoundException
      * @throws SQLException
      */
     @Override
-    public CompletableFuture<List<User>> findAllAsync() throws SQLException, DatabaseOperationException, CompletionException, MultipleUsersNotFoundException {
+    public CompletableFuture<List<User>> findAllAsync() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return findAll();
@@ -75,7 +71,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             catch (SQLException e) {
                 logger.error(String.format("%s; %s", StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e.getCause()));
                 throw new DatabaseOperationException(StaticConstants.UNABLE_TO_LOAD_DB_DRIVER);
-            }}, dbExecutor)
+            }})
                 .exceptionally(ex -> {
                     if(ex.getCause() instanceof DatabaseOperationException) {
                         throw new DatabaseOperationException(ex.getCause().getMessage());
@@ -90,8 +86,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
                     }
                 });
     }
-
-    private List<User> findAll() throws SQLException, MultipleUsersNotFoundException {
+    private List<User> findAll() throws SQLException, NoUsersFoundException {
         String queryString = sqlQueryPreparedStrings.findAllQueryString(usersTableName);
         try (JdbcConnection connection = new JdbcConnection();
              PreparedStatement statement = connection.prepareStatementReturningGeneratedKey(queryString)) {
@@ -102,8 +97,9 @@ public class UsersRepository implements UserRepository, AutoCloseable{
                 users.add(mapResultSetToUser(resultSet));
             }
             if (users.isEmpty()) {
-                logger.info(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
-                throw new MultipleUsersNotFoundException(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
+                //logger.info(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
+                //throw new NoUsersFoundException(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
+                return Collections.emptyList();
             }
             return users;
         }
@@ -130,7 +126,6 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             return create(user);
         });
     }
-
     private User create(User user) throws UserAlreadyExistException {
         String queryString = sqlQueryPreparedStrings.createUserPreparedQueryString(usersTableName);
 
@@ -157,14 +152,11 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
         }
     }
-
     private void setPreparedStatementToCreateUser(PreparedStatement statement, User user) throws SQLException {
 
-        long updatedTime = user.getCreatedAt().getTime();
-        Timestamp updated = new Timestamp(updatedTime );
+        long updatedTime = user.getUpdatedAt().getTime();
+        Timestamp created = new Timestamp(updatedTime );
 
-        long lastLoginTime = user.getCreatedAt().getTime();
-        Timestamp lastLogin = new Timestamp(lastLoginTime );
 
         statement.setString(1, user.getUserName());
         statement.setString(2, user.getFirstName());
@@ -172,9 +164,9 @@ public class UsersRepository implements UserRepository, AutoCloseable{
         statement.setString(4, user.getEmail());
         statement.setString(5, user.getPassword());
         statement.setString(6, user.getPhoneNumber());
-        statement.setTimestamp(7, updated);
+        statement.setTimestamp(7, created);
         statement.setBytes(8, user.getUserImage());
-        statement.setTimestamp(9, lastLogin);
+        statement.setTimestamp(9, created);
     }
 
     /**
@@ -209,8 +201,7 @@ public class UsersRepository implements UserRepository, AutoCloseable{
      *             <li>{@link DatabaseOperationException} - превышение времени ожидания</li>
      *             <li>{@link NullPointerException} - синтаксическая ошибка запроса</li>
      *         </ul>
-     * @see #dbExecutor
-     * @see JdbcConnection
+      * @see JdbcConnection
      * @implNote Для обработки результатов используйте методы {@code CompletableFuture}:
      *           {@code thenApply()}, {@code exceptionally()} и др.
      */
@@ -256,7 +247,6 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             return findById(id);
         });
     }
-
     private User findById(UUID id) throws UserNotFoundException, DatabaseOperationException {
         String queryString = sqlQueryPreparedStrings.findByIdString(usersTableName);
 
@@ -277,38 +267,6 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     }
 
     @Override
-    public CompletableFuture<List<User>> findAllByIdsAsync(List<UUID> userIds) {
-        return CompletableFuture.supplyAsync(() -> {
-            if (userIds == null || userIds.isEmpty()) {
-                return Collections.emptyList();
-            }
-            List<String> ids = userIds.stream().map(UUID::toString).toList();
-            String sql = sqlQueryStrings.findAllByIdsString(usersTableName, ids);
-
-            try (JdbcConnection connection = new JdbcConnection();
-                 PreparedStatement statement = connection.getConnection().prepareStatement(sql)) {
-
-                for (int i = 0; i < userIds.size(); i++) {
-                    statement.setObject(i + 1, userIds.get(i));
-                }
-
-                ResultSet resultSet = statement.executeQuery();
-                List<User> result = new ArrayList<>();
-
-                while (resultSet.next()) {
-                    result.add(UserMapper.mapResultSetToUser(resultSet));
-                }
-
-                return result;
-            } catch (SQLException e) {
-                throw new CompletionException("Failed to find users by ids", e);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    @Override
     public CompletableFuture<User> updateAsync(User user) throws NullPointerException, UserNotFoundException, DatabaseOperationException, SQLException, CompletionException {
         Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
@@ -320,7 +278,6 @@ public class UsersRepository implements UserRepository, AutoCloseable{
             }
         });
     }
-
     private User update(User user) throws SQLException, UserNotFoundException{
         String updateQuery = sqlQueryPreparedStrings.updateUsertByIdString(usersTableName);
 
@@ -365,7 +322,34 @@ public class UsersRepository implements UserRepository, AutoCloseable{
     }
 
     @Override
-    public void close() {
-        dbExecutor.shutdown();
+    public CompletableFuture<List<User>> findAllByIdsAsync(List<UUID> userIds) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (userIds == null || userIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<String> ids = userIds.stream().map(UUID::toString).toList();
+            String sql = sqlQueryStrings.findAllByIdsString(usersTableName, ids);
+
+            try (JdbcConnection connection = new JdbcConnection();
+                 PreparedStatement statement = connection.getConnection().prepareStatement(sql)) {
+
+                for (int i = 0; i < userIds.size(); i++) {
+                    statement.setObject(i + 1, userIds.get(i));
+                }
+
+                ResultSet resultSet = statement.executeQuery();
+                List<User> result = new ArrayList<>();
+
+                while (resultSet.next()) {
+                    result.add(UserMapper.mapResultSetToUser(resultSet));
+                }
+
+                return result;
+            } catch (SQLException e) {
+                throw new CompletionException("Failed to find users by ids", e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

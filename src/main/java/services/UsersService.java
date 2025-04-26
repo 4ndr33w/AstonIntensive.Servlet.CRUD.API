@@ -95,10 +95,11 @@ public class UsersService implements UserService {
     }
 
     @Override
-    public CompletableFuture<List<User>> getAllAsync() throws SQLException, DatabaseOperationException, CompletionException, MultipleUsersNotFoundException {
+    public CompletableFuture<List<User>> getAllAsync() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException {
 
         return userRepository.findAllAsync()
                 .thenCompose(users -> {
+                    if(users.isEmpty()) throw new NoUsersFoundException(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
 
                     List<CompletableFuture<User>> userFutures = users.stream()
                             .map(this::enrichUserWithProjects)
@@ -108,12 +109,12 @@ public class UsersService implements UserService {
                             .thenApply(v -> userFutures.stream()
                                     .map(CompletableFuture::join)
                                     .collect(Collectors.toList()));
-                }
-                )
-                .exceptionally(ex -> {
+                });
+                /*.exceptionally(ex -> {
                     logger.error("Error fetching users: " + ex.getMessage());
                     throw new CompletionException(ex);
-                });
+                }*/
+                //);
     }
 
     private CompletableFuture<User> enrichUserWithProjects(User user) {

@@ -12,17 +12,18 @@ import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
 import utils.exceptions.DatabaseOperationException;
+import utils.exceptions.NoProjectsFoundException;
+import utils.exceptions.NoUsersFoundException;
 import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
+import utils.sqls.SqlQueryPreparedStrings;
 import utils.sqls.SqlQueryStrings;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import static utils.mappers.ProjectMapper.mapResultSetToProject;
@@ -50,7 +51,8 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
     Logger logger = LoggerFactory.getLogger(ProjectRepository.class);
 
     private final SqlQueryStrings sqlQueryStrings;
-    private final ExecutorService dbExecutor;
+    private final SqlQueryPreparedStrings sqlQueryPreparedStrings;
+    //private final ExecutorService dbExecutor;
     private final ProjectUserRepository projectUserRepository;// = new ProjectUsersRepositoryImpl();
     private final UserRepository userRepository;
 
@@ -59,69 +61,102 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
         sqlQueryStrings = new SqlQueryStrings();
         projectUserRepository = new ProjectUsersRepositoryImpl();
         userRepository = new UsersRepository();
+        sqlQueryPreparedStrings = new SqlQueryPreparedStrings();
 
         ThreadPoolConfNonStatic threadPoolConfNonStatic = new ThreadPoolConfNonStatic();
-        dbExecutor = threadPoolConfNonStatic.getDbExecutor();
+        //dbExecutor = threadPoolConfNonStatic.getDbExecutor();
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project project) throws SQLException {
+    public CompletableFuture<Project> createAsync(Project project) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return CompletableFuture.supplyAsync(() -> {
-            String tableName = String.format("%s.%s", schema, projectsTable);
-            String queryString = sqlQueryStrings.createProjectString(tableName, project);
-
-            try (JdbcConnection jdbcConnection = new JdbcConnection();
-                 Statement statement = jdbcConnection.statement()) {
-
-                int affectedRows = statement.executeUpdate(queryString, Statement.RETURN_GENERATED_KEYS);
-
-                if (affectedRows == 0) {
-                    logger.error(String.format("Repository:  error: %s; project: %s", StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE, project));
-                    throw new DatabaseOperationException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
-                }
-                project.setId((getGeneratedKeyFromRequest(statement)));
-                jdbcConnection.close();
-                return project;
-            }
-            catch (Exception e) {
-                logger.error(String.format("Repository:  error: %s", e.getMessage()));
-                throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
-            }
-        }, dbExecutor);
-    }
-
-    @Override
-    public CompletableFuture<List<Project>> findByAdminIdAsync(UUID adminId) {
-        Objects.requireNonNull(adminId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-        String queryString = sqlQueryStrings.findProjectsByAdminIdString(tableName, adminId.toString());
-        return CompletableFuture.supplyAsync(() -> {
-            List<Project> projects = new ArrayList<>();
-
-            try (JdbcConnection jdbcConnection = new JdbcConnection();
-                 var resultSet = jdbcConnection.executeQuery(queryString)) {
-
-                while (resultSet.next()) {
-                    Project project = mapResultSetToProject(resultSet);
-
-                    projects.add(project);
-                }
-
-
+            try {
+                return create(project);
             } catch (Exception e) {
-                logger.error(String.format("Repository: findByAdminIdAsync: \nerror: %s", e.getMessage()));
-                throw new RuntimeException("Error finding projects by adminId: " + adminId, e);
+                throw new RuntimeException(e);
             }
+        });
+    }
+    private Project create(Project project) throws SQLException, DatabaseOperationException {
+        String queryString = sqlQueryPreparedStrings.createProjectString(tableName);
 
-            logger.info("Repository: findByAdminIdAsync: \n retrieved list of projects...");
-            return projects;
-        }, dbExecutor);
+        try (JdbcConnection connection = new JdbcConnection();
+             PreparedStatement statement = connection.prepareStatementReturningGeneratedKey(queryString)) {
+
+            setPreparedStatementToCreateProject(statement, project);
+
+            int affectedRows = statement.executeUpdate();
+
+            if (affectedRows == 0) {
+                logger.error(String.format("Repository:  error: %s; project: %s", StaticConstants.DATABASE_OPERATION_NO_ROWS_AFFECTED_EXCEPTION_MESSAGE, project));
+                throw new DatabaseOperationException(StaticConstants.ERROR_DURING_SAVING_DATA_INTO_DATABASE_EXCEPTION_MESSAGE);
+            }
+            project.setId((getGeneratedKeyFromRequest(statement)));
+            return project;
+        }
+        catch (SQLException e) {
+            logger.error(String.format("Repository:  error: %s", e.getMessage()));
+            throw new SQLException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+        }
+    }
+    private void setPreparedStatementToCreateProject(PreparedStatement statement, Project project) throws SQLException {
+
+        long nowTime = new Date().getTime();
+        Timestamp created = new Timestamp(nowTime  );
+
+        statement.setString(1, project.getName());
+        statement.setString(2, project.getDescription());
+        statement.setTimestamp(3, created);
+        statement.setTimestamp(4, created);
+        statement.setString(5, Arrays.toString(project.getImage()));
+        statement.setObject(6, project.getAdminId(), Types.OTHER);
+        statement.setInt(7, project.getProjectStatus().ordinal());
     }
 
+    @Override
+    public CompletableFuture<List<Project>> findByAdminIdAsync(UUID adminId) throws NoProjectsFoundException, RuntimeException, NullPointerException {
+        Objects.requireNonNull(adminId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return findByAdminId(adminId);
+            }
+            catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+    private List<Project> findByAdminId(UUID adminId) throws SQLException, NoProjectsFoundException, RuntimeException {
+        String queryString = sqlQueryPreparedStrings.findProjectsByAdminIdString(tableName);
+        List<Project> projects = new ArrayList<>();
+
+        try (JdbcConnection jdbcConnection = new JdbcConnection();
+             PreparedStatement statement = jdbcConnection.prepareStatement(queryString)) {
+            statement.setObject(1, adminId, Types.OTHER);
+
+            ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+                Project project = mapResultSetToProject(resultSet);
+
+                projects.add(project);
+            }
+            if(projects.size() == 0) {
+                //throw new NoProjectsFoundException(StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE);
+                return Collections.emptyList();
+            }
+
+        } catch (Exception e) {
+            logger.error(String.format("Repository: findByAdminIdAsync: \nerror: %s", e.getMessage()));
+            throw new RuntimeException("Error finding projects by adminId: " + adminId, e);
+        }
+        return projects;
+    }
 
     @Override
-    public CompletableFuture<List<Project>> findByUserIdAsync(UUID userId) {
+    public CompletableFuture<List<Project>> findByUserIdAsync(UUID userId) throws NoUsersFoundException, RuntimeException, NullPointerException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return CompletableFuture.supplyAsync(() -> {
@@ -129,7 +164,11 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
                 return Collections.emptyList();
             }
             CompletableFuture<List<Project>> adminProjectsFuture = null;
-            adminProjectsFuture = findByAdminIdAsync(userId);
+            try {
+                adminProjectsFuture = findByAdminIdAsync(userId);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
 
             CompletableFuture<List<Project>> memberProjectsFuture = findProjectsByUserIdIfUserNotProjectAdmin(userId);
 
@@ -149,8 +188,7 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
                                         .collect(Collectors.toList()));
                     })
                     .join();
-
-        }, dbExecutor);
+        });
     }
     private List<CompletableFuture<Project>> loadUserIdsToFutureProject(ArrayList<Project> projects) {
 
@@ -183,7 +221,7 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }, dbExecutor);
+        });
         return  memberProjectsFuture;
     }
 
@@ -212,7 +250,7 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-        }, dbExecutor);
+        });
     }
     private CompletableFuture<List<UserDto>> loadProjectUsers(UUID projectId) {
         return CompletableFuture.supplyAsync(() -> {
@@ -244,7 +282,7 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
             } catch (Exception e) {
                 throw new CompletionException("Failed to load project users", e);
             }
-        }, dbExecutor);
+        });
     }
 
     @Override
@@ -263,7 +301,7 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
                 logger.error(String.format("Repository: delete: error: %s", e.getMessage()));
                 throw new RuntimeException(e);
             }
-        }, dbExecutor);
+        });
     }
 
     @Override
@@ -345,7 +383,7 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
                 logger.error(String.format("Repository: update: error: %s", e.getMessage()));
                 throw new CompletionException("Unexpected error", e);
             }
-        }, dbExecutor);
+        });
     }
 
     @Override

@@ -1,23 +1,17 @@
 package controllers;
 
 import controllers.interfaces.BaseUserController;
-import controllers.interfaces.UserControllerInterface;
-import models.dtos.ProjectDto;
 import models.dtos.UserDto;
-import models.entities.Project;
 import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import services.UsersService;
 import services.interfaces.UserService;
-import utils.StaticConstants;
 import utils.exceptions.*;
-import utils.mappers.ProjectMapper;
 import utils.mappers.UserMapper;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -50,7 +44,7 @@ public class UsersController implements BaseUserController<User, UserDto> {
      * @throws RuntimeException
      */
     @Override
-    public CompletableFuture<List<UserDto>> getAll() throws SQLException, DatabaseOperationException, CompletionException, MultipleUsersNotFoundException {
+    public CompletableFuture<List<UserDto>> getAll() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException {
 
         return userService.getAllAsync()
                 .thenApply(users -> users.stream().map(UserMapper::toDto).toList());

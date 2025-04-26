@@ -12,6 +12,8 @@ import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import services.interfaces.ProjectService;
 import utils.StaticConstants;
+import utils.exceptions.DatabaseOperationException;
+import utils.exceptions.NoProjectsFoundException;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.ProjectUpdateException;
 
@@ -32,28 +34,21 @@ public class ProjectsService implements ProjectService {
     private final repositories.interfaces.ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectUserRepository projectUserRepository;
-    private final ExecutorService dbExecutor;
 
     public ProjectsService() {
         this.projectRepository = new ProjectRepository();
         this.userRepository = new UsersRepository();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
-        dbExecutor = Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors(),
-                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build());
     }
 
     public ProjectsService(repositories.interfaces.ProjectRepository projectRepository) {
         this.projectRepository = projectRepository;
         this.userRepository = new UsersRepository();
         this.projectUserRepository = new ProjectUsersRepositoryImpl();
-        dbExecutor = Executors.newFixedThreadPool(
-                Runtime.getRuntime().availableProcessors(),
-                new ThreadFactoryBuilder().setNameFormat("jdbc-worker-%d").build());
     }
 
     @Override
-    public CompletableFuture<List<Project>> getByUserIdAsync(UUID userId) {
+    public CompletableFuture<List<Project>> getByUserIdAsync(UUID userId) throws SQLException, NoProjectsFoundException, NullPointerException{
         if (userId == null) {
             return CompletableFuture.failedFuture(
                     new IllegalArgumentException("User ID cannot be null"));
@@ -61,59 +56,48 @@ public class ProjectsService implements ProjectService {
         return projectRepository.findByUserIdAsync(userId)
                 .thenApply(projects -> {
                     if (projects == null) {
-                        return new ArrayList<Project>();
+                        throw new NoProjectsFoundException(StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE);
                     }
                     return projects;
-                })
+                });/*
                 .exceptionally(ex -> {
                     logger.error(String.format("Failed to load user projects for user ID: %s", userId));
                     return Collections.emptyList();
-                });
+                });*/
     }
 
     @Override
-    public CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) {
+    public CompletableFuture<List<Project>> getByAdminIdAsync(UUID adminId) throws SQLException, NoProjectsFoundException, NullPointerException {
         Objects.requireNonNull(adminId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.findByAdminIdAsync(adminId)
                 .thenApply(projects -> {
                     if (projects == null) {
-                        return new ArrayList<Project>();
+                          throw new NoProjectsFoundException(StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE);
                     }
                     return projects;
-                })
-                .exceptionally(ex -> {
-                    logger.error(String.format("Failed to load user projects for user ID: %s", adminId));
-                    return Collections.emptyList();
                 });
     }
 
     @Override
-    public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException {
+    public CompletableFuture<Project> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException, IllegalArgumentException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.findByIdAsync(projectId)
                 .thenCompose(project -> {
                     if (project == null) {
-                        return CompletableFuture.failedFuture(
-
-                                new NoSuchElementException(String.format("$s: %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, projectId))
-                        );
+                        throw new ProjectNotFoundException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
                     }
                     if (userId.equals(project.getAdminId())) {
                         logger.error(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE);
-                        return CompletableFuture.failedFuture(
-                                new IllegalArgumentException(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE)
-                        );
+                        throw new IllegalArgumentException(StaticConstants.ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE);
                     }
 
                     return projectUserRepository.addUserToProject(userId, projectId)
                             .thenApply(success -> {
                                 if (!success) {
-                                    throw new CompletionException(
-                                            new SQLException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE)
-                                    );
+                                    throw new DatabaseOperationException(StaticConstants.FAILED_TO_UPDATE_PROJECT_USERS_EXCEPTION_MESSAGE);
                                 }
                                 List<UserDto> updatedUsers = new ArrayList<>();
 
@@ -133,16 +117,14 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException {
+    public CompletableFuture<Project> removeUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException, DatabaseOperationException, NullPointerException, IllegalArgumentException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.findByIdAsync(projectId)
                 .thenCompose(project -> {
                     if (project == null) {
-                        return CompletableFuture.failedFuture(
-                                new NoSuchElementException("Project not found with ID: " + projectId)
-                        );
+                        throw new ProjectNotFoundException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
                     }
                     if (userId.equals(project.getAdminId())) {
                         return CompletableFuture.failedFuture(
@@ -152,9 +134,7 @@ public class ProjectsService implements ProjectService {
                     return projectUserRepository.deleteUserFromProject(userId, projectId)
                             .thenApply(success -> {
                                 if (!success) {
-                                    throw new CompletionException(
-                                            new SQLException("Failed to remove user from project in database")
-                                    );
+                                    throw new DatabaseOperationException(StaticConstants.FAILED_TO_UPDATE_PROJECT_USERS_EXCEPTION_MESSAGE);
                                 }
                                 List<UserDto> updatedUsers = new ArrayList<>();
 
@@ -175,61 +155,43 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<Project> createAsync(Project project) throws SQLException {
+    public CompletableFuture<Project> createAsync(Project project) throws SQLException, DatabaseOperationException, NullPointerException,  RuntimeException {
         Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        CompletableFuture<Project> projectFuture = projectRepository.createAsync(project);
-
-        return projectFuture
-                .exceptionally(ex -> {
-                    throw new RuntimeException("Error creating project by id", ex);
-                });
+        return projectRepository.createAsync(project);
     }
 
     @Override
-    public CompletableFuture<Project> getByIdAsync(UUID id) throws SQLException {
+    public CompletableFuture<Project> getByIdAsync(UUID id) throws SQLException, RuntimeException, ProjectNotFoundException {
         return projectRepository.findByIdAsync(id)
                 .thenCompose(project -> {
                     if (project == null) {
-                        return CompletableFuture.completedFuture(null);
+                        throw new ProjectNotFoundException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
                 }
                     return CompletableFuture.completedFuture(project);
                     })
                 .exceptionally(ex -> {
-                    throw new RuntimeException("Error fetching project by id");
+                    throw new RuntimeException("Service error");
                 });
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException {
+    public CompletableFuture<Boolean> deleteByIdAsync(UUID id) throws SQLException, NullPointerException {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        return projectRepository.deleteAsync(id)
-                .exceptionally(ex -> {
-                    throw new RuntimeException("Error deleting project by id");
-                });
+        return projectRepository.deleteAsync(id);
     }
 
     @Override
-    public CompletableFuture<Project> updateByIdAsync(Project project) throws SQLException {
+    public CompletableFuture<Project> updateByIdAsync(Project project) throws SQLException, NullPointerException {
         Objects.requireNonNull(project, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return projectRepository.updateAsync(project)
                 .thenApply(updatedProject -> {
                     if (updatedProject == null) {
-                        throw new CompletionException(
-                                new ProjectNotFoundException("Project with id " + project.getId() + " not found"));
+                        throw new ProjectNotFoundException(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE);
                     }
                     return updatedProject;
-                })
-                .exceptionally(ex -> {
-                    if (ex.getCause() instanceof NoSuchElementException) {
-                        logger.error("Project with id {} not found", project.getId(), ex.getCause());
-                        throw new CompletionException(
-                                new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, project.getId(), ex.getCause())));
-                    }
-                    logger.error("Failed to update project with id: {}", project.getId(), ex);
-                    throw new ProjectUpdateException("Failed to update project", ex.getCause());
                 });
     }
 }

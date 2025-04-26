@@ -43,6 +43,7 @@ public class StaticConstants {
     public static final String PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE");
     public static final String NO_PROJECTS_FOUND_BY_ADMIN_ID_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("PROJECTS_NOT_FOUND_BY_USER_ID_EXCEPTION_MESSAGE");
     public static final String ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("ADMIN_CANNOT_BE_ADDED_TO_PROJECT_EXCEPTION_MESSAGE");
+    public static final String FAILED_TO_UPDATE_PROJECT_USERS_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("FAILED_TO_UPDATE_PROJECT_USERS_EXCEPTION_MESSAGE");
 
     // User
     public static final String USER_NOT_FOUND_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("USER_NOT_FOUND_EXCEPTION_MESSAGE");

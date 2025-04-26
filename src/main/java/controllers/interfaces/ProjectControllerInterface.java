@@ -57,7 +57,7 @@ public interface ProjectControllerInterface {
      * @param project
      * @return {@code ProjectDto}
      */
-    ProjectDto create(Project project);
+    ProjectDto create(Project project) throws SQLException;
 
     /**
      * Удалить проект

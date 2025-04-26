@@ -41,7 +41,6 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
     protected static ExecutorService executor;
 
     public BaseServlet() {
-
         super();
         executor = configurations.ThreadPoolConfiguration.getDbExecutor();
     }
@@ -244,7 +243,7 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
                 message = StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
-            if (e instanceof MultipleUsersNotFoundException) {
+            if (e instanceof NoUsersFoundException) {
                 message = StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
@@ -255,6 +254,18 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
             if (e instanceof IllegalArgumentException) {
                 message = StaticConstants.ILLEGAL_ARGUMENT_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_BAD_REQUEST;
+            }
+            if (e instanceof InvalidIdExceptionMessage) {
+                message = StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_BAD_REQUEST;
+            }
+            if (e instanceof NoUsersFoundException) {
+                message = StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_NOT_FOUND;
+            }
+            if (e instanceof NoProjectsFoundException ) {
+                message = StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
 
             asyncErrorResponse(statusCode, path, message, asyncContext, e);
