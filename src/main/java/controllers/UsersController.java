@@ -3,12 +3,9 @@ package controllers;
 import controllers.interfaces.BaseUserController;
 import models.dtos.UserDto;
 import models.entities.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import services.UsersService;
 import services.interfaces.UserService;
 import utils.exceptions.*;
-import utils.mappers.UserMapper;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -16,6 +13,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Класс контроллера,
@@ -47,7 +46,6 @@ public class UsersController implements BaseUserController<User, UserDto> {
     public CompletableFuture<List<UserDto>> getAll() throws SQLException, DatabaseOperationException, CompletionException, NoUsersFoundException, ResultSetMappingException {
 
         return userService.getAllAsync();
-                //.thenApply(users -> users.stream().map(UserMapper::toDto).toList());
     }
 
     /**
@@ -67,7 +65,6 @@ public class UsersController implements BaseUserController<User, UserDto> {
         Objects.requireNonNull(userId);
 
         return userService.getByIdAsync(userId);
-                //.thenApply(UserMapper::toDto);
     }
 
     /**
@@ -85,14 +82,6 @@ public class UsersController implements BaseUserController<User, UserDto> {
     public CompletableFuture<UserDto> create(User user) throws DatabaseOperationException, NullPointerException, CompletionException, UserAlreadyExistException, SQLException {
         Objects.requireNonNull(user);
         return userService.createAsync(user);
-                //.thenApply(UserMapper::toDto);
-/*
-        try {
-            return UserMapper.toDto(userService.createAsync(user).get());
-        }
-        catch (Exception ex) {
-            throw new RuntimeException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE);
-        }*/
     }
 
     /**
@@ -116,23 +105,6 @@ public class UsersController implements BaseUserController<User, UserDto> {
     public CompletableFuture<UserDto> updateUser(UserDto userDto) throws SQLException {
         Objects.requireNonNull(userDto);
 
-        //User user = UserMapper.mapToEntity(userDto);
         return userService.updateByIdAsync(userDto);
-                //.thenApply(UserMapper::toDto);
-
-/*
-        try {
-            User updatedUser = userService.updateByIdAsync(user).join();
-
-            return UserMapper.toDto(updatedUser);
-
-        } catch (CompletionException ex) {
-            if (ex.getCause() instanceof NoSuchElementException) {
-                logger.warn("UserController: updateUser:\n {}", ex.getMessage());
-                throw new ProjectNotFoundException("User not found with id: " + userDto.getId());
-            }
-            logger.error("UserController: updateUser: {}", ex.getMessage());
-            throw new ProjectUpdateException("Failed to update user", ex);
-        }*/
     }
 }

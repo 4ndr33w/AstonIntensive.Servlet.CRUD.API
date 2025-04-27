@@ -1,6 +1,9 @@
 package utils.sqls;
 
 import models.entities.Project;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import repositories.ProjectRepository;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -10,6 +13,8 @@ import java.util.stream.Collectors;
  * @version 1.0
  */
 public class SqlQueryPreparedStrings {
+
+    Logger logger = LoggerFactory.getLogger(SqlQueryPreparedStrings.class);
 
     public String findAllQueryString(String tableName){
         return "SELECT * FROM %s".formatted(tableName);

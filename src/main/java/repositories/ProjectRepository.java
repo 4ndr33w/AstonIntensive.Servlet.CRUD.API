@@ -3,31 +3,34 @@ package repositories;
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
 import models.dtos.ProjectDto;
-import models.dtos.ProjectUsersDto;
 import models.dtos.UserDto;
 import models.entities.Project;
-import models.entities.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
 import utils.StaticConstants;
-import utils.exceptions.DatabaseOperationException;
-import utils.exceptions.NoProjectsFoundException;
-import utils.exceptions.NoUsersFoundException;
-import utils.exceptions.ProjectNotFoundException;
+import utils.exceptions.*;
 import utils.mappers.ProjectMapper;
-import utils.mappers.ProjectUserMapper;
 import utils.mappers.UserMapper;
 import utils.sqls.SqlQueryPreparedStrings;
 import utils.sqls.SqlQueryStrings;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.sql.Timestamp;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static utils.mappers.ProjectMapper.mapResultSetToProject;
 
@@ -54,9 +57,8 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
 
     private final SqlQueryStrings sqlQueryStrings;
     private final SqlQueryPreparedStrings sqlQueryPreparedStrings;
-    private final ProjectUserRepository projectUserRepository;// = new ProjectUsersRepositoryImpl();
+    private final ProjectUserRepository projectUserRepository;
     private final UserRepository userRepository;
-
 
     public ProjectRepository() {
         sqlQueryStrings = new SqlQueryStrings();
@@ -108,7 +110,7 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
         statement.setString(2, project.getDescription());
         statement.setTimestamp(3, created);
         statement.setTimestamp(4, created);
-        statement.setString(5, Arrays.toString(project.getImage()));
+        statement.setBytes(5, project.getImage());
         statement.setObject(6, project.getAdminId(), Types.OTHER);
         statement.setInt(7, project.getProjectStatus().ordinal());
     }
@@ -151,44 +153,7 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
         }
         return projects;
     }
-/*
-    @Override
-    public CompletableFuture<List<Project>> findByUserIdAsync(UUID userId) throws NoUsersFoundException, RuntimeException, NullPointerException {
-        Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-        return CompletableFuture.supplyAsync(() -> {
-            if (userId == null) {
-                return Collections.emptyList();
-            }
-            CompletableFuture<List<Project>> adminProjectsFuture = null;
-            try {
-                adminProjectsFuture = findByAdminIdAsync(userId);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            CompletableFuture<List<Project>> memberProjectsFuture = findProjectsByUserIdIfUserNotProjectAdmin(userId);
-
-            return adminProjectsFuture
-                    .thenCombine(memberProjectsFuture, (adminProjects, memberProjects) -> {
-                        Set<Project> combined = new LinkedHashSet<>();
-                        combined.addAll(adminProjects);
-                        combined.addAll(memberProjects);
-                        return new ArrayList<>(combined);
-                    })
-                    .thenCompose(projects -> {
-                        List<CompletableFuture<Project>> enrichedProjects = loadUserIdsToFutureProject(projects);
-
-                        return CompletableFuture.allOf(enrichedProjects.toArray(new CompletableFuture[0]))
-                                .thenApply(v -> enrichedProjects.stream()
-                                        .map(CompletableFuture::join)
-                                        .collect(Collectors.toList()));
-                    })
-                    .join();
-        });
-    }
-
- */
     @Override
     public CompletableFuture<List<Project>> findByUserIdAsync(UUID userId) throws NoUsersFoundException, RuntimeException, NullPointerException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
@@ -211,7 +176,7 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
 
                 projects.add(project);
             }
-            if(projects.size() == 0) {
+            if(projects.isEmpty()) {
                 return Collections.emptyList();
             }
 
@@ -220,44 +185,6 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
             throw new RuntimeException("Error finding projects by userId: " + userId, e);
         }
         return projects;
-    }
-
-
-
-
-    private List<CompletableFuture<Project>> loadUserIdsToFutureProject(ArrayList<Project> projects) {
-
-        return projects.stream()
-                .map(project -> loadProjectUsers(project.getId())
-                        .thenApply(users -> {
-                            project.setProjectUsers(users);
-                            return project;
-                        }))
-                .toList();
-    }
-
-    private CompletableFuture<List<Project>> findProjectsByUserIdIfUserNotProjectAdmin(UUID userId) {
-        CompletableFuture<List<Project>> memberProjectsFuture = CompletableFuture.supplyAsync(() -> {
-
-            String projectsTableName = String.format("%s.%s", schema, projectsTable);
-            String projectUsersTableName = String.format("%s.%s", schema, projectUsersTable);
-            String query = sqlQueryStrings.findAllProjectsByUserId(projectsTableName, projectUsersTableName, userId.toString());
-
-            try (JdbcConnection conn = new JdbcConnection();
-                 ResultSet rs = conn.executeQuery(query)) {
-
-                List<Project> projects = new ArrayList<>();
-                while (rs.next()) {
-                    projects.add(mapResultSetToProject(rs));
-                }
-                return projects;
-            } catch (SQLException e) {
-                throw new CompletionException("Failed to find member projects", e);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-        return  memberProjectsFuture;
     }
 
     @Override
@@ -332,34 +259,40 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException {
+    public CompletableFuture<Boolean> deleteAsync(UUID id) throws SQLException, RuntimeException, NullPointerException, ProjectUserNotFoundException {
         return CompletableFuture.supplyAsync(() -> {
             Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
-            String tableName = String.format("%s.%s", schema, projectsTable);
-            String queryString = sqlQueryStrings.deleteByIdString(tableName, id.toString());
-
-            try (JdbcConnection jdbcConnection = new JdbcConnection()) {
-                int affectedRows = jdbcConnection.executeUpdate(queryString);
-                return affectedRows > 0;
-            }
-            catch (Exception e) {
-                logger.error(String.format("Repository: delete: error: %s", e.getMessage()));
+            try {
+                return delete(id);
+            } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         });
     }
-/*
-    @Override
-    public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException {
-        Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
-        Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
+    private boolean delete(UUID id) throws SQLException, RuntimeException {
+        String queryString = sqlQueryPreparedStrings.deleteByIdString(tableName);
 
-        return null;
-    }*/
+        try (JdbcConnection jdbcConnection = new JdbcConnection();
+        PreparedStatement statement = jdbcConnection.prepareStatement(queryString);) {
+
+            statement.setObject(1, id, Types.OTHER);
+
+            int affectedRows = statement.executeUpdate();
+
+            if(affectedRows == 0) {
+                throw new ProjectNotFoundException(String.format(StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE, id));
+            }
+            return affectedRows > 0;
+        }
+        catch (Exception e) {
+            logger.error(String.format("Repository: delete: error: %s", e.getMessage()));
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
-    public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException {
+    public CompletableFuture<ProjectDto> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException, RuntimeException, NullPointerException {
 
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         Objects.requireNonNull(projectId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
@@ -376,7 +309,6 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
                                     if (!success) {
                                         logger.error(String.format("Repository: addUserToProject: error: CompletitionException -> SQLException"));
                                         throw new CompletionException(
-                                                //
                                                 new SQLException("Failed to add user to project"));
                                     }
                                     logger.info("Repository: addUserToProject: added user to project");
@@ -411,7 +343,6 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
                                         throw new CompletionException(
                                                 new SQLException("Failed to remove user from project"));
                                     }
-                                    logger.info("Repository: RemoveUserFromProjectAsync: removed user from project");
                                     projectDto.setProjectUsersIds(updatedUsers);
                                     return projectDto;
                                 });
@@ -531,7 +462,8 @@ public class ProjectRepository implements repositories.interfaces.ProjectReposit
                 result.add(ProjectMapper.mapResultSetToProject(resultSet));
             }
             return result;
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }

@@ -10,7 +10,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author 4ndr33w
  * @version 1.0
- */
+ *//*
 public class ProjectsRepositoryTest {
 
     repositories.interfaces.synchronous.ProjectRepoSynchro projectRepository;
@@ -28,3 +28,4 @@ public class ProjectsRepositoryTest {
         assertNotNull(project);
     }
 }
+*/

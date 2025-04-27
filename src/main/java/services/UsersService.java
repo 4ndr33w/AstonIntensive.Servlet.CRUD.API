@@ -143,7 +143,6 @@ public class UsersService implements UserService {
                             })
                             .toList();
                 });
-
     }
 
     Map<UUID, List<ProjectUsersDto>> getUserProjectsMap (List<UUID> userIds) throws SQLException, ExecutionException, InterruptedException {

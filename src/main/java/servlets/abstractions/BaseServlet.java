@@ -1,15 +1,9 @@
 package servlets.abstractions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-
-import configurations.JdbcConnection;
-import configurations.PropertiesConfiguration;
 import models.dtos.ErrorDto;
 import models.entities.Project;
 import models.entities.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import utils.StaticConstants;
 import utils.Utils;
 import utils.exceptions.*;
@@ -19,13 +13,16 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
  * @author 4ndr33w

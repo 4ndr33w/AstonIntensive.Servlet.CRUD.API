@@ -21,6 +21,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import utils.mappers.ProjectMapper;
 
 /**
  * Сервлет представляет эндпойнт
@@ -186,7 +187,7 @@ public class ProjectsServlet extends BaseServlet {
                 }
                 UUID projectId = UUID.fromString(id);
 
-                var result = projectController.getByProjectId(projectId);
+                var result = projectController.delete(projectId);
                 Boolean isDeleted = (Boolean) result.get();
 
                 if (isDeleted) {
@@ -228,8 +229,10 @@ public class ProjectsServlet extends BaseServlet {
             try {
                 Project project = parseProjectFromRequest(req);
                 project.setId(projectId);
+                ProjectDto projectDto = ProjectMapper.toDto(project);
 
-                var result = projectController.update(project);
+                var result = projectController.update(projectDto);
+
                 ProjectDto updatedProject = (ProjectDto) result.get();
 
                 String jsonResponse = new ObjectMapper().writeValueAsString(updatedProject);

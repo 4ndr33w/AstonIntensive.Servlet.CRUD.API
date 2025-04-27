@@ -1,11 +1,12 @@
 package servlets;
 
-import controllers.ProjectControllerSynchronous;
-import controllers.interfaces.ProjectControllerInterface;
+//import controllers.ProjectControllerSynchronous;
+//import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
 
+import javax.servlet.AsyncContext;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,6 +18,9 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import utils.exceptions.InvalidIdExceptionMessage;
+import utils.exceptions.NoProjectsFoundException;
+import utils.exceptions.ProjectNotFoundException;
 
 /**
  * Сервлет обработки GET-запроса
@@ -47,11 +51,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @WebServlet(urlPatterns = "/api/v1/projects/user", asyncSupported = true)
 public class GetProjectByUserIdServlet extends BaseServlet {
 
-    private final ProjectControllerInterface projectController;
+    //private final ProjectControllerInterface projectController;
+    private final controllers.interfaces.BaseProjectController projectController;
 
     public GetProjectByUserIdServlet() {
         super();
-        this.projectController = new ProjectControllerSynchronous();
+        //this.projectController = new ProjectControllerSynchronous();
+        projectController = new controllers.ProjectsController();
     }
 
     /**
@@ -75,53 +81,60 @@ public class GetProjectByUserIdServlet extends BaseServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
-        try {
-            resp.setContentType("application/json");
-            resp.setCharacterEncoding("UTF-8");
+        String id = req.getParameter("id");
+        AsyncContext asyncContext = req.startAsync();
+        executor.execute(() -> {
+            try {
 
-            String id = req.getParameter("id");
-            if (id == null) {
-                printResponse(
-                        HttpServletResponse.SC_BAD_REQUEST,
-                        "/api/v1/projects/user",
-                        StaticConstants.ID_REQUIRED_AS_PARAMETER_ERROR_MESSAGE,
-                        resp);
-                return;
-            }
-            boolean idValidation = utils.validateId(id);
-            if(!idValidation) {
-                printResponse(
-                        HttpServletResponse.SC_BAD_REQUEST,
-                        "/api/v1/projects/user",
-                        StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE,
-                        resp);
-                return;
-            }
-            List<ProjectDto> projects = projectController.getByUserId(UUID.fromString(id));
+                if (id == null) {
+                    asyncErrorResponse(
+                            HttpServletResponse.SC_BAD_REQUEST,
+                            "/api/v1/projects/user",
+                            StaticConstants.ID_REQUIRED_AS_PARAMETER_ERROR_MESSAGE,
+                            asyncContext);
+                    return;
+                }
+                boolean idValidation = utils.validateId(id);
+                if(!idValidation) {
+                    throw new InvalidIdExceptionMessage(StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE);
+                }
 
-            if(projects == null || projects.size() == 0) {
-                printResponse(
-                        HttpServletResponse.SC_NOT_FOUND,
-                        "/api/v1/projects/user",
-                        StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE,
-                        resp);
-            }
-            else{
-                ObjectMapper mapper = new ObjectMapper();
-                String jsonResponse = mapper.writeValueAsString(projects);
+                var result = projectController.getByUserId(UUID.fromString(id));
 
-                PrintWriter out = resp.getWriter();
-                out.print(jsonResponse);
-                out.flush();
+                if (result.isCompletedExceptionally()) {
+                    asyncErrorResponse(
+                            HttpServletResponse.SC_NOT_FOUND,
+                            "/api/v1/projects/user",
+                            StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE,
+                            asyncContext);
+                    return;
+
+                }
+                List<ProjectDto> projects = (List<ProjectDto>) result.join();
+
+                if(projects == null || projects.isEmpty()) {
+                    throw new NoProjectsFoundException(StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE);
+                }
+                else{
+
+                    ObjectMapper mapper = new ObjectMapper();
+                    String jsonResponse = mapper.writeValueAsString(projects);
+
+                    asyncSuccesfulResponse(HttpServletResponse.SC_OK,
+                            jsonResponse,
+                            asyncContext);
+                }
             }
-        }
-        catch (Exception e) {
-            printResponse(
-                    HttpServletResponse.SC_BAD_REQUEST,
-                    "/api/v1/projects/user",
-                    StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
-                    e,
-                    resp);
-        }
+            catch (Exception e) {
+                handleAsyncError(asyncContext, e, "/api/v1/projects/user");
+            }
+            finally {
+                if (asyncContext != null) {
+                    asyncContext.complete();
+                }
+            }
+
+        });
+
     }
 }

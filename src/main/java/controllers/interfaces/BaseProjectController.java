@@ -1,8 +1,5 @@
 package controllers.interfaces;
 
-import models.dtos.ProjectDto;
-import models.entities.Project;
-
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;

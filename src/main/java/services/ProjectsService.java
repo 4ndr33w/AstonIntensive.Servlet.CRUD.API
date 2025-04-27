@@ -47,29 +47,52 @@ public class ProjectsService implements ProjectService {
     }
 
     @Override
-    public CompletableFuture<List<ProjectDto>> getProjectsByUserIdAsync(UUID userId) throws SQLException, NoProjectsFoundException, NullPointerException, RuntimeException{
+    public CompletableFuture<List<ProjectDto>> getProjectsByUserIdAsync(UUID userId) throws SQLException, NoProjectsFoundException, NullPointerException, RuntimeException {
         Objects.requireNonNull(userId, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         var projectUsers = projectUserRepository.findByUserIdAsync(userId);
+        var userProjects = projectRepository.findByProjectIdsAsync(projectUsers.join().stream().map(ProjectUsersDto::getProjectId).toList());
+        var map = getMapOfProjectUsersIdsGroupedByProjects(projectUsers);
 
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return findProjectsFromProjectUsers(projectUsers);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+        return userProjects.thenCombine(map, (projects, usersMap) -> {
+            if(projects.isEmpty() || usersMap.isEmpty()) {
+                if (usersMap.isEmpty()) {
+                    throw new NoProjectsFoundException(StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE);
+                }
             }
+            var userProject = projects.stream()
+                    .map(project -> {
+                        ProjectDto dto = ProjectMapper.toDto(project);
+
+                        dto.setProjectUsersIds(usersMap.getOrDefault(project.getId(), Collections.emptyList()));
+                        return dto;
+                    }).toList();
+
+            if(userProject.isEmpty()) {
+                throw new NoProjectsFoundException(StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE);
+            }
+            return userProject;
         });
     }
-    private List<ProjectDto> findProjectsFromProjectUsers(CompletableFuture<List<ProjectUsersDto>> projectUsersFuture) throws SQLException, NoProjectsFoundException {
-
-        List<ProjectUsersDto> projectUsers = projectUsersFuture.join();
-        List<UUID> userIds = projectUsers.stream().map(ProjectUsersDto::getProjectId).toList();
-        var projects = projectRepository.findByProjectIdsAsync(userIds).join();
-        if(projects.isEmpty()) {
-            return new ArrayList<>();
+    private CompletableFuture<Map<UUID, List<UUID>>> getMapOfProjectUsersIdsGroupedByProjects(CompletableFuture<List<ProjectUsersDto>> projectUsersFuture) throws SQLException {
+        try {
+            return projectUsersFuture
+                    .thenApply(projectUsers -> {
+                        var _projectUsets = projectUsers
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                        ProjectUsersDto::getProjectId,
+                                        Collectors.mapping(
+                                                ProjectUsersDto::getUserId,
+                                                Collectors.toList()
+                                        )
+                                ));
+                        return !_projectUsets.isEmpty() ? _projectUsets : new HashMap<>();
+                    });
         }
-
-        return projects.stream().map(ProjectMapper::toDto).toList();
+        catch (Exception e) {
+            return new CompletableFuture<>();
+        }
     }
 
     @Override
@@ -88,8 +111,7 @@ public class ProjectsService implements ProjectService {
 
                         dto.setProjectUsersIds(usersMap.getOrDefault(project.getId(), Collections.emptyList()));
                         return dto;
-                    })
-                    .collect(Collectors.toList());
+                    }).toList();
         });
     }
 
@@ -103,25 +125,12 @@ public class ProjectsService implements ProjectService {
     }
     private CompletableFuture<Map<UUID, List<UUID>>> getUserIdsFromProjectUsersByProjectIds(List<UUID> projectIds)
             throws DatabaseOperationException, NullPointerException {
-
         try {
-            return projectUserRepository.findByProjectIdsAsync(projectIds)
-                    .thenApply(projectUsers -> {
-                        return projectUsers
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                        ProjectUsersDto::getProjectId,
-                                        Collectors.mapping(
-                                                ProjectUsersDto::getUserId,
-                                                Collectors.toList()
-                                        )
-                                ));
-                    });
+            return getMapOfProjectUsersIdsGroupedByProjects(projectUserRepository.findByProjectIdsAsync(projectIds));
         }
         catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Override

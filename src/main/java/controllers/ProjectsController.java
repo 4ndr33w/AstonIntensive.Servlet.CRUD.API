@@ -1,14 +1,12 @@
 package controllers;
 
 import controllers.interfaces.BaseProjectController;
-import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import models.entities.Project;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import services.ProjectsService;
 import services.interfaces.ProjectService;
 import utils.exceptions.DatabaseOperationException;
+import utils.exceptions.NoProjectsFoundException;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.ProjectUpdateException;
 
@@ -19,13 +17,15 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Класс для работы с проектами
  * в многопоточном режиме
  * Предоставляет методы для{@code CRUD}-операций с проектами
  *
- * @see ProjectControllerInterface
+ //* @see ProjectControllerInterface
  * @see services.interfaces.ProjectService
  * @author 4ndr33w
  * @version 1.0
@@ -37,8 +37,6 @@ public class ProjectsController implements BaseProjectController<Project, Projec
     private final ProjectService projectService;
 
     public ProjectsController() {
-
-        //this.projectService = new ProjectServiceImplNew();
         this.projectService = new ProjectsService();
     }
 
@@ -57,11 +55,9 @@ public class ProjectsController implements BaseProjectController<Project, Projec
      * @throws NoSuchElementException
      */
     @Override
-    public CompletableFuture<List<ProjectDto>> getByUserId(UUID userId) throws SQLException, RuntimeException, ProjectNotFoundException, NullPointerException {
+    public CompletableFuture<List<ProjectDto>> getByUserId(UUID userId) throws SQLException, RuntimeException, NoProjectsFoundException, NullPointerException {
         Objects.requireNonNull(userId);
-
         return projectService.getProjectsByUserIdAsync(userId);
-                //.thenApply(projects -> projects.stream().map(ProjectMapper::toDto).toList());
     }
 
     /**
@@ -80,11 +76,10 @@ public class ProjectsController implements BaseProjectController<Project, Projec
      * @throws RuntimeException
      */
     @Override
-    public CompletableFuture<List<ProjectDto>> getByAdminId(UUID adminId) throws SQLException, RuntimeException, ProjectNotFoundException, NullPointerException  {
+    public CompletableFuture<List<ProjectDto>> getByAdminId(UUID adminId) throws SQLException, RuntimeException, NoProjectsFoundException, NullPointerException  {
         Objects.requireNonNull(adminId);
 
         return projectService.getByAdminIdAsync(adminId);
-                //.thenApply(projects -> projects.stream().map(ProjectMapper::toDto).toList());
     }
 
     /**
@@ -107,7 +102,6 @@ public class ProjectsController implements BaseProjectController<Project, Projec
         Objects.requireNonNull(projectId);
 
         return projectService.getByIdAsync(projectId);
-                //.thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -128,7 +122,6 @@ public class ProjectsController implements BaseProjectController<Project, Projec
         Objects.requireNonNull(project);
 
         return projectService.createAsync(project);
-                //.thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -171,7 +164,6 @@ public class ProjectsController implements BaseProjectController<Project, Projec
         Objects.requireNonNull(projectId);
 
         return projectService.addUserToProjectAsync(userId, projectId);
-                //.thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -191,7 +183,6 @@ public class ProjectsController implements BaseProjectController<Project, Projec
         Objects.requireNonNull(projectId);
 
         return projectService.removeUserFromProjectAsync(userId, projectId);
-                //.thenApply(ProjectMapper::toDto);
     }
 
     /**
@@ -209,6 +200,5 @@ public class ProjectsController implements BaseProjectController<Project, Projec
         Objects.requireNonNull(projectDto);
 
         return projectService.updateByIdAsync(projectDto);
-                //.thenApply(ProjectMapper::toDto);
     }
 }

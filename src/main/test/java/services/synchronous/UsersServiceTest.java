@@ -1,7 +1,7 @@
 package services.synchronous;
 
 import org.junit.Test;
-import repositories.interfaces.synchronous.UserRepositorySynchro;
+//import repositories.interfaces.synchronous.UserRepositorySynchro;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -12,7 +12,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author 4ndr33w
  * @version 1.0
- */
+ *//*
 public class UsersServiceTest {
 
     UserRepositorySynchro usersRepository;
@@ -45,4 +45,4 @@ public class UsersServiceTest {
 
         assertNotNull(test);
     }
-}
+}*/

@@ -1,7 +1,5 @@
 package repositories.interfaces;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import utils.StaticConstants;
 import utils.exceptions.DatabaseOperationException;
 
@@ -10,6 +8,8 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Generic интерфейс для CRUD операций

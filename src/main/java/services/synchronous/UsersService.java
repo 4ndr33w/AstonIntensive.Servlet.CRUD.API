@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 /**
  * @author 4ndr33w
  * @version 1.0
- */
+ *//*
 public class UsersService implements UserServiceSynchro {
 
     repositories.interfaces.synchronous.UserRepositorySynchro userRepository;
@@ -201,4 +201,4 @@ public class UsersService implements UserServiceSynchro {
 
         return userRepository.update(entity);
     }
-}
+}*/

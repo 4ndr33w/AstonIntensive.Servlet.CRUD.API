@@ -7,9 +7,9 @@ import models.entities.Project;
 import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import repositories.interfaces.synchronous.ProjectUserRepositorySynchro;
+/*import repositories.interfaces.synchronous.ProjectUserRepositorySynchro;
 import repositories.synchronous.ProjectUsersRepositorySynchronous;
-import repositories.synchronous.UsersRepositorySynchronous;
+import repositories.synchronous.UsersRepositorySynchronous;*/
 import services.interfaces.synchronous.ProjectServiceSynchro;
 import utils.StaticConstants;
 import utils.exceptions.ProjectNotFoundException;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 /**
  * @author 4ndr33w
  * @version 1.0
- */
+ *//*
 public class ProjectsService implements ProjectServiceSynchro {
 
     Logger logger = LoggerFactory.getLogger(ProjectsService.class);
@@ -227,3 +227,4 @@ public class ProjectsService implements ProjectServiceSynchro {
                 .collect(Collectors.toList());
     }
 }
+*/

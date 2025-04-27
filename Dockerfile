@@ -1,6 +1,6 @@
 #FROM tomcat:7.0.109-jdk8
-#FROM tomcat:9.0-jdk17
-FROM tomcat:11.0-jdk17
+FROM tomcat:9.0-jdk17
+#FROM tomcat:11.0-jdk17
 
 ADD https://jdbc.postgresql.org/download/postgresql-42.6.0.jar /usr/local/tomcat/lib/
 ENV JDK_JAVA_OPTIONS ""

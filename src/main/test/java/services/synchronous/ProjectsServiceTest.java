@@ -5,7 +5,7 @@ import models.entities.Project;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
+/*import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import org.mockito.junit.MockitoJUnitRunner;
@@ -21,12 +21,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.*;*/
 
 /**
  * @author 4ndr33w
  * @version 1.0
- */
+ *//*
 @RunWith(MockitoJUnitRunner.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ProjectsServiceTest extends Utils {
@@ -86,4 +86,4 @@ public class ProjectsServiceTest extends Utils {
     // Get By Admin Id
     //---------------------------------------------------------------
 
-}
+}*/

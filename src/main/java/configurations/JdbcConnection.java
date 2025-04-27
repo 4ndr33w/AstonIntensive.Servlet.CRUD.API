@@ -3,8 +3,12 @@ package configurations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
-import java.util.Objects;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Класс для работы с JDBC
@@ -44,25 +48,6 @@ public class JdbcConnection implements AutoCloseable{
            return connection;
     }
 
-    public void setAutoCommit(boolean flag) throws SQLException {
-        if (connection != null) {
-            connection.setAutoCommit(flag);
-        }
-    }
-
-    public void commit() throws SQLException {
-        if (connection != null) {
-            logger.info("Выполнен коммит");
-            connection.commit();
-        }
-    }
-
-    public void rollback() throws SQLException {
-        if (connection != null) {
-            logger.info("Выполнен откат коммита");
-            connection.rollback();
-        }
-    }
 
     public ResultSet executeQuery(String query) throws Exception {
         closeResultSet();
@@ -71,27 +56,6 @@ public class JdbcConnection implements AutoCloseable{
 
         return resultSet;
     }
-
-    public int executeUpdate(String query) throws SQLException {
-        closeStatement();
-        this.statement = connection.createStatement();
-        return statement.executeUpdate(query);
-    }
-
-    public int preparedStatementExecuteUpdate(PreparedStatement preparedStatement) throws SQLException, NullPointerException {
-        Objects.requireNonNull(preparedStatement, "PreparedStatement не может быть null");
-
-        closePreparedStatement();
-        this.preparedStatement = preparedStatement;
-
-        return preparedStatement.executeUpdate();
-    }
-
-   /* public PreparedStatement prepareStatement(String sql) throws SQLException {
-        closePreparedStatement();
-        this.preparedStatement = connection.prepareStatement(sql);
-        return this.preparedStatement;
-    }*/
 
     public PreparedStatement prepareStatementReturningGeneratedKey(String sql) throws SQLException {
         closePreparedStatement();
@@ -103,11 +67,6 @@ public class JdbcConnection implements AutoCloseable{
         closePreparedStatement();
         this.preparedStatement = connection.prepareStatement(sql);
         return this.preparedStatement;
-    }
-
-    public Statement statement() throws SQLException {
-        closeStatement();
-        return connection.createStatement();
     }
 
     @Override

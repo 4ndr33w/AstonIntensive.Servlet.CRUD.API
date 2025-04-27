@@ -2,8 +2,7 @@ package repositories;
 
 import configurations.JdbcConnection;
 import configurations.PropertiesConfiguration;
-import configurations.ThreadPoolConfNonStatic;
-import configurations.ThreadPoolConfiguration;
+
 import models.dtos.ProjectUsersDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,14 +11,20 @@ import utils.StaticConstants;
 import utils.exceptions.ProjectUserNotFoundException;
 import utils.mappers.ProjectUserMapper;
 import utils.sqls.SqlQueryPreparedStrings;
-import utils.sqls.SqlQueryStrings;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 import static utils.mappers.ProjectUserMapper.mapResultSetToProjectUser;
 
@@ -131,7 +136,6 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
      * @throws CompletionException
      * @throws NullPointerException
      * @throws RuntimeException
-     * @throws SQLDataException
      */
     @Override
     public CompletableFuture<Boolean> deleteUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException, RuntimeException, NullPointerException, ProjectUserNotFoundException  {
@@ -174,7 +178,6 @@ public class ProjectUsersRepositoryImpl implements ProjectUserRepository {
      * @throws CompletionException
      * @throws NullPointerException
      * @throws RuntimeException
-     * @throws SQLDataException
      */
     @Override
     public CompletableFuture<Boolean> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException, RuntimeException, NullPointerException  {

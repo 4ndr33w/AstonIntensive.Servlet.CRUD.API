@@ -1,9 +1,9 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import controllers.ProjectControllerSynchronous;
+//import controllers.ProjectControllerSynchronous;
 import controllers.ProjectsController;
-import controllers.interfaces.ProjectControllerInterface;
+//import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
