@@ -8,12 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import services.ProjectsService;
 import services.interfaces.ProjectService;
-import servlets.ProjectsServlet;
-import utils.StaticConstants;
 import utils.exceptions.DatabaseOperationException;
 import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.ProjectUpdateException;
-import utils.mappers.ProjectMapper;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -21,7 +18,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -64,7 +60,7 @@ public class ProjectsController implements BaseProjectController<Project, Projec
     public CompletableFuture<List<ProjectDto>> getByUserId(UUID userId) throws SQLException, RuntimeException, ProjectNotFoundException, NullPointerException {
         Objects.requireNonNull(userId);
 
-        return projectService.getByUserIdAsync(userId);
+        return projectService.getProjectsByUserIdAsync(userId);
                 //.thenApply(projects -> projects.stream().map(ProjectMapper::toDto).toList());
     }
 

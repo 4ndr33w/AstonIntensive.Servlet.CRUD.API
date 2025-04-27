@@ -1,27 +1,20 @@
 package servlets;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
+import utils.exceptions.InvalidIdExceptionMessage;
 
+import javax.servlet.AsyncContext;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
-
-/*
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-*/
-import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Сервлет с эндпойнтами для добавления / удаления
@@ -30,15 +23,14 @@ import java.util.UUID;
  * @author 4ndr33w
  * @version 1.0
  */
-@WebServlet("/api/v1/projects/users")
+@WebServlet(urlPatterns = "/api/v1/projects/users", asyncSupported = true)
 public class AddRemoveUsersToProjectServlet extends BaseServlet {
 
-    private final ProjectControllerInterface projectController;
-    protected Logger logger = LoggerFactory.getLogger(AddRemoveUsersToProjectServlet.class);
+    private final controllers.interfaces.BaseProjectController projectController;
 
     public AddRemoveUsersToProjectServlet() {
-        //this.projectController = new controllers.ProjectsController();
-        this.projectController = new controllers.ProjectControllerSynchronous();
+        super();
+        this.projectController = new controllers.ProjectsController();
     }
 
     /**
@@ -60,18 +52,9 @@ public class AddRemoveUsersToProjectServlet extends BaseServlet {
      * @throws Exception
      */
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
 
-        session = req.getSession();
-
-        executor.execute(() -> {
-            try {
-
-            } catch (Exception e) {
-                logger.error(e.getMessage());
-                throw new RuntimeException(e);
-            }
-        });
+        actionHandler(req, models.enums.ActionType.POST);
     }
 
     /**
@@ -93,22 +76,70 @@ public class AddRemoveUsersToProjectServlet extends BaseServlet {
      * @throws Exception
      */
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        try {
-            UUID projectId = UUID.fromString(req.getParameter("projectId"));
-            UUID userId = UUID.fromString(req.getParameter("userId"));
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
 
-            ProjectDto result = projectController.removeUserFromProject(userId, projectId);
+        actionHandler(req, models.enums.ActionType.DELETE);
+    }
 
-            resp.setContentType("application/json");
-            new ObjectMapper().writeValue(resp.getWriter(), result);
-        } catch (Exception e) {
-            printResponse(
-                    HttpServletResponse.SC_BAD_REQUEST,
-                    "/api/v1/projects/users",
-                    StaticConstants.REQUEST_VALIDATION_ERROR_MESSAGE,
-                    e,
-                    resp);
-        }
+    private void actionHandler(HttpServletRequest req, models.enums.ActionType actionType) {
+        AsyncContext asyncContext = req.startAsync();
+
+        executor.execute(() -> {
+            String projectIdString = asyncContext.getRequest().getParameter("projectid");
+            String userIdString = asyncContext.getRequest().getParameter("userid");
+            try {
+                if (projectIdString == null || userIdString == null ) {
+                    asyncErrorResponse(
+                            HttpServletResponse.SC_BAD_REQUEST,
+                            "/api/v1/projects/users",
+                            StaticConstants.ID_REQUIRED_AS_PARAMETER_ERROR_MESSAGE,
+                            asyncContext);
+                }
+                else {
+                    boolean projectIdValidation = utils.validateId(projectIdString);
+                    boolean userIdValidation = utils.validateId(userIdString);
+
+                    if (!projectIdValidation || !userIdValidation) {
+                        throw new InvalidIdExceptionMessage(StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE);
+                    }
+                    UUID projectId = UUID.fromString(projectIdString);
+                    UUID userId = UUID.fromString(userIdString);
+
+                    CompletableFuture<?> result = null;
+
+                    switch (actionType) {
+                        case POST -> {
+                            result = projectController.addUserToProject(userId, projectId );
+                            break;
+                        }
+                        case DELETE -> {
+                            result = projectController.removeUserFromProject(userId, projectId );
+                            break;
+                        }
+                    }
+
+                    if(result.isCompletedExceptionally()) {
+                        handleAsyncError(asyncContext, (Exception) result.get(),"/api/v1/projects/users");
+                    }
+                    else {
+                        var updatedProject = (ProjectDto) result.get();
+                        String jsonResponse = new ObjectMapper().writeValueAsString(updatedProject);
+
+                        asyncSuccesfulResponse(
+                                HttpServletResponse.SC_OK,
+                                jsonResponse,
+                                asyncContext);
+                    }
+                }
+            }
+            catch (Exception e) {
+                handleAsyncError(asyncContext, e,"/api/v1/projects/users");
+            }
+            finally {
+                if (asyncContext != null) {
+                    asyncContext.complete();
+                }
+            }
+        });
     }
 }

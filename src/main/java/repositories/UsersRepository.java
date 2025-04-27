@@ -34,15 +34,12 @@ public class UsersRepository implements UserRepository{
             : PropertiesConfiguration.getProperties().getProperty("jdbc.users-table");
 
     private final String usersTableName = String.format("%s.%s", usersSchema, usersTable);
-    private final SqlQueryStrings sqlQueryStrings;
 
     private final SqlQueryPreparedStrings sqlQueryPreparedStrings;
 
     Logger logger = LoggerFactory.getLogger(UsersRepository.class);
 
     public UsersRepository() {
-        sqlQueryStrings = new SqlQueryStrings();
-
         sqlQueryPreparedStrings = new SqlQueryPreparedStrings();
     }
 
@@ -86,7 +83,6 @@ public class UsersRepository implements UserRepository{
                     }
                 });
     }
-
     private List<User> findAll() throws SQLException, NoUsersFoundException, ResultSetMappingException {
         String queryString = sqlQueryPreparedStrings.findAllQueryString(usersTableName);
         try (JdbcConnection connection = new JdbcConnection();
@@ -98,8 +94,6 @@ public class UsersRepository implements UserRepository{
                 users.add(mapResultSetToUser(resultSet));
             }
             if (users.isEmpty()) {
-                //logger.info(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
-                //throw new NoUsersFoundException(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
                 return Collections.emptyList();
             }
             return users;
@@ -216,12 +210,10 @@ public class UsersRepository implements UserRepository{
             }
         });
     }
-
     private boolean delete(UUID id) throws SQLException, DatabaseOperationException, NullPointerException, UserNotFoundException {
         if (id == null) {
             throw new NullPointerException(StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
         }
-
         String queryString = sqlQueryPreparedStrings.deleteByIdString(usersTableName);
 
         try (JdbcConnection jdbcConnection = new JdbcConnection();
@@ -328,29 +320,36 @@ public class UsersRepository implements UserRepository{
             if (userIds == null || userIds.isEmpty()) {
                 return Collections.emptyList();
             }
-            List<String> ids = userIds.stream().map(UUID::toString).toList();
-            String sql = sqlQueryStrings.findAllByIdsString(usersTableName, ids);
-
-            try (JdbcConnection connection = new JdbcConnection();
-                 PreparedStatement statement = connection.getConnection().prepareStatement(sql)) {
-
-                for (int i = 0; i < userIds.size(); i++) {
-                    statement.setObject(i + 1, userIds.get(i));
-                }
-
-                ResultSet resultSet = statement.executeQuery();
-                List<User> result = new ArrayList<>();
-
-                while (resultSet.next()) {
-                    result.add(UserMapper.mapResultSetToUser(resultSet));
-                }
-
-                return result;
-            } catch (SQLException e) {
-                throw new CompletionException("Failed to find users by ids", e);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            return findAllByIds(userIds);
         });
+    }
+    private List<User> findAllByIds(List<UUID> userIds) {
+        String sql = sqlQueryPreparedStrings.findAllByIdsString(usersTableName, userIds.size());
+
+        try (JdbcConnection connection = new JdbcConnection();
+             PreparedStatement statement = connection.getConnection().prepareStatement(sql)) {
+
+            setPreparedStatementToFindByIds(statement, userIds);
+
+            ResultSet resultSet = statement.executeQuery();
+            List<User> result = new ArrayList<>();
+
+            while (resultSet.next()) {
+                result.add(UserMapper.mapResultSetToUser(resultSet));
+            }
+            return result;
+        }
+        catch (SQLException e) {
+            throw new DatabaseOperationException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, e);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void setPreparedStatementToFindByIds(PreparedStatement statement, List<UUID> userIds) throws SQLException {
+
+        for (int i = 0; i < userIds.size(); i++) {
+            statement.setObject(i + 1, userIds.get(i), Types.OTHER);
+        }
     }
 }

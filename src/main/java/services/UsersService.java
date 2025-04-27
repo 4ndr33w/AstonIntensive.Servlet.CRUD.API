@@ -1,6 +1,7 @@
 package services;
 
 import models.dtos.ProjectDto;
+import models.dtos.ProjectUsersDto;
 import models.dtos.UserDto;
 import models.entities.Project;
 import models.entities.User;
@@ -18,6 +19,8 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -33,11 +36,13 @@ public class UsersService implements UserService {
 
     private final UserRepository userRepository;
     private final repositories.interfaces.ProjectRepository projectsRepository;
+    private final repositories.interfaces.ProjectUserRepository projectUserRepository;
     private final Logger logger;
 
     public UsersService() {
         this.userRepository = new UsersRepository();
         this.projectsRepository = new ProjectRepository();
+        this.projectUserRepository = new repositories.ProjectUsersRepositoryImpl();
         logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
     }
 
@@ -45,6 +50,7 @@ public class UsersService implements UserService {
         this.userRepository = userRepository;
         logger = org.slf4j.LoggerFactory.getLogger(UsersService.class);
         this.projectsRepository = new ProjectRepository();
+        this.projectUserRepository = new repositories.ProjectUsersRepositoryImpl();
     }
 
     @Override
@@ -54,15 +60,16 @@ public class UsersService implements UserService {
                 .thenCompose(user -> {
                     if (user == null) {
                         throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE);
-                        //return CompletableFuture.completedFuture(null);
                     }
-                    return enrichUserWithProjects(UserMapper.toDto(user));
+                    try {
+                        return combineProjectsWithUsers(List.of(user))
+                                .thenApply(users -> users.stream()
+                                        .map(UserMapper::toDto)
+                                        .toList().get(0));
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 });
-                /*.exceptionally(ex -> {
-                    String message = String.format("$s,  id: %s\ncause: %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, id, ex.getCause().getMessage());
-                    logger.error(message);
-                    throw new UserNotFoundException(message, ex);
-                });*/
     }
 
     /**
@@ -75,13 +82,6 @@ public class UsersService implements UserService {
         Objects.requireNonNull(user, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return userRepository.createAsync(user).thenApply(UserMapper::toDto);
-                /*.exceptionally(ex -> {
-                    String message = String.format("%s, userId: %s",
-                            StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE,
-                            user.getId());
-                    logger.error(message, ex);
-                    throw new CompletionException(message, ex);
-                });*/
     }
 
     @Override
@@ -89,12 +89,6 @@ public class UsersService implements UserService {
         Objects.requireNonNull(id, StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE);
 
         return userRepository.deleteAsync(id);
-                /*.exceptionally(ex -> {
-                    if (ex.getCause() instanceof SQLException) {
-                        throw new CompletionException(StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE, ex.getCause());
-                    }
-                    throw new CompletionException(ex);
-                });*/
     }
 
     @Override
@@ -103,63 +97,109 @@ public class UsersService implements UserService {
         return userRepository.findAllAsync()
                 .thenCompose(users -> {
                     if(users.isEmpty()) throw new NoUsersFoundException(StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE);
-
-                    List<CompletableFuture<UserDto>> userFutures = users.stream()
-                            .map(UserMapper::toDto)
-                            .map(this::enrichUserWithProjects)
-                            .toList();
-
-                    return CompletableFuture.allOf(userFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(v -> userFutures.stream()
-                                    .map(CompletableFuture::join)
-                                    .toList());
-                });
-    }
-
-    private CompletableFuture<UserDto> enrichUserWithProjects(UserDto userDto) {
-        return projectsRepository.findByUserIdAsync(userDto.getId())
-                .thenCompose(projects -> {
-                    List<CompletableFuture<ProjectDto>> projectFutures = projects.stream()
-                            .map(project -> {
-
-                                try {
-                                    return projectsRepository.findByIdAsync(project.getId())
-                                        .thenApply(this::findProjects);
-                                } catch (SQLException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }).toList();
-
-                    return CompletableFuture.allOf(projectFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(v -> collectProjectsFromFutures(userDto, projectFutures));
-                });
-    }
-
-    private ProjectDto findProjects(Project fullProject) {
-        ProjectDto projectDto = ProjectMapper.toDto(fullProject);
-
-        List<User> users = fullProject.getProjectUsers().stream()
-                .map(u -> {
                     try {
-                        return userRepository.findByIdAsync(u.getId())
-                                .join();
-                    } catch (Exception e) {
-                        throw new CompletionException(e);
+                        return combineProjectsWithUsers(users)
+                                .thenApply(users1 -> users1.stream()
+                                        .map(UserMapper::toDto).toList());
                     }
-                })
-                .toList();
-
-        projectDto.setProjectUsersIds(users.stream().map(User::getId).collect(Collectors.toList()));
-        return projectDto;
+                    catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
-    private UserDto collectProjectsFromFutures(UserDto userDto, List<CompletableFuture<ProjectDto>> projectFutures) {
-        userDto.setProjects(
-                projectFutures.stream()
-                        .map(CompletableFuture::join)
-                        .collect(Collectors.toList())
-        );
-        return userDto;
+    private CompletableFuture<List<User>> combineProjectsWithUsers(List<User> users) throws SQLException, ExecutionException, InterruptedException {
+
+        List<UUID> userIds = users.stream().map(User::getId).toList();
+        Map<UUID, List<ProjectDto>> adminProjectsMap = getAdminProjectsMap(userIds);
+        Map<UUID, List<ProjectUsersDto>> userProjectsMap = getUserProjectsMap (userIds );
+        List<UUID> allProjectIds = !userProjectsMap.isEmpty() ? getProjectIds(userProjectsMap) : new ArrayList<>();
+        Map<UUID, ProjectDto> projectsMap = !allProjectIds.isEmpty() ?  projectsMap (allProjectIds ) : new HashMap<>();
+
+        return CompletableFuture
+                .supplyAsync(() -> {
+                    return users.stream()
+                            .map(user -> {
+                                List<ProjectDto> userProjects = new ArrayList<>();
+
+                                if(adminProjectsMap.size() > 0)
+                                {
+                                    userProjects.addAll(adminProjectsMap.getOrDefault(user.getId(), List.of()));
+                                }
+                                if (userProjectsMap.size() > 0) {
+                                    userProjects.addAll(
+                                            userProjectsMap.getOrDefault(user.getId(), List.of())
+                                                    .stream()
+                                                    .map(pu -> projectsMap.get(pu.getProjectId()))
+                                                    .filter(Objects::nonNull)
+                                                    .toList()
+                                    );
+                                }
+                                if (!userProjects.isEmpty()) {
+                                    user.setProjects(userProjects);
+                                }
+                                else  user.setProjects(List.of());
+                                return user;
+                            })
+                            .toList();
+                });
+
+    }
+
+    Map<UUID, List<ProjectUsersDto>> getUserProjectsMap (List<UUID> userIds) throws SQLException, ExecutionException, InterruptedException {
+
+        return projectUserRepository.findByUserIdsAsync(userIds).get()
+                .stream()
+                .collect(Collectors.groupingBy(ProjectUsersDto::getUserId));
+    }
+
+    List<UUID> getProjectIds (Map<UUID, List<ProjectUsersDto>> userProjectsMap) {
+
+        return userProjectsMap.values()
+                .stream()
+                .flatMap(List::stream)
+                .map(ProjectUsersDto::getProjectId)
+                .distinct()
+                .toList();
+    }
+
+    Map<UUID, ProjectDto> projectsMap (List<UUID> projectIds ) throws SQLException, ExecutionException, InterruptedException {
+        return findProjectDtos(projectIds)
+                .stream()
+                .collect(Collectors.toMap(ProjectDto::getId, Function.identity()));
+    }
+    private List<ProjectDto> findProjectDtos(List<UUID> projectIds) throws SQLException, ExecutionException, InterruptedException {
+
+        var projects = projectsRepository.findByProjectIdsAsync(projectIds).get();
+
+        if(!projects.isEmpty()) {
+            return projects.stream().map(ProjectMapper::toDto).toList();
+        }
+        return List.of();
+    }
+
+    Map<UUID, List<ProjectDto>> getAdminProjectsMap (List<UUID> userIds) throws SQLException, ExecutionException, InterruptedException {
+
+        Map<UUID, List<ProjectDto>> adminProjectMap = findAllProjectsByAdminIds(userIds)
+                .stream()
+                .collect(Collectors.groupingBy(ProjectDto::getAdminId));
+
+        if(adminProjectMap.isEmpty()) {
+            return Map.of();
+        }
+        else {
+            return adminProjectMap;
+        }
+    }
+
+    private List<ProjectDto> findAllProjectsByAdminIds(List<UUID> adminIds) throws SQLException, ExecutionException, InterruptedException {
+        Objects.requireNonNull(adminIds, "AdminIds cannot be null");
+
+        var projectsByAdminIdsOptional = projectsRepository.findByAdminIdsAsync(adminIds).get();
+        if(projectsByAdminIdsOptional.size() > 0) {
+            return projectsByAdminIdsOptional.stream().map(ProjectMapper::toDto).toList();
+        }
+        return List.of();
     }
 
     @Override
@@ -171,17 +211,17 @@ public class UsersService implements UserService {
                     if (updatedUser == null) {
                         throw new UserNotFoundException(StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE + " id: " + userDto.getId());
                     }
-                    return enrichUserWithProjects(UserMapper.toDto(updatedUser));
+                    try {
+                        return combineProjectsWithUsers(List.of(updatedUser))
+                                .thenApply(users -> users.stream()
+                                        .map(UserMapper::toDto)
+                                        .toList().get(0));
+                    }
+                    catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
 
                 });
-                /*.exceptionally(ex -> {
-                    if (ex.getCause() instanceof NoSuchElementException) {
-                        logger.error(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, dto.getId(), ex.getCause()));
-                        throw new ProjectNotFoundException(String.format("%s; id: %s; %s", StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE, dto.getId(), ex.getCause()));
-                    }
-                    logger.error(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, dto.getId()));
-                    throw new CompletionException(String.format("%s; id: %s", StaticConstants.FAILED_TO_UPDATE_USER_EXCEPTION_MESSAGE, dto.getId()), ex.getCause());
-                });*/
     }
 
 }

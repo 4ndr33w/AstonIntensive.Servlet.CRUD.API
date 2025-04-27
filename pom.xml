@@ -20,12 +20,7 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.1</version>
-      <scope>test</scope>
-    </dependency>
+
     <dependency>
       <groupId>jakarta.servlet</groupId>
       <artifactId>jakarta.servlet-api</artifactId>
@@ -88,23 +83,28 @@
       <version>5.17.0</version>
       <scope>test</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>5.17.0</version>
+      <version>4.11.0</version> <!-- Устойчивая версия Mockitio -->
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-      <version>5.10.2</version>
+      <version>5.10.2</version> <!-- Одна стабильная версия -->
       <scope>test</scope>
     </dependency>
+   <!-- <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.1</version>
+      <scope>test</scope>
+    </dependency> -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <version>5.13.0-M2</version>
+      <version>5.10.2</version> <!-- Та же самая версия -->
       <scope>test</scope>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.slf4j/jul-to-slf4j -->

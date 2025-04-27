@@ -1,41 +1,16 @@
 package servlets;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-//import configurations.LoggerConfiguration;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import controllers.UsersController;
-import models.dtos.ErrorDto;
-import models.dtos.UserDto;
-import models.entities.Project;
-import models.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import servlets.abstractions.BaseServlet;
-import servlets.sessionProcessing.SessionProcessingTask;
-import utils.StaticConstants;
+import utils.Utils;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-/*
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.ServletException;
-*/
-
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Servlet для получения списка всех пользователей
@@ -46,19 +21,15 @@ import java.util.concurrent.ExecutionException;
 @WebServlet(urlPatterns = "/api/v1/users/all", asyncSupported = true)
 public class GetAllUsersServlet extends BaseServlet {
 
-    Logger logger = LoggerFactory.getLogger(GetAllUsersServlet.class);
-    //private final controllers.interfaces.UserControllerInterface userController;
     private final controllers.interfaces.BaseUserController userController;
 
     public GetAllUsersServlet() {
         super();
         userController = new UsersController();
-        //userController = new controllers.UserControllerSynchronous();
     }
 
     @Override
     public void init() {
-
     }
 
     /**

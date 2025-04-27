@@ -65,7 +65,7 @@ public class ProjectsServiceTest extends Utils {
 
     @Test(expected = ProjectNotFoundException.class)
     @Description("Успешко возвращаем пустой список, если пользователь не имеет проектов")
-    public void getByUserIdAsync_ShouldReturnEmptyList_WhenUserHasNoProjects() {
+    public void getProjectsByUserIdAsync_ShouldReturnEmptyList_WhenUserHasNoProjects() {
 
         UUID userId = UUID.randomUUID();
 

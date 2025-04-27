@@ -1,36 +1,26 @@
 package servlets;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import controllers.ProjectsController;
 import controllers.interfaces.BaseProjectController;
 import models.dtos.ProjectDto;
 import models.entities.Project;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
 import utils.Utils;
 import utils.exceptions.InvalidIdExceptionMessage;
-import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.RequiredParameterException;
-import utils.mappers.ProjectMapper;
-
 
 import javax.servlet.AsyncContext;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-
-/*
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-*/
 import java.io.IOException;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Сервлет представляет эндпойнт
@@ -40,22 +30,14 @@ import java.util.UUID;
  * @author 4ndr33w
  * @version 1.0
  */
-@WebServlet("/api/v1/projects")
+@WebServlet(urlPatterns = "/api/v1/projects", asyncSupported = true)
 public class ProjectsServlet extends BaseServlet {
 
-    Logger logger = LoggerFactory.getLogger(ProjectsServlet.class);
-
-    //private final ProjectControllerInterface projectController;
     private final BaseProjectController projectController;
-    private ObjectMapper objectMapper = new ObjectMapper();
-    private final Utils utils;
 
-    public ProjectsServlet() {
+    public ProjectsServlet(){
         super();
         this.projectController = new ProjectsController();
-        //this.projectController = new ProjectControllerSynchronous();
-
-        utils = new Utils();
     }
 
     /**
@@ -78,7 +60,7 @@ public class ProjectsServlet extends BaseServlet {
      * @throws RuntimeException
      */
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
         String id = req.getParameter("id");
 
@@ -139,7 +121,7 @@ public class ProjectsServlet extends BaseServlet {
      * @throws IllegalArgumentException
      */
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
 
         AsyncContext asyncContext = req.startAsync();
         executor.execute(() -> {
@@ -188,7 +170,7 @@ public class ProjectsServlet extends BaseServlet {
      * @throws IOException
      */
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
 
         String id = req.getParameter("id");
         AsyncContext asyncContext = req.startAsync();
@@ -227,7 +209,7 @@ public class ProjectsServlet extends BaseServlet {
     }
 
     @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
 
         String id = req.getParameter("id");
 

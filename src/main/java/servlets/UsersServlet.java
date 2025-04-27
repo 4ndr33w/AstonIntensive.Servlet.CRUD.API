@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.UUID;
 
 /**
@@ -36,19 +37,15 @@ import java.util.UUID;
 @WebServlet(urlPatterns = "/api/v1/users", asyncSupported = true)
 public class UsersServlet extends BaseServlet {
 
-    protected Logger logger = LoggerFactory.getLogger(UsersServlet .class);
-    //private final controllers.interfaces.UserControllerInterface userController;
     private final controllers.interfaces.BaseUserController userController;
 
     public UsersServlet() {
         super();
         userController = new UsersController();
-        //userController = new controllers.UserControllerSynchronous();
-        utils = new Utils();
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
         String id = req.getParameter("id");
         AsyncContext asyncContext = req.startAsync();
@@ -130,8 +127,6 @@ public class UsersServlet extends BaseServlet {
                 }
                 else {
                     var createdUser = result.get();
-                    asyncContext.getResponse().setContentType("application/json");
-                    asyncContext.getResponse().setCharacterEncoding("UTF-8");
                     String jsonResponse = new ObjectMapper().writeValueAsString(createdUser);
 
                     asyncSuccesfulResponse(
@@ -235,7 +230,7 @@ public class UsersServlet extends BaseServlet {
     }
 
     @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
 
         String id = req.getParameter("id");
 

@@ -59,5 +59,6 @@ public class StaticConstants {
     public static final String DATABASE_ACCESS_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("DATABASE_ACCESS_EXCEPTION_MESSAGE");
     public static final String FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("FAILED_TO_RETRIEVE_GENERATED_KEYS_EXCEPTION_MESSAGE");
     public static final String UNABLE_TO_LOAD_DB_DRIVER = PropertiesConfiguration.getConstants().getProperty("UNABLE_TO_LOAD_DB_DRIVER");
+    public static final String PROJECT_USER_NOT_FOUND_EXCEPTION_MESSAGE = PropertiesConfiguration.getConstants().getProperty("PROJECT_USER_NOT_FOUND_EXCEPTION_MESSAGE");
 
 }

@@ -2,8 +2,8 @@ package repositories.interfaces;
 
 import models.dtos.ProjectUsersDto;
 
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -17,10 +17,11 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface ProjectUserRepository {
 
-    CompletableFuture<List<ProjectUsersDto>> findByUserId(UUID userId);
-    CompletableFuture<List<ProjectUsersDto>> findByProjectId(UUID projectId);
-    CompletableFuture<Boolean> deleteUserFromProject(UUID userId, UUID projectId);
-    CompletableFuture<Boolean> addUserToProject(UUID userId, UUID projectId);
-    CompletableFuture<List<ProjectUsersDto>> findByProjectIds(List<UUID> projectIds);
+    CompletableFuture<List<ProjectUsersDto>> findByUserIdAsync(UUID userId);
+    CompletableFuture<List<ProjectUsersDto>> findByProjectIdAsync(UUID projectId);
+    CompletableFuture<Boolean> deleteUserFromProjectAsync(UUID userId, UUID projectId) throws SQLException;
+    CompletableFuture<Boolean> addUserToProjectAsync(UUID userId, UUID projectId) throws SQLException;
+    CompletableFuture<List<ProjectUsersDto>> findByProjectIdsAsync(List<UUID> projectIds) throws SQLException;
+    CompletableFuture<List<ProjectUsersDto>> findByUserIdsAsync(List<UUID> userIds) throws SQLException;
 
 }

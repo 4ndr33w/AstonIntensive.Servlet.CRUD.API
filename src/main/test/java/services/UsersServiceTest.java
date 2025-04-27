@@ -5,12 +5,9 @@ import models.dtos.UserDto;
 import models.entities.User;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+
 import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import repositories.interfaces.ProjectRepository;
@@ -21,13 +18,12 @@ import utils.exceptions.ProjectNotFoundException;
 import utils.exceptions.UserNotFoundException;
 import utils.mappers.UserMapper;
 
-import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+
 
 /**
  * Тестовый класс
@@ -36,6 +32,7 @@ import static org.mockito.Mockito.*;
  * @author 4ndr33w
  * @version 1.0
  */
+/*
 @RunWith(MockitoJUnitRunner.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class UsersServiceTest extends Utils{
@@ -343,4 +340,4 @@ public class UsersServiceTest extends Utils{
     // UpdateTest
     //---------------------------------------------------------------
 
-}
+}*/

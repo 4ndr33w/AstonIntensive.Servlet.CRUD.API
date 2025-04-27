@@ -3,6 +3,8 @@ package servlets.abstractions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import configurations.JdbcConnection;
+import configurations.PropertiesConfiguration;
 import models.dtos.ErrorDto;
 import models.entities.Project;
 import models.entities.User;
@@ -36,12 +38,11 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
     protected ObjectMapper objectMapper = new ObjectMapper();
     protected Utils utils;
 
-    protected HttpSession session;
-
     protected static ExecutorService executor;
 
     public BaseServlet() {
         super();
+        utils = new Utils();
         executor = configurations.ThreadPoolConfiguration.getDbExecutor();
     }
 
@@ -197,7 +198,7 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
                 if (counter > 10) break;
             }
             String message = cause.getMessage();
-            int statusCode = 0;
+            int statusCode = -1;
 
             if (e instanceof SQLException) {
 
@@ -209,31 +210,12 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
                     statusCode = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
                 }
             }
-            if (e instanceof ResultSetMappingException) {
-                statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-            }
-            if (e instanceof UserAlreadyExistException) {
-                message = StaticConstants.USER_ALREADY_EXISTS_EXCEPTION_MESSAGE;
-                statusCode = HttpServletResponse.SC_BAD_REQUEST;
-            }
             if (e instanceof InterruptedException) {
                 statusCode = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
             }
             if (e instanceof NullPointerException) {
                 message = StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_BAD_REQUEST;
-            }
-            if (e instanceof DatabaseOperationException) {
-
-                if (e.getCause() instanceof SQLException) {
-                    this.handleAsyncError(asyncContext, (Exception) e.getCause(), path);
-                }
-                message = StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE;
-                statusCode = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-            }
-            if (e instanceof UserNotFoundException) {
-                message = StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE;
-                statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
             if (e instanceof CompletionException) {
                 if(cause.getCause() != null) {
@@ -243,31 +225,73 @@ public abstract class BaseServlet extends HttpServlet implements AutoCloseable{
                 message = StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
-            if (e instanceof NoUsersFoundException) {
-                message = StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE;
-                statusCode = HttpServletResponse.SC_NOT_FOUND;
+            if (e instanceof IllegalArgumentException) {
+                message = StaticConstants.ILLEGAL_ARGUMENT_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_BAD_REQUEST;
+            }
+
+            if (e instanceof DatabaseOperationException) {
+
+                if (e.getCause() instanceof SQLException) {
+                    this.handleAsyncError(asyncContext, (Exception) e.getCause(), path);
+                }
+                message = StaticConstants.DATABASE_ACCESS_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
             }
             if (e instanceof DataParsingException) {
                 message = StaticConstants.ERROR_FETCHING_RESULT_SET_METADATA_EXCEPTION_MESSAGE;
-                statusCode = HttpServletResponse.SC_BAD_REQUEST;
-            }
-            if (e instanceof IllegalArgumentException) {
-                message = StaticConstants.ILLEGAL_ARGUMENT_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_BAD_REQUEST;
             }
             if (e instanceof InvalidIdExceptionMessage) {
                 message = StaticConstants.INVALID_ID_FORMAT_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_BAD_REQUEST;
             }
-            if (e instanceof NoUsersFoundException) {
-                message = StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE;
-                statusCode = HttpServletResponse.SC_NOT_FOUND;
-            }
             if (e instanceof NoProjectsFoundException ) {
                 message = StaticConstants.PROJECTS_NOT_FOUND_EXCEPTION_MESSAGE;
                 statusCode = HttpServletResponse.SC_NOT_FOUND;
             }
+            if (e instanceof NoUsersFoundException) {
+                message = StaticConstants.USERS_NOT_FOUND_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_NOT_FOUND;
+            }
+            if (e instanceof ProjectNotFoundException) {
+                message = StaticConstants.PROJECT_NOT_FOUND_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_NOT_FOUND;
+            }
+            if (e instanceof ProjectUserNotFoundException) {
+                message = StaticConstants.PROJECT_USER_NOT_FOUND_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_NOT_FOUND;
+            }
+            if (e instanceof RequiredParameterException) {
+                message = StaticConstants.PARAMETER_IS_NULL_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_BAD_REQUEST;
+            }
+            if (e instanceof ResultSetMappingException) {
+                statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+            }
+            if (e instanceof UserAlreadyExistException) {
+                message = StaticConstants.USER_ALREADY_EXISTS_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_BAD_REQUEST;
+            }
+            if (e instanceof UserNotFoundException) {
+                message = StaticConstants.USER_NOT_FOUND_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_NOT_FOUND;
+            }
+            if (e instanceof ProjectUpdateException) {
+                message = "Failed to update project";
+                statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+            }
 
+            if(statusCode == -1) {
+                message = StaticConstants.UNEXPECTED_ERROR_EXCEPTION_MESSAGE;
+                statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+            }
+
+            asyncErrorResponse(statusCode, path, message, asyncContext, e);
+        }
+        catch (Exception ex) {
+            String message = StaticConstants.UNEXPECTED_ERROR_EXCEPTION_MESSAGE;
+            int statusCode = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
             asyncErrorResponse(statusCode, path, message, asyncContext, e);
         }
         finally {

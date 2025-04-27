@@ -1,30 +1,22 @@
 package servlets;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import controllers.ProjectControllerSynchronous;
 import controllers.interfaces.ProjectControllerInterface;
 import models.dtos.ProjectDto;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import servlets.abstractions.BaseServlet;
 import utils.StaticConstants;
-import utils.Utils;
 
-import jakarta.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-/*
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-*/
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Сервлет обработки GET-запроса
@@ -52,17 +44,13 @@ import java.util.UUID;
  * @author 4ndr33w
  * @version 1.0
  */
-@WebServlet("/api/v1/projects/user")
+@WebServlet(urlPatterns = "/api/v1/projects/user", asyncSupported = true)
 public class GetProjectByUserIdServlet extends BaseServlet {
 
     private final ProjectControllerInterface projectController;
-    Logger logger = LoggerFactory.getLogger(GetProjectByUserIdServlet.class);
-    private ObjectMapper objectMapper = new ObjectMapper();
-    private final Utils utils;
 
     public GetProjectByUserIdServlet() {
         super();
-        this.utils = new Utils();
         this.projectController = new ProjectControllerSynchronous();
     }
 
@@ -125,7 +113,6 @@ public class GetProjectByUserIdServlet extends BaseServlet {
                 PrintWriter out = resp.getWriter();
                 out.print(jsonResponse);
                 out.flush();
-                logger.info("Ответ отправлен клиенту");
             }
         }
         catch (Exception e) {

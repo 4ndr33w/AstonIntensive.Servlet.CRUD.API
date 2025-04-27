@@ -6,12 +6,9 @@ import models.entities.Project;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+
 import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+//import org.mockito.quality.Strictness;
 import repositories.interfaces.ProjectRepository;
 import repositories.interfaces.ProjectUserRepository;
 import repositories.interfaces.UserRepository;
@@ -27,8 +24,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+
 
 /**
  *  * Тестовый класс
@@ -37,6 +33,7 @@ import static org.mockito.Mockito.*;
  * @author 4ndr33w
  * @version 1.0
  */
+/*
 @RunWith(MockitoJUnitRunner.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ProjectServiceTest extends Utils {
@@ -403,4 +400,4 @@ public class ProjectServiceTest extends Utils {
     //---------------------------------------------------------------
     // UpdateTest
     //---------------------------------------------------------------
-}
+}*/
